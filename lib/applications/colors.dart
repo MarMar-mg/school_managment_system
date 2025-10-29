@@ -3,24 +3,40 @@ import 'package:flutter/material.dart';
 class AppColor {
 
   static const Color backgroundColor = Color(0xFFF8F9FF);
-  static const Color teacherBaseColor = Color(0xFFF8F9FF);
-  static const Color adminBaseColor = Color(0xFFF8F9FF);
-  static const Color studentBaseColor = Color(0xFFF8F9FF);
-  static const Color studentSecondColor = Color(0xFFF8F9FF);
-  static const Color teacherSecondColor = Color(0xFFF8F9FF);
-  static const Color adminSecondColor = Color(0xFFF8F9FF);
+  static const Color teacherBaseColor = Color(0xCC1E90FF);
+  static const Color teacherSecondColor = Color(0xCC00C2CB);
+  static const Color adminBaseColor =  Color(0xCCFF6B9D);
+  static const Color adminSecondColor = Color(0xCCFF8FA3);
+  static const Color studentBaseColor = Color(0xCC6A5AE0);
+  static const Color studentSecondColor = Color(0xCC8B78FF);
+
 
 
   static const Color baliHai = Color(0xff8D98AF);
 
   static const Color blue = Color(0xff38B7FE);
+  static const Color purple = Color(0xFF6A5AE0);
+  static const Color lightPurple = Color(0xFF8B78FF);
   static const Color indigo = Color(0xff0085FE);
   static const Color shimmerColor = Color(0xffF0F0F0);
+
+  static const Color gray = Color(0xff374151);
+  static const Color lightGray = Color(0xff6B7280);
+  static const Color textGray = Color(0xff4B5563);
+  static const Color borderGray = Color(0xffE5E7EB);
+  static const Color darkOrange = Color(0xffCC7A00);
+  static const Color textBlack = Color(0xff111827);
+  static const Color portalGray = Color(0xff6B7280);
+  static const Color shadowGray = Color(0xffF2F2F2);
+  static const Color drawerRed = Color(0xffEF4444);
+  static const Color lightYellow = Color(0xFFFFF8E1);
+  static const Color darkText = Color(0xFF1A1A2E);
+  static const Color lightBackColor = Color(0x4da1c4d1);
+
 
   static const Color mehrAlborzBlue = Color(0xff294D82);
   static const Color asstSystemBlue2 = Color(0xff749EAC);
   static const Color asstSystemBlue = Color(0xffB9D5D5);
-  static const Color asstSystemAppBar = Color(0x66749eac);
   static const Color teachSystemGreen2 = Color(0xa397ad82);
   static const Color teachSystemBackground = Color(0x28b7d29c);
   static const Color teachSystemBackground2 = Color(0x49b7d29c);
@@ -32,15 +48,6 @@ class AppColor {
   static const Color stuSystemBackground2 = Color(0x3f9cbbd2);
   static const Color mehrAlborzBlue2 = Color(0x80294d82);
   static const Color mehrAlborzOrange = Color(0xffFF9800);
-  static const Color gray = Color(0xff374151);
-  static const Color lightGray = Color(0xff6B7280);
-  static const Color textGray = Color(0xff4B5563);
-  static const Color borderGray = Color(0xffE5E7EB);
-  static const Color darkOrange = Color(0xffCC7A00);
-  static const Color textBlack = Color(0xff111827);
-  static const Color portalGray = Color(0xff6B7280);
-  static const Color shadowGray = Color(0xffF2F2F2);
-  static const Color drawerRed = Color(0xffEF4444);
 
   static Color grey(bool isThemeLight, int volume, {int extraVolumeForDark = 0}) {
     if (volume <= 10) volume = volume * 100;

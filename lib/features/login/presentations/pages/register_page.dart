@@ -1,39 +1,48 @@
-import 'package:school_managment_system/commons/untils.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/svg.dart';
 import '../../../../applications/colors.dart';
-import '../../../../commons/text_style.dart';
-import '../../../../commons/widgets/loading_widget.dart';
-import '../../../../main.dart';
+import 'login_page.dart';
 
 TextEditingController nameController = TextEditingController();
 TextEditingController passController = TextEditingController();
 
 class RegisterPage extends StatefulWidget {
-
-
-  const RegisterPage({
-    Key? key,}) : super(key: key);
+  const RegisterPage({Key? key}) : super(key: key);
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
+  // To control focus and avoid keyboard overflow
+  final FocusNode _nameFocus = FocusNode();
+  final FocusNode _passFocus = FocusNode();
 
+  @override
+  void dispose() {
+    _nameFocus.dispose();
+    _passFocus.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
+      resizeToAvoidBottomInset: true, // Important for keyboard
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Center(
+        child: MediaQuery.removePadding(
+          context: context,
+          removeTop: true,
+          removeBottom: true,
+          child: SingleChildScrollView(
+            reverse: true, // Start from bottom when keyboard opens
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(24.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                const SizedBox(height: 100), // Keeps top spacing
+
                 // Logo & Title
                 Column(
                   children: [
@@ -42,7 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       height: 80,
                       decoration: BoxDecoration(
                         gradient: const LinearGradient(
-                          colors: [Color(0xFF6A5AE0), Color(0xFF8B78FF)],
+                          colors: [AppColor.purple, AppColor.lightPurple],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
@@ -55,22 +64,19 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    const Text(
+                    Text(
                       'پورتال آموزشی',
                       style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A2E),
+                        color: AppColor.purple,
                       ),
                       textDirection: TextDirection.rtl,
                     ),
                     const SizedBox(height: 8),
                     const Text(
                       'نقش خود را برای ادامه انتخاب کنید',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Color(0xFF6B6B6B),
-                      ),
+                      style: TextStyle(fontSize: 14, color: AppColor.lightGray),
                       textDirection: TextDirection.rtl,
                     ),
                   ],
@@ -79,43 +85,41 @@ class _RegisterPageState extends State<RegisterPage> {
                 const SizedBox(height: 48),
 
                 // Role Cards
-                Expanded(
-                  child: Column(
-                    children: [
-                      _buildRoleCard(
-                        context: context,
-                        icon: Icons.school_rounded,
-                        title: 'دانش‌آموز',
-                        subtitle: 'دسترسی به درس‌ها، نمرات',
-                        gradientColors: const [Color(0xFF6A5AE0), Color(0xFF8B78FF)],
-                        onTap: () {
-                          // Navigate to student dashboard
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildRoleCard(
-                        context: context,
-                        icon: Icons.menu_book_rounded,
-                        title: 'معلم',
-                        subtitle: 'مدیریت کلاس‌ها و دانش‌آموزان',
-                        gradientColors: const [Color(0xFF00C2CB), Color(0xFF1E90FF)],
-                        onTap: () {
-                          // Navigate to teacher dashboard
-                        },
-                      ),
-                      const SizedBox(height: 16),
-                      _buildRoleCard(
-                        context: context,
-                        icon: Icons.person_outline_rounded,
-                        title: 'مدیر',
-                        subtitle: 'پورتال مدیریت مدرسه',
-                        gradientColors: const [Color(0xFFFF6B9D), Color(0xFFFF8FA3)],
-                        onTap: () {
-                          // Navigate to admin dashboard
-                        },
-                      ),
-                    ],
-                  ),
+                Column(
+                  children: [
+                    _buildRoleCard(
+                      context: context,
+                      icon: Icons.school_rounded,
+                      title: 'دانش‌آموز',
+                      subtitle: 'دسترسی به درس‌ها، نمرات',
+                      gradientColors: [
+                        AppColor.studentBaseColor,
+                        AppColor.studentSecondColor,
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRoleCard(
+                      context: context,
+                      icon: Icons.menu_book_rounded,
+                      title: 'معلم',
+                      subtitle: 'مدیریت کلاس‌ها و دانش‌آموزان',
+                      gradientColors: const [
+                        AppColor.teacherBaseColor,
+                        AppColor.teacherSecondColor,
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildRoleCard(
+                      context: context,
+                      icon: Icons.person_outline_rounded,
+                      title: 'مدیر',
+                      subtitle: 'پورتال مدیریت مدرسه',
+                      gradientColors: const [
+                        AppColor.adminBaseColor,
+                        AppColor.adminSecondColor,
+                      ],
+                    ),
+                  ],
                 ),
 
                 const SizedBox(height: 32),
@@ -123,12 +127,12 @@ class _RegisterPageState extends State<RegisterPage> {
                 // Footer
                 const Text(
                   'دسترسی امن به پورتال آموزشی',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF9A9A9A),
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColor.lightGray),
                   textDirection: TextDirection.rtl,
                 ),
+
+                // Extra space at the bottom so the last item isn't hidden under keyboard
+                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
               ],
             ),
           ),
@@ -137,17 +141,21 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
-
   Widget _buildRoleCard({
     required BuildContext context,
     required IconData icon,
     required String title,
     required String subtitle,
     required List<Color> gradientColors,
-    required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () async {
+        final output = await Navigator.push(
+            context,
+            MaterialPageRoute(builder: (BuildContext ctx) => LoginPage(icon: icon,
+                title: title, subtitle: subtitle, gradientColors: gradientColors)));
+        return output;
+      },
       borderRadius: BorderRadius.circular(16),
       child: Container(
         padding: const EdgeInsets.all(16),
@@ -177,17 +185,13 @@ class _RegisterPageState extends State<RegisterPage> {
                 color: Colors.white.withOpacity(0.2),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 28,
-              ),
+              child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(width: 16),
             // Text Content
             Expanded(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     title,
@@ -201,10 +205,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Colors.white70,
-                    ),
+                    style: const TextStyle(fontSize: 13, color: Colors.white70),
                     textDirection: TextDirection.rtl,
                   ),
                 ],
