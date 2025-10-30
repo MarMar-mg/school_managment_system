@@ -1,22 +1,18 @@
-// login_page.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
+import '../../../dashboard/presentation/pages/dashboard.dart';
 
 class LoginPage extends StatefulWidget {
-  /// Icon that appears on the avatar (school, book, person …)
+  final Role role;
   final IconData icon;
-
-  /// Role title (دانش‌آموز, معلم, مدیر)
   final String title;
-
-  /// Subtitle under the role (optional – not used in the UI you showed)
   final String subtitle;
-
-  /// Gradient colours for the avatar and the login button
   final List<Color> gradientColors;
 
   const LoginPage({
     super.key,
+    required this.role,
     required this.icon,
     required this.title,
     required this.subtitle,
@@ -28,18 +24,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  // Controllers (pre-filled with demo data)
-  late final TextEditingController _emailController =
-  TextEditingController();
-  late final TextEditingController _passController =
-  TextEditingController();
-
-  // Password visibility
+  late final TextEditingController _idController = TextEditingController();
+  late final TextEditingController _passController = TextEditingController();
   bool _obscurePassword = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _idController.dispose();
     _passController.dispose();
     super.dispose();
   }
@@ -52,38 +43,37 @@ class _LoginPageState extends State<LoginPage> {
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24.0),
-          child: Column(
-            children: [
-              const SizedBox(height: 16),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                children: [
+                  const SizedBox(height: 16),
 
-              // ── Top Bar – Back + Change Role ───────────────────────
-              GestureDetector(
-                onTap: () => Navigator.pop(context),
-                child: Row(
-                  children: [
-                    Icon(Icons.arrow_back,
-                      color: AppColor.purple,
+                  // ── Back + Change Role ───────────────────────
+                  GestureDetector(
+                    onTap: () => Navigator.pop(context),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.arrow_back, color: AppColor.purple),
+                        const SizedBox(width: 8),
+                        Text(
+                          'تغییر نقش',
+                          style: TextStyle(
+                            color: AppColor.purple,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                          ),
+                          textDirection: TextDirection.rtl,
+                        ),
+                      ],
                     ),
-                    Text(
-                      'تغییر نقش',
-                      style: TextStyle(
-                        color: AppColor.purple,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
-                ),
-              ),
+                  ),
 
-              const SizedBox(height: 24),
+                  const SizedBox(height: 32),
 
-              // ── Main Card (avatar + form) ─────────────────────────────
-              Padding(
-                padding: const EdgeInsets.only(top: 64),
-                child: Expanded(
-                  child: Container(
+                  // ── Main Card ─────────────────────────────────────
+                  Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -99,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        // ── Avatar + Role ─────────────────────────────────────
+                        // ── Avatar + Role ─────────────────────────────
                         Row(
                           textDirection: TextDirection.rtl,
                           children: [
@@ -114,21 +104,19 @@ class _LoginPageState extends State<LoginPage> {
                                 ),
                                 borderRadius: BorderRadius.circular(16),
                               ),
-                              child: Icon(
-                                widget.icon,
-                                color: Colors.white,
-                                size: 36,
-                              ),
+                              child: Icon(widget.icon,
+                                  color: Colors.white, size: 36),
                             ),
                             const SizedBox(width: 16),
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.end,
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   const Text(
                                     'ورود به عنوان',
                                     style: TextStyle(
-                                        fontSize: 14, color: AppColor.lightGray),
+                                        fontSize: 14,
+                                        color: AppColor.lightGray),
                                     textDirection: TextDirection.rtl,
                                   ),
                                   const SizedBox(height: 4),
@@ -145,63 +133,53 @@ class _LoginPageState extends State<LoginPage> {
                             ),
                           ],
                         ),
-                  
+
                         const SizedBox(height: 32),
-                  
-                        // ── Email Field ─────────────────────────────────────
+
+                        // ── National ID Field ───────────────────────
                         _buildTextField(
-                          controller: _emailController,
+                          controller: _idController,
                           label: 'کد ملی',
                           icon: Icons.person_outline_rounded,
                           keyboardType: TextInputType.number,
                         ),
-                  
+
                         const SizedBox(height: 16),
-                  
-                        // ── Password Field ───────────────────────────────────
+
+                        // ── Password Field ───────────────────────────
                         _buildTextField(
                           controller: _passController,
                           label: 'رمز عبور',
                           icon: Icons.lock_outline_rounded,
                           obscureText: _obscurePassword,
                           isPassword: true,
-                          onToggle: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onToggle: () =>
+                              setState(() => _obscurePassword = !_obscurePassword),
                         ),
-                  
-                        const SizedBox(height: 8),
-                  
-                        // ── Forgot Password ───────────────────────────────────
-                        // Align(
-                        //   alignment: Alignment.centerLeft,
-                        //   child: InkWell(
-                        //     onTap: () {
-                        //       // TODO: navigate to forgot-password screen
-                        //     },
-                        //     child: Text(
-                        //       'فراموشی رمز عبور؟',
-                        //       style: TextStyle(
-                        //         fontSize: 13,
-                        //         color: AppColor.purple,
-                        //         fontWeight: FontWeight.w500,
-                        //       ),
-                        //       textDirection: TextDirection.rtl,
-                        //     ),
-                        //   ),
-                        // ),
-                  
+
                         const SizedBox(height: 24),
-                  
-                        // ── Login Button ─────────────────────────────────────
+
+                        // ── Login Button ─────────────────────────────
                         InkWell(
                           onTap: () {
-                            final email = _emailController.text.trim();
+                            final id = _idController.text.trim();
                             final pass = _passController.text;
-                            if (email.isNotEmpty && pass.isNotEmpty) {
-                              debugPrint('Login → $email | $pass');
-                              // TODO: call your auth API
+                            if (id.isNotEmpty && pass.isNotEmpty) {
+                              debugPrint('Login → Role: ${widget.role}, ID: $id');
+                              // Navigate to Dashboard with correct role
+                              Navigator.pushReplacement(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => Dashboard(
+                                    role: widget.role,
+                                    userName: 'علی احمدی', // Replace with real name
+                                  ),
+                                ),
+                              );
                             } else {
                               ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(content: Text('لطفاً همه فیلدها را پر کنید')),
+                                const SnackBar(
+                                    content: Text('لطفاً همه فیلدها را پر کنید')),
                               );
                             }
                           },
@@ -212,8 +190,6 @@ class _LoginPageState extends State<LoginPage> {
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: widget.gradientColors,
-                                begin: Alignment.centerLeft,
-                                end: Alignment.centerRight,
                               ),
                               borderRadius: BorderRadius.circular(16),
                             ),
@@ -221,16 +197,17 @@ class _LoginPageState extends State<LoginPage> {
                               child: Text(
                                 'ورود',
                                 style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white),
                               ),
                             ),
                           ),
                         ),
+
                         const SizedBox(height: 32),
-                        // ── Demo Info Card ───────────────────────────────────────
+
+                        // ── Demo Info Card ───────────────────────────
                         Container(
                           width: double.infinity,
                           padding: const EdgeInsets.all(16),
@@ -244,21 +221,22 @@ class _LoginPageState extends State<LoginPage> {
                               Text(
                                 'اطلاعات ورود آزمایش:',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColor.darkText,
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColor.darkText),
                                 textDirection: TextDirection.rtl,
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'ایمیل: student@school.edu',
-                                style: TextStyle(fontSize: 13, color: AppColor.darkText),
+                                'کد ملی: ۱۲۳۴۵۶۷۸۹۰',
+                                style: TextStyle(
+                                    fontSize: 13, color: AppColor.darkText),
                                 textDirection: TextDirection.rtl,
                               ),
                               Text(
                                 'رمز عبور: demo123',
-                                style: TextStyle(fontSize: 13, color: AppColor.darkText),
+                                style: TextStyle(
+                                    fontSize: 13, color: AppColor.darkText),
                                 textDirection: TextDirection.rtl,
                               ),
                             ],
@@ -267,27 +245,26 @@ class _LoginPageState extends State<LoginPage> {
                       ],
                     ),
                   ),
-                ),
-              ),
 
-              const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-              // ── Footer ───────────────────────────────────────────────
-              
-              const Text(
-                'با ورود شما شرایط خدمات و سیاست حریم خصوصی موافقت می‌کنید',
-                style: TextStyle(fontSize: 12, color: AppColor.lightGray),
-                textAlign: TextAlign.center,
-                textDirection: TextDirection.rtl,
+                  // ── Footer ─────────────────────────────────────
+                  const Text(
+                    'با ورود شما شرایط خدمات و سیاست حریم خصوصی موافقت می‌کنید',
+                    style: TextStyle(fontSize: 12, color: AppColor.lightGray),
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // ── Reusable TextField ───────────────────────────────────────
+  // ── Reusable TextField ───────────────────────────────
   Widget _buildTextField({
     required TextEditingController controller,
     required String label,
@@ -311,7 +288,9 @@ class _LoginPageState extends State<LoginPage> {
         suffixIcon: isPassword
             ? IconButton(
           icon: Icon(
-            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+            _obscurePassword
+                ? Icons.visibility_off
+                : Icons.visibility,
             color: AppColor.lightGray,
           ),
           onPressed: onToggle,
@@ -323,7 +302,8 @@ class _LoginPageState extends State<LoginPage> {
           borderRadius: BorderRadius.circular(12),
           borderSide: BorderSide.none,
         ),
-        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+        contentPadding:
+        const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
       ),
     );
   }

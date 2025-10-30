@@ -83,6 +83,18 @@ String replaceEnglishNumber(String englishNumber) {
   return englishNumber;
 }
 
+// Safe parse Persian percent (e.g. "۹۲٪" → 92.0)
+double parsePersianPercent(String input) {
+String cleaned = replaceFarsiNumber(input);
+cleaned = cleaned.replaceAll('%', '').trim();
+return double.tryParse(cleaned) ?? 0.0;
+}
+
+// Format number to Persian (e.g. 92 → "۹۲")
+String toPersianNumber(dynamic number) {
+return replaceEnglishNumber(number.toString());
+}
+
 String? getPhoneNumber(String phoneNumber) {
   String englishNumber = replaceFarsiNumber(phoneNumber.trim().replaceAll(' ', ''));
   if (englishNumber.length < 10) return null;

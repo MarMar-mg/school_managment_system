@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
 import 'login_page.dart';
-
-TextEditingController nameController = TextEditingController();
-TextEditingController passController = TextEditingController();
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({Key? key}) : super(key: key);
@@ -13,127 +11,97 @@ class RegisterPage extends StatefulWidget {
 }
 
 class _RegisterPageState extends State<RegisterPage> {
-  // To control focus and avoid keyboard overflow
-  final FocusNode _nameFocus = FocusNode();
-  final FocusNode _passFocus = FocusNode();
-
-  @override
-  void dispose() {
-    _nameFocus.dispose();
-    _passFocus.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      resizeToAvoidBottomInset: true, // Important for keyboard
+      resizeToAvoidBottomInset: true,
       body: SafeArea(
-        child: MediaQuery.removePadding(
-          context: context,
-          removeTop: true,
-          removeBottom: true,
-          child: SingleChildScrollView(
-            reverse: true, // Start from bottom when keyboard opens
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.all(24.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const SizedBox(height: 100), // Keeps top spacing
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Center(
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const SizedBox(height: 80),
 
-                // Logo & Title
-                Column(
-                  children: [
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [AppColor.purple, AppColor.lightPurple],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                  // ── Logo & Title ───────────────────────
+                  Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [AppColor.purple, AppColor.lightPurple],
+                          ),
+                          borderRadius: BorderRadius.circular(20),
                         ),
-                        borderRadius: BorderRadius.circular(20),
+                        child: const Icon(Icons.school_rounded,
+                            color: Colors.white, size: 40),
                       ),
-                      child: const Icon(
-                        Icons.school_rounded,
-                        color: Colors.white,
-                        size: 40,
+                      const SizedBox(height: 16),
+                      const Text(
+                        'پورتال آموزشی',
+                        style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: AppColor.purple),
+                        textDirection: TextDirection.rtl,
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'پورتال آموزشی',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.purple,
+                      const SizedBox(height: 8),
+                      const Text(
+                        'نقش خود را برای ادامه انتخاب کنید',
+                        style:
+                        TextStyle(fontSize: 14, color: AppColor.lightGray),
+                        textDirection: TextDirection.rtl,
                       ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'نقش خود را برای ادامه انتخاب کنید',
-                      style: TextStyle(fontSize: 14, color: AppColor.lightGray),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
 
-                const SizedBox(height: 48),
+                  const SizedBox(height: 48),
 
-                // Role Cards
-                Column(
-                  children: [
-                    _buildRoleCard(
-                      context: context,
-                      icon: Icons.school_rounded,
-                      title: 'دانش‌آموز',
-                      subtitle: 'دسترسی به درس‌ها، نمرات',
-                      gradientColors: [
-                        AppColor.studentBaseColor,
-                        AppColor.studentSecondColor,
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildRoleCard(
-                      context: context,
-                      icon: Icons.menu_book_rounded,
-                      title: 'معلم',
-                      subtitle: 'مدیریت کلاس‌ها و دانش‌آموزان',
-                      gradientColors: const [
-                        AppColor.teacherBaseColor,
-                        AppColor.teacherSecondColor,
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    _buildRoleCard(
-                      context: context,
-                      icon: Icons.person_outline_rounded,
-                      title: 'مدیر',
-                      subtitle: 'پورتال مدیریت مدرسه',
-                      gradientColors: const [
-                        AppColor.adminBaseColor,
-                        AppColor.adminSecondColor,
-                      ],
-                    ),
-                  ],
-                ),
+                  // ── Role Cards ─────────────────────────────
+                  _buildRoleCard(
+                    context: context,
+                    role: Role.student,
+                    icon: Icons.school_rounded,
+                    title: 'دانش‌آموز',
+                    subtitle: 'دسترسی به درس‌ها، نمرات',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildRoleCard(
+                    context: context,
+                    role: Role.teacher,
+                    icon: Icons.menu_book_rounded,
+                    title: 'معلم',
+                    subtitle: 'مدیریت کلاس‌ها و دانش‌آموزان',
+                  ),
+                  const SizedBox(height: 16),
+                  _buildRoleCard(
+                    context: context,
+                    role: Role.admin,
+                    icon: Icons.person_outline_rounded,
+                    title: 'مدیر',
+                    subtitle: 'پورتال مدیریت مدرسه',
+                  ),
 
-                const SizedBox(height: 32),
+                  const SizedBox(height: 32),
 
-                // Footer
-                const Text(
-                  'دسترسی امن به پورتال آموزشی',
-                  style: TextStyle(fontSize: 12, color: AppColor.lightGray),
-                  textDirection: TextDirection.rtl,
-                ),
+                  // ── Footer ─────────────────────────────────────
+                  const Text(
+                    'دسترسی امن به پورتال آموزشی',
+                    style: TextStyle(fontSize: 12, color: AppColor.lightGray),
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                  ),
 
-                // Extra space at the bottom so the last item isn't hidden under keyboard
-                SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
-              ],
+                  // extra space for keyboard
+                  SizedBox(height: MediaQuery.of(context).viewInsets.bottom),
+                ],
+              ),
             ),
           ),
         ),
@@ -141,34 +109,45 @@ class _RegisterPageState extends State<RegisterPage> {
     );
   }
 
+  // ────────────────────────────────────────────────────────────────
   Widget _buildRoleCard({
     required BuildContext context,
+    required Role role,
     required IconData icon,
     required String title,
     required String subtitle,
-    required List<Color> gradientColors,
   }) {
+    final gradient = role.gradient; // from RoleExtension
+
     return InkWell(
       onTap: () async {
-        final output = await Navigator.push(
-            context,
-            MaterialPageRoute(builder: (BuildContext ctx) => LoginPage(icon: icon,
-                title: title, subtitle: subtitle, gradientColors: gradientColors)));
-        return output;
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LoginPage(
+              role: role,
+              icon: icon,
+              title: title,
+              subtitle: subtitle,
+              gradientColors: gradient,
+            ),
+          ),
+        );
       },
       borderRadius: BorderRadius.circular(16),
       child: Container(
+        width: double.infinity,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: gradientColors,
+            colors: gradient,
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: gradientColors.first.withOpacity(0.3),
+              color: gradient.first.withOpacity(0.3),
               blurRadius: 12,
               offset: const Offset(0, 6),
             ),
@@ -177,7 +156,7 @@ class _RegisterPageState extends State<RegisterPage> {
         child: Row(
           textDirection: TextDirection.rtl,
           children: [
-            // Icon
+            // ── Icon ─────────────────────────────────────
             Container(
               width: 56,
               height: 56,
@@ -188,7 +167,8 @@ class _RegisterPageState extends State<RegisterPage> {
               child: Icon(icon, color: Colors.white, size: 28),
             ),
             const SizedBox(width: 16),
-            // Text Content
+
+            // ── Texts ────────────────────────────────────
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -196,27 +176,25 @@ class _RegisterPageState extends State<RegisterPage> {
                   Text(
                     title,
                     style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white),
                     textDirection: TextDirection.rtl,
                   ),
                   const SizedBox(height: 4),
                   Text(
                     subtitle,
-                    style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    style: const TextStyle(
+                        fontSize: 13, color: Colors.white70),
                     textDirection: TextDirection.rtl,
                   ),
                 ],
               ),
             ),
-            // Arrow
-            const Icon(
-              Icons.arrow_forward_ios_rounded,
-              color: Colors.white,
-              size: 18,
-            ),
+
+            // ── Arrow ────────────────────────────────────
+            const Icon(Icons.arrow_forward_ios_rounded,
+                color: Colors.white, size: 18),
           ],
         ),
       ),
