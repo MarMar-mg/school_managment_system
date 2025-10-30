@@ -1,81 +1,75 @@
 import 'package:flutter/material.dart';
-import '../commons/text_style.dart';
+import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
 
-PreferredSize getNormalAppBar(
-  BuildContext context,
-) {
-  return PreferredSize(
-    preferredSize: const Size.fromHeight(100),
-    child: Container(
-      width: double.infinity,
-      height: double.infinity,
-      margin: const EdgeInsets.only(right: 32, left: 32, top: 20),
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: Colors.black, width: 1.0)),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const SizedBox(width: 16,),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'قثسیبل امنت',
-                style: defaultTextStyle(
-                  context,
-                  StyleText.wb2,
-                ).s(24).w(6).c(Colors.black),
-              ),
-            ],
+class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
+  final String userName;
+  final Role role;
+
+  const DashboardAppBar({
+    Key? key,
+    required this.userName,
+    required this.role,
+  }) : super(key: key);
+
+  @override
+  Size get preferredSize => const Size.fromHeight(60);
+
+  @override
+  Widget build(BuildContext context) {
+    return AppBar(
+      backgroundColor: AppColor.backgroundColor,
+      elevation: 0,
+      leading: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: CircleAvatar(
+          backgroundColor: role.gradient.first.withOpacity(0.15),
+          child: Text(
+            userName.isNotEmpty ? userName[0] : 'ع',
+            style: TextStyle(
+              color: role.gradient.first,
+              fontWeight: FontWeight.bold,
+              fontSize: 18,
+            ),
           ),
-          const Spacer(),
-          Row(
-            children: [
-              TextButton(
-                onPressed: () {
-                  // Navigator.push(
-                  //   context,
-                  //   MaterialPageRoute(
-                  //       builder: (context) => const GalleryPage()),
-                  // );
-                },
-                child: Text(
-                  'GALLERY',
-                  style: defaultTextStyle(
-                    context,
-                    StyleText.wb2,
-                  ).s(16).w(4).c(Colors.black),
-                ),
-              ),
-              const SizedBox(width: 10,),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'ABOUT',
-                  style: defaultTextStyle(
-                    context,
-                    StyleText.wb2,
-                  ).s(16).w(4).c(Colors.black),
-                ),
-              ),
-              const SizedBox(width: 10,),
-              TextButton(
-                onPressed: () {},
-                child: Text(
-                  'CONTACT',
-                  style: defaultTextStyle(
-                    context,
-                    StyleText.wb2,
-                  ).s(16).w(4).c(Colors.black),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 8,),
-        ],
+        ),
       ),
-    ),
-  );
+      title: Text(
+        'سلام، $userName',
+        style: const TextStyle(
+          color: AppColor.darkText,
+          fontWeight: FontWeight.bold,
+          fontSize: 18,
+        ),
+        textDirection: TextDirection.rtl,
+      ),
+      actions: [
+        Stack(
+          children: [
+            IconButton(
+              icon: const Icon(
+                Icons.notifications_outlined,
+                color: AppColor.purple,
+                size: 24,
+              ),
+              onPressed: () {},
+            ),
+            Positioned(
+              right: 12,
+              top: 12,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(width: 8),
+      ],
+    );
+  }
 }
