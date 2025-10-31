@@ -14,11 +14,12 @@ import '../models/dashboard_models.dart';
 class Dashboard extends StatefulWidget {
   final Role role;
   final String userName;
+  final String userId;
 
   const Dashboard({
     super.key,
     required this.role,
-    required this.userName,
+    required this.userName, required this.userId,
   });
 
   @override

@@ -64,13 +64,13 @@ class RegisterPage extends StatelessWidget {
                   const SizedBox(height: 16),
 
                   RoleCard(
-                    role: Role.admin,
+                    role: Role.manager,
                     icon: Icons.person_outline_rounded,
                     title: 'مدیر',
                     subtitle: 'پورتال مدیریت مدرسه',
                     onTap: () => _navigateToLogin(
                       context,
-                      role: Role.admin,
+                      role: Role.manager,
                       icon: Icons.person_outline_rounded,
                       title: 'مدیر',
                       subtitle: 'پورتال مدیریت مدرسه',

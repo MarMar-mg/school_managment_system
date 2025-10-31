@@ -1,0 +1,20 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace SchoolPortalAPI.Models
+{
+    public class ExerciseStuTeach
+    {
+        [Key]
+        public long Exstid { get; set; }
+
+        public int? Score { get; set; }
+        public string? Answerimage { get; set; }
+        public long Exerciseid { get; set; }
+        public long Courseid { get; set; }
+        public long Teacherid { get; set; }
+        public long? Studentid { get; set; }
+        public string? Description { get; set; }
+        public long? Date { get; set; }
+        public string? Filename { get; set; }
+    }
+}

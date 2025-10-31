@@ -34,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
+  bool _isLoading = false;
 
 
   void _handleLogin() async {
@@ -41,51 +42,44 @@ class _LoginPageState extends State<LoginPage> {
     final password = _passwordController.text;
 
     if (username.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لطفاً همه فیلدها را پر کنید')),
-      );
+      _showSnackBar('لطفاً همه فیلدها را پر کنید');
       return;
     }
 
-    // Show loading dialog
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
-    );
+    setState(() => _isLoading = true);
 
     try {
       final response = await ApiService.login(username, password);
       print(username);
       print(password);
-      print(widget.role.title);
 
-      Navigator.pop(context); // Close loading dialog
+      if (!mounted) return;
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => Dashboard(
-              role: _roleFromString(response['role']),
-              userName: response['username'] ?? 'کاربر',
-            ),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => Dashboard(
+            role: _roleFromString(response['role'] ?? 'student'),
+            userName: response['username'] ?? 'کاربر',
+            userId: response['userid']?.toString() ?? '0',
           ),
-        );
-      }
+        ),
+      );
     } catch (e) {
-      Navigator.pop(context); // Close loading dialog
-
-      if (mounted) {
-        print(username);
-        print(password);
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا: $e')),
-        );
-      }
+      if (!mounted) return;
+      _showSnackBar(e.toString());
+      print(e.toString());
+      print(username);
+      print(password);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  void _showSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
   }
 
   Role _roleFromString(String role) {
@@ -95,7 +89,7 @@ class _LoginPageState extends State<LoginPage> {
       case 'teacher':
         return Role.teacher;
       case 'admin':
-        return Role.admin;
+        return Role.manager;
       default:
         return Role.student;
     }

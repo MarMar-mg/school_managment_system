@@ -1,31 +1,26 @@
-using Microsoft.EntityFrameworkCore;
-
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+// CORS — کامل
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FlutterWebPolicy", policy =>
+    {
+        policy.WithOrigins("http://localhost:55295", "http://127.0.0.1:55295")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
-// Add DbContext
+builder.Services.AddControllers();
 builder.Services.AddDbContext<SchoolDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Add CORS
-builder.Services.AddCors(options =>
-{
-    options.AddPolicy("AllowFlutter",
-        policy => policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-});
-
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
-
-app.UseCors("AllowFlutter");
-app.UseAuthorization();
+// ترتیب مهم!
+app.UseCors("FlutterWebPolicy"); // قبل از MapControllers
+app.UseHttpsRedirection();
 app.MapControllers();
+
 app.Run();

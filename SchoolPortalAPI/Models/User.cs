@@ -1,0 +1,14 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace SchoolPortalAPI.Models
+{
+    public class User
+    {
+        [Key]
+        public long Userid { get; set; }
+
+        public string Username { get; set; } = null!;
+        public string Password { get; set; } = null!;
+        public string Role { get; set; } = null!;
+    }
+}

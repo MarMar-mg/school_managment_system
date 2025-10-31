@@ -2,15 +2,9 @@ import 'package:flutter/material.dart';
 import 'features/login/presentations/pages/register_page.dart';
 import 'package:provider/provider.dart';
 import 'core/providers/auth_provider.dart';
-import 'core/services/api_service.dart';
 
 void main() async {
-  try {
-    final news = await ApiService.getNews();
-    print(news);
-  } catch (e) {
-    print(e);
-  }
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
