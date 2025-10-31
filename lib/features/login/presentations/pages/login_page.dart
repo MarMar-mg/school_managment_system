@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
+import '../../../../core/services/api_service.dart';
 import '../widgets/login_header.dart';
 import '../widgets/login_form_card.dart';
 import '../../../dashboard/presentation/pages/dashboard.dart';
+// Add to existing imports
+import 'package:provider/provider.dart';
+import '../../../../core/providers/auth_provider.dart';
+
 
 class LoginPage extends StatefulWidget {
   final Role role;
@@ -30,39 +35,72 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   bool _rememberMe = false;
 
-  @override
-  void dispose() {
-    _emailController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
 
-  void _handleLogin() {
-    final email = _emailController.text.trim();
+  void _handleLogin() async {
+    final username = _emailController.text.trim();
     final password = _passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
+    if (username.isEmpty || password.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('لطفاً همه فیلدها را پر کنید'),
-          behavior: SnackBarBehavior.floating,
-        ),
+        const SnackBar(content: Text('لطفاً همه فیلدها را پر کنید')),
       );
       return;
     }
 
-    debugPrint('Login → Role: ${widget.role}, Email: $email');
-
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (_) => Dashboard(
-          role: widget.role,
-          userName: 'علی احمدی',
-        ),
+    // Show loading dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
       ),
     );
+
+    try {
+      final response = await ApiService.login(username, password);
+      print(username);
+      print(password);
+      print(widget.role.title);
+
+      Navigator.pop(context); // Close loading dialog
+
+      if (mounted) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Dashboard(
+              role: _roleFromString(response['role']),
+              userName: response['username'] ?? 'کاربر',
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      Navigator.pop(context); // Close loading dialog
+
+      if (mounted) {
+        print(username);
+        print(password);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطا: $e')),
+        );
+      }
+    }
   }
+
+  Role _roleFromString(String role) {
+    switch (role.toLowerCase()) {
+      case 'student':
+        return Role.student;
+      case 'teacher':
+        return Role.teacher;
+      case 'admin':
+        return Role.admin;
+      default:
+        return Role.student;
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {

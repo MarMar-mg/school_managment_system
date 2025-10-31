@@ -6,9 +6,9 @@ enum Role { student, teacher, admin }
 extension RoleExtension on Role {
   String get title {
     switch (this) {
-      case Role.student: return 'دانش‌آموز';
-      case Role.teacher: return 'معلم';
-      case Role.admin: return 'مدیر';
+      case Role.student: return 'student';
+      case Role.teacher: return 'teacher';
+      case Role.admin: return 'admin';
     }
   }
 
