@@ -5,9 +5,6 @@ import '../../../../core/services/api_service.dart';
 import '../widgets/login_header.dart';
 import '../widgets/login_form_card.dart';
 import '../../../dashboard/presentation/pages/dashboard.dart';
-// Add to existing imports
-import 'package:provider/provider.dart';
-import '../../../../core/providers/auth_provider.dart';
 
 
 class LoginPage extends StatefulWidget {
@@ -54,6 +51,11 @@ class _LoginPageState extends State<LoginPage> {
       print(password);
 
       if (!mounted) return;
+      if((response['role']).toString().toLowerCase() != widget.role.title.toString().toLowerCase()){
+        print((response['role']).toString().toLowerCase());
+        print(widget.role.title.toString().toLowerCase());
+        throw Exception('این حساب برای ${widget.role.title} نیست');
+      }
 
       Navigator.pushReplacement(
         context,

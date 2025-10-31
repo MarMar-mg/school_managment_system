@@ -1,3 +1,6 @@
+using Microsoft.EntityFrameworkCore;
+using SchoolPortalAPI.Data;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // CORS — کامل
