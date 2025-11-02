@@ -1,11 +1,3 @@
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.csproj.AssemblyReference.cache
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.GeneratedMSBuildEditorConfig.editorconfig
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.AssemblyInfoInputs.cache
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.AssemblyInfo.cs
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.csproj.CoreCompileInputs.cache
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.MvcApplicationPartsAssemblyInfo.cs
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.MvcApplicationPartsAssemblyInfo.cache
-F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.sourcelink.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\appsettings.Development.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\appsettings.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\SchoolPortalAPI.exe
@@ -161,6 +153,14 @@ F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\runt
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Diagnostics.EventLog.dll
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\runtimes\win\lib\net8.0\System.Security.Cryptography.Pkcs.dll
 F:\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net8.0\runtimes\browser\lib\net8.0\System.Text.Encodings.Web.dll
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.csproj.AssemblyReference.cache
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.GeneratedMSBuildEditorConfig.editorconfig
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.AssemblyInfoInputs.cache
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.AssemblyInfo.cs
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.csproj.CoreCompileInputs.cache
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.MvcApplicationPartsAssemblyInfo.cs
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.MvcApplicationPartsAssemblyInfo.cache
+F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\SchoolPortalAPI.sourcelink.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\staticwebassets.build.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\staticwebassets.development.json
 F:\flutter_project\school_managment_system\SchoolPortalAPI\obj\Debug\net8.0\staticwebassets\msbuild.SchoolPortalAPI.Microsoft.AspNetCore.StaticWebAssets.props

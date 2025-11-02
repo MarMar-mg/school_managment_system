@@ -27,18 +27,18 @@ class SectionHeader extends StatelessWidget {
           ),
           textDirection: TextDirection.rtl,
         ),
-        GestureDetector(
-          onTap: onSeeAll,
-          child: Text(
-            actionText,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColor.purple,
-            ),
-            textDirection: TextDirection.rtl,
-          ),
-        ),
+        // GestureDetector(
+        //   onTap: onSeeAll,
+        //   child: Text(
+        //     actionText,
+        //     style: const TextStyle(
+        //       fontSize: 14,
+        //       fontWeight: FontWeight.w600,
+        //       color: AppColor.purple,
+        //     ),
+        //     textDirection: TextDirection.rtl,
+        //   ),
+        // ),
       ],
     );
   }

@@ -8,7 +8,7 @@ extension RoleExtension on Role {
     switch (this) {
       case Role.student: return 'student';
       case Role.teacher: return 'teacher';
-      case Role.manager: return 'admin';
+      case Role.manager: return 'manager';
     }
   }
 

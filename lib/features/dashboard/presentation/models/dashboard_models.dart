@@ -4,18 +4,18 @@ import '../../../../applications/colors.dart';
 // ────────────────────── MODELS ──────────────────────
 
 class StatCard {
-  final String value;
   final String label;
+  final String value;
   final String subtitle;
-  final Color color;
   final IconData icon;
+  final Color color;
 
   StatCard({
-    required this.value,
     required this.label,
+    required this.value,
     required this.subtitle,
-    required this.color,
     required this.icon,
+    required this.color,
   });
 }
 
@@ -52,35 +52,64 @@ class EventItem {
 }
 
 class AssignmentItem {
-  final String subject;
   final String title;
-  final String dueDate;
+  final String subject;
   final String badge;
   final Color badgeColor;
   final IconData icon;
 
   AssignmentItem({
-    required this.subject,
     required this.title,
-    required this.dueDate,
+    required this.subject,
     required this.badge,
     required this.badgeColor,
     required this.icon,
   });
 }
 
+// features/dashboard/presentation/models/dashboard_models.dart
+
 class ProgressItem {
   final String subject;
-  final String grade;
   final double percentage;
+  final String grade;
   final Color color;
 
   ProgressItem({
     required this.subject,
-    required this.grade,
     required this.percentage,
+    required this.grade,
     required this.color,
   });
+
+  factory ProgressItem.fromJson(Map<String, dynamic> json) {
+    final percent = (json['average'] as num).toDouble();
+    final grade = _getGrade(percent);
+    final color = _getColor(percent);
+
+    return ProgressItem(
+      subject: json['courseName'] ?? 'نامشخص',
+      percentage: percent,
+      grade: grade,
+      color: color,
+    );
+  }
+
+  static String _getGrade(double percent) {
+    if (percent >= 90) return 'A';
+    if (percent >= 80) return 'B';
+    if (percent >= 70) return 'C';
+    if (percent >= 60) return 'D';
+    return 'F';
+  }
+
+  static Color _getColor(double percent) {
+    if (percent >= 90) return Colors.green;
+    if (percent >= 80) return Colors.lightGreen;
+    if (percent >= 70) return Colors.yellow;
+    if (percent >= 60) return Colors.orange;
+    return Colors.red;
+  }
 }
 
 // ────────────────────── DATA PROVIDER ──────────────────────
@@ -157,34 +186,31 @@ class DashboardData {
     ];
   }
 
-  static List<AssignmentItem> getAssignments() {
-    return [
-      AssignmentItem(
-        subject: 'ریاضی ۳',
-        title: 'آزمون ریاضی ۳',
-        dueDate: 'فردا',
-        badge: 'فوری',
-        badgeColor: Colors.red,
-        icon: Icons.calculate_rounded,
-      ),
-      AssignmentItem(
-        subject: 'شیمی',
-        title: 'گزارش آزمایشگاه',
-        dueDate: '۴ آبان',
-        badge: '۴ آبان',
-        badgeColor: Colors.orange,
-        icon: Icons.science_rounded,
-      ),
-      AssignmentItem(
-        subject: 'تاریخ',
-        title: 'پیش‌نویس مقاله',
-        dueDate: '۶ آبان',
-        badge: '۶ آبان',
-        badgeColor: Colors.blue,
-        icon: Icons.history_edu_rounded,
-      ),
-    ];
-  }
+  // static List<AssignmentItem> getAssignments() {
+  //   return [
+  //     AssignmentItem(
+  //       subject: 'ریاضی ۳',
+  //       title: 'آزمون ریاضی ۳',
+  //       badge: 'فوری',
+  //       badgeColor: Colors.red,
+  //       icon: Icons.calculate_rounded,
+  //     ),
+  //     AssignmentItem(
+  //       subject: 'شیمی',
+  //       title: 'گزارش آزمایشگاه',
+  //       badge: '۴ آبان',
+  //       badgeColor: Colors.orange,
+  //       icon: Icons.science_rounded,
+  //     ),
+  //     AssignmentItem(
+  //       subject: 'تاریخ',
+  //       title: 'پیش‌نویس مقاله',
+  //       badge: '۶ آبان',
+  //       badgeColor: Colors.blue,
+  //       icon: Icons.history_edu_rounded,
+  //     ),
+  //   ];
+  // }
 
   static List<ProgressItem> getProgress() {
     return [

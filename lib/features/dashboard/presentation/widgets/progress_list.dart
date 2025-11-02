@@ -1,19 +1,54 @@
+// features/dashboard/presentation/widgets/progress_list.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
+import '../../../../core/services/api_service.dart';
 import '../models/dashboard_models.dart';
 
-class ProgressList extends StatelessWidget {
-  final List<ProgressItem> progressItems;
+class ProgressList extends StatefulWidget {
+  final Role role;
+  final int userId;
 
   const ProgressList({
     Key? key,
-    required this.progressItems,
+    required this.role,
+    required this.userId,
   }) : super(key: key);
 
   @override
+  State<ProgressList> createState() => _ProgressListState();
+}
+
+class _ProgressListState extends State<ProgressList> {
+  late Future<List<ProgressItem>> _progressFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _progressFuture = ApiService.getProgress(
+      role: widget.role,
+      userId: widget.userId,
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: progressItems.map((item) => ProgressCard(item: item)).toList(),
+    return FutureBuilder<List<ProgressItem>>(
+      future: _progressFuture,
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          final items = snapshot.data!;
+          if (items.isEmpty) {
+            return const Text('هیچ داده‌ای موجود نیست');
+          }
+          return Column(
+            children: items.map((item) => ProgressCard(item: item)).toList(),
+          );
+        } else if (snapshot.hasError) {
+          return Text('خطا: ${snapshot.error}');
+        }
+        return const Center(child: CircularProgressIndicator());
+      },
     );
   }
 }

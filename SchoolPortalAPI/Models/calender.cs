@@ -8,7 +8,7 @@ namespace SchoolPortalAPI.Models
         public long Eventid { get; set; }
 
         public string Title { get; set; } = null!;
-        public long Date { get; set; }
+        public string Date { get; set; } = null!;
         public string? Description { get; set; }
     }
 }

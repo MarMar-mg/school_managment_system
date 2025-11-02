@@ -55,5 +55,23 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(students);
         }
+
+        // Controllers/TeacherController.cs
+        [HttpGet("progress/{teacherId}")]
+        public async Task<IActionResult> GetTeacherProgress(long teacherId)
+        {
+            var progress = await _context.Scores
+                .Where(s => s.Course != null && s.Course.Teacherid == teacherId)
+                .Include(s => s.Course)
+                .GroupBy(s => s.Courseid)
+                .Select(g => new
+                {
+                    courseName = g.First().Course != null ? g.First().Course.Name : "نامشخص",
+                    average = g.Average(s => (double?)s.ScoreValue) ?? 0.0
+                })
+                .ToListAsync();
+
+            return Ok(progress);
+        }
     }
 }

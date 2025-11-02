@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../../../applications/colors.dart';
-import '../../../../applications/role.dart';
-import '../../../../applications/our_app_bar.dart';
+import 'package:school_managment_system/commons/untils.dart';
 import '../../../../applications/bottom_nav_bar.dart';
-import '../widgets/stats_grid.dart';
-import '../widgets/section_header_widget.dart';
-import '../widgets/news_list_widget.dart';
+import '../../../../applications/colors.dart';
+import '../../../../applications/our_app_bar.dart';
+import '../../../../applications/role.dart';
 import '../widgets/events_list_widget.dart';
+import '../widgets/news_list_widget.dart';
+import '../widgets/section_header_widget.dart';
+import '../widgets/stats_grid.dart';
 import '../widgets/assignments_list.dart';
 import '../widgets/progress_list.dart';
 import '../models/dashboard_models.dart';
@@ -14,12 +15,13 @@ import '../models/dashboard_models.dart';
 class Dashboard extends StatefulWidget {
   final Role role;
   final String userName;
-  final String userId;
+  final String userId; // Add userId to fetch data
 
   const Dashboard({
     super.key,
     required this.role,
-    required this.userName, required this.userId,
+    required this.userName,
+    required this.userId,
   });
 
   @override
@@ -44,17 +46,19 @@ class _DashboardState extends State<Dashboard> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Stats Grid
-              StatsGrid(role: widget.role),
+              StatsGrid(role: widget.role, userId: widget.userId.toInt()),
 
               const SizedBox(height: 24),
 
-              // News Section
+              // News Section - Now uses API
               SectionHeader(
                 title: 'اخبار و رویدادها',
-                onSeeAll: () {},
+                onSeeAll: () {
+                  // Navigate to full news page
+                },
               ),
               const SizedBox(height: 12),
-              NewsList(newsItems: DashboardData.getNews()),
+              const NewsList(), // API-connected widget
 
               const SizedBox(height: 24),
 
@@ -64,7 +68,7 @@ class _DashboardState extends State<Dashboard> {
                 onSeeAll: () {},
               ),
               const SizedBox(height: 12),
-              EventsList(eventItems: DashboardData.getEvents()),
+              const EventsList(), // You can make this API-connected too
 
               // Assignments Section (Student Only)
               if (widget.role == Role.student) ...[
@@ -76,7 +80,7 @@ class _DashboardState extends State<Dashboard> {
                 ),
                 const SizedBox(height: 12),
                 AssignmentsList(
-                  assignments: DashboardData.getAssignments(),
+                   studentId: widget.userId.toInt(),
                 ),
               ],
 
@@ -89,7 +93,8 @@ class _DashboardState extends State<Dashboard> {
               ),
               const SizedBox(height: 12),
               ProgressList(
-                progressItems: DashboardData.getProgress(),
+                role: widget.role,
+                userId: int.parse(widget.userId),
               ),
 
               const SizedBox(height: 24),
