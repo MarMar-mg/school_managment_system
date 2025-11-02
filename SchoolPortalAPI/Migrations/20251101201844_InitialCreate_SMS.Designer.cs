@@ -11,8 +11,8 @@ using SchoolPortalAPI.Data;
 namespace SchoolPortalAPI.Migrations
 {
     [DbContext(typeof(SchoolDbContext))]
-    [Migration("20251031160204_AddPrimaryKeys")]
-    partial class AddPrimaryKeys
+    [Migration("20251101201844_InitialCreate_SMS")]
+    partial class InitialCreate_SMS
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

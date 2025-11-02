@@ -5,7 +5,7 @@
 namespace SchoolPortalAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class AddPrimaryKeys : Migration
+    public partial class InitialCreate_SMS : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

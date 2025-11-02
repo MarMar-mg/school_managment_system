@@ -9,5 +9,6 @@ namespace SchoolPortalAPI.Models
 
         public string Title { get; set; } = null!;
         public long Date { get; set; }
+        public string? Description { get; set; }
     }
 }
