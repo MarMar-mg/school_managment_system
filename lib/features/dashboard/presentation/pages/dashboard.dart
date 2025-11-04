@@ -100,12 +100,12 @@ class _DashboardState extends State<Dashboard> {
           ),
         ),
       ),
-      bottomNavigationBar: BottomNavBar(
-        currentIndex: _selectedIndex,
-        onTap: (index) {
-          setState(() => _selectedIndex = index);
-        },
-      ),
+      // bottomNavigationBar: BottomNavBar(
+      //   currentIndex: _selectedIndex,
+      //   onTap: (index) {
+      //     setState(() => _selectedIndex = index);
+      //   },
+      // ),
     );
   }
 }

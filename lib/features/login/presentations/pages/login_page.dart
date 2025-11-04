@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../../applications/bottom_nav_bar.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
@@ -60,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (_) => Dashboard(
+          builder: (_) => BottomNavBar(
             role: _roleFromString(response['role'] ?? 'student'),
             userName: response['username'] ?? 'کاربر',
             userId: response['userid']?.toString() ?? '0',
