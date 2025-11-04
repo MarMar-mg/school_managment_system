@@ -56,12 +56,20 @@ namespace SchoolPortalAPI.Controllers
             return Ok(students);
         }
 
-        // Controllers/TeacherController.cs
         [HttpGet("progress/{teacherId}")]
         public async Task<IActionResult> GetTeacherProgress(long teacherId)
         {
+            // مرحله ۱: پیدا کردن Teacherid از جدول Teachers
+            var teacher = await _context.Teachers
+                .Where(t => t.Userid == teacherId)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
+
+            if (teacher == 0) return NotFound("معلم یافت نشد");
+
+            // مرحله ۲: پیدا کردن نمرات با Course.Teacherid
             var progress = await _context.Scores
-                .Where(s => s.Course != null && s.Course.Teacherid == teacherId)
+                .Where(s => s.Course != null && s.Course.Teacherid == teacher)
                 .Include(s => s.Course)
                 .GroupBy(s => s.Courseid)
                 .Select(g => new

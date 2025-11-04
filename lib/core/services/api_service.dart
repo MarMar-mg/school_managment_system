@@ -279,7 +279,7 @@ class ApiService {
       switch (role) {
         case Role.student:
         // دانش‌آموز
-          final studentRes = await http.get(Uri.parse('$baseUrl/api/student/dashboard/$userId'));
+          final studentRes = await http.get(Uri.parse('$baseUrl/student/dashboard/$userId'));
           if (studentRes.statusCode == 200) {
             final data = json.decode(studentRes.body);
             stats.addAll([
@@ -310,7 +310,7 @@ class ApiService {
 
         case Role.teacher:
         // معلم
-          final teacherRes = await http.get(Uri.parse('$baseUrl/api/teacher/classes/$userId'));
+          final teacherRes = await http.get(Uri.parse('$baseUrl/teacher/classes/$userId'));
           final classes = json.decode(teacherRes.body) as List;
           stats.addAll([
             StatCard(
@@ -332,7 +332,7 @@ class ApiService {
 
         case Role.manager:
         // مدیر
-          final adminRes = await http.get(Uri.parse('$baseUrl/api/admin/stats'));
+          final adminRes = await http.get(Uri.parse('$baseUrl/admin/stats'));
           final data = json.decode(adminRes.body);
           stats.addAll([
             StatCard(
