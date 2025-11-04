@@ -15,7 +15,7 @@ import '../models/dashboard_models.dart';
 class Dashboard extends StatefulWidget {
   final Role role;
   final String userName;
-  final String userId; // Add userId to fetch data
+  final String userId;
 
   const Dashboard({
     super.key,
@@ -50,15 +50,13 @@ class _DashboardState extends State<Dashboard> {
 
               const SizedBox(height: 24),
 
-              // News Section - Now uses API
               SectionHeader(
-                title: 'اخبار و رویدادها',
+                title: 'اخبار',
                 onSeeAll: () {
-                  // Navigate to full news page
                 },
               ),
               const SizedBox(height: 12),
-              const NewsList(), // API-connected widget
+              const NewsList(),
 
               const SizedBox(height: 24),
 
@@ -68,7 +66,7 @@ class _DashboardState extends State<Dashboard> {
                 onSeeAll: () {},
               ),
               const SizedBox(height: 12),
-              const EventsList(), // You can make this API-connected too
+              const EventsList(),
 
               // Assignments Section (Student Only)
               if (widget.role == Role.student) ...[

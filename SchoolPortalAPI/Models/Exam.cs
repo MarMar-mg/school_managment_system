@@ -11,7 +11,9 @@ namespace SchoolPortalAPI.Models
 
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
-        public string Examdate { get; set; } = null!;
+        public string Enddate { get; set; } = null!;
+        public string Starttime { get; set; } = null!;
+        public string Endtime { get; set; } = null!;
 
         public long? Courseid { get; set; }
         public long? Classid { get; set; }  // مهم

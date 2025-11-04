@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:school_managment_system/applications/colors.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
@@ -371,8 +372,8 @@ class ApiService {
     final twoDaysLater = now.add(const Duration(days: 2));
 
     // فرمت تاریخ: 14030901
-    final startDate = _formatDate(now);
-    final endDate = _formatDate(twoDaysLater);
+    final startDate = _formatShamsiDate(now);
+    final endDate = _formatShamsiDate(twoDaysLater);
 
     final List<AssignmentItem> assignments = [];
 
@@ -387,7 +388,7 @@ class ApiService {
         assignments.addAll(exercises.map((e) => AssignmentItem(
           title: e['title'] ?? 'تمرین',
           subject: e['courseName'] ?? 'نامشخص',
-          badge: _formatDisplayDate(e['dueDate']),
+          badge: _formatDisplayShamsiDate(e['dueDate']),
           badgeColor: Colors.orange,
           icon: Icons.assignment_rounded,
         )));
@@ -403,7 +404,7 @@ class ApiService {
         assignments.addAll(exams.map((e) => AssignmentItem(
           title: e['title'] ?? 'امتحان',
           subject: e['courseName'] ?? 'نامشخص',
-          badge: _formatDisplayDate(e['examDate']),
+          badge: _formatDisplayShamsiDate(e['examDate']),
           badgeColor: Colors.red,
           icon: Icons.quiz_rounded,
         )));
@@ -422,14 +423,30 @@ class ApiService {
     return assignments;
   }
 
-  static String _formatDate(DateTime date) {
-    return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+
+  // تبدیل DateTime میلادی به رشته شمسی (14030825)
+  static String _formatShamsiDate(DateTime date) {
+    final jalali = Jalali.fromDateTime(date);
+    return '${jalali.year}${jalali.month.toString().padLeft(2, '0')}${jalali.day.toString().padLeft(2, '0')}';
   }
 
-  static String _formatDisplayDate(String? date) {
-    if (date == null || date.length < 8) return '';
-    return '${date.substring(0,4)}/${date.substring(4,6)}/${date.substring(6,8)}';
+// تبدیل رشته شمسی (14030825) به نمایش (۱۴۰۳/۰۸/۲۵)
+  static String _formatDisplayShamsiDate(String? shamsiStr) {
+    if (shamsiStr == null || shamsiStr.length < 8) return 'نامشخص';
+    final year = shamsiStr.substring(0, 4);
+    final month = shamsiStr.substring(4, 6);
+    final day = shamsiStr.substring(6, 8);
+    return shamsiStr;
   }
+
+  // static String _formatDate(DateTime date.) {
+  //   return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
+  // }
+  //
+  // static String _formatDisplayDate(String? date) {
+  //   if (date == null || date.length < 8) return '';
+  //   return '${date.substring(0,4)}/${date.substring(4,6)}/${date.substring(6,8)}';
+  // }
 
   static DateTime _parseBadgeDate(String badge) {
     final parts = badge.split('/');

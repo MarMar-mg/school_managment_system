@@ -34,8 +34,8 @@ class _NewsListState extends State<NewsList> {
 
       final sortedNews = news
         ..sort((a, b) {
-          final dateA = _parseDate(a['startDate']);
-          final dateB = _parseDate(b['startDate']);
+          final dateA = _parseDate(a['Startdate']);
+          final dateB = _parseDate(b['Startdate']);
           return dateA.compareTo(dateB);
         });
 
@@ -200,8 +200,8 @@ class NewsCard extends StatelessWidget {
     final dateStr = date.toString().trim();
     if (dateStr.length >= 8) {
       final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(4, 6);
-      final day = dateStr.length > 6 ? dateStr.substring(6, 8) : '01';
+      final month = dateStr.substring(5, 7);
+      final day = dateStr.substring(8, 10);
       return '$year/$month/$day';
     }
     return dateStr;
@@ -212,7 +212,8 @@ class NewsCard extends StatelessWidget {
     final title = item['title'] ?? 'بدون عنوان';
     final description = item['description'] ?? '';
     final category = item['category'] ?? '';
-    final startDate = _formatDate(item['startDate']);
+    final startDate = _formatDate(item['startdate']);
+    final endDate = _formatDate(item['enddate']);
 
     final color = _getCategoryColor(category);
     final icon = _getCategoryIcon(category);
@@ -258,14 +259,32 @@ class NewsCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 12),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-            child: Text(
-              startDate,
-              style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
-              textDirection: TextDirection.rtl,
-            ),
+          Column(
+            children: [
+              // Container(
+              //   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              //   decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              //   child: Text(
+              //     startDate,
+              //     style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+              //     textDirection: TextDirection.rtl,
+              //   ),
+              // ),
+              // Text(
+              //   'الی',
+              //   style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+              //   textDirection: TextDirection.rtl,
+              // ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                child: Text(
+                  endDate,
+                  style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                  textDirection: TextDirection.rtl,
+                ),
+              ),
+            ],
           ),
         ],
       ),

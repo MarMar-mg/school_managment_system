@@ -57,7 +57,6 @@ namespace SchoolPortalAPI.Controllers
       [HttpGet("progress/1")]
       public async Task<IActionResult> GetProgress(long userId)
       {
-          // مرحله ۱: پیدا کردن StuCode از جدول Students
           var student = await _context.Students
               .Where(s => s.UserID == userId)
               .Select(s => new { s.StuCode, s.Name })
@@ -66,7 +65,6 @@ namespace SchoolPortalAPI.Controllers
           if (student == null)
               return NotFound("دانش‌آموز یافت نشد");
 
-          // مرحله ۲: پیدا کردن نمرات با StuCode
           var progress = await _context.Scores
               .Where(s => s.StuCode == student.StuCode)
               .Include(s => s.Course)
@@ -84,7 +82,7 @@ namespace SchoolPortalAPI.Controllers
               progress
           });
       }
-      // Controllers/StudentController.cs
+
 
       [HttpGet("exercises/{studentId}")]
       public async Task<IActionResult> GetExercises(
@@ -94,7 +92,7 @@ namespace SchoolPortalAPI.Controllers
       {
           var student = await _context.Students
               .Where(s => s.Studentid == studentId)
-              .Select(s => new { s.Classeid, s.StuCode })
+              .Select(s => new { s.Classeid })
               .FirstOrDefaultAsync();
 
           if (student == null) return NotFound("دانش‌آموز یافت نشد");
@@ -103,9 +101,9 @@ namespace SchoolPortalAPI.Controllers
               .Where(e => e.Classid == student.Classeid);
 
           if (!string.IsNullOrEmpty(start))
-              query = query.Where(e => e.Duedate.CompareTo(start) >= 0);
+              query = query.Where(e => e.Enddate.CompareTo(start) >= 0);
           if (!string.IsNullOrEmpty(end))
-              query = query.Where(e => e.Duedate.CompareTo(end) <= 0);
+              query = query.Where(e => e.Enddate.CompareTo(end) <= 0);
 
           var result = await query
               .Include(e => e.Course)
@@ -113,7 +111,9 @@ namespace SchoolPortalAPI.Controllers
               {
                   title = e.Title,
                   courseName = e.Course != null ? e.Course.Name : "نامشخص",
-                  dueDate = e.Duedate
+                  dueDate = e.Enddate,
+                  startTime = e.Starttime,
+                  endTime = e.Endtime
               })
               .ToListAsync();
 
@@ -137,9 +137,9 @@ namespace SchoolPortalAPI.Controllers
               .Where(e => e.Classid == student.Classeid);
 
           if (!string.IsNullOrEmpty(start))
-              query = query.Where(e => e.Examdate.CompareTo(start) >= 0);
+              query = query.Where(e => e.Enddate.CompareTo(start) >= 0);
           if (!string.IsNullOrEmpty(end))
-              query = query.Where(e => e.Examdate.CompareTo(end) <= 0);
+              query = query.Where(e => e.Enddate.CompareTo(end) <= 0);
 
           var result = await query
               .Include(e => e.Course)
@@ -147,11 +147,14 @@ namespace SchoolPortalAPI.Controllers
               {
                   title = e.Title,
                   courseName = e.Course != null ? e.Course.Name : "نامشخص",
-                  examDate = e.Examdate
+                  examDate = e.Enddate,
+                  startTime = e.Starttime,
+                  endTime = e.Endtime
               })
               .ToListAsync();
 
           return Ok(result);
       }
+
     }
 }
