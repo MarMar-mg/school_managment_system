@@ -15,7 +15,7 @@ namespace SchoolPortalAPI.Models
        public string Score_month { get; set; } = null!;
 
        [Column("StuCode")]
-       public string StuCode { get; set; } = null!;
+       public long? Studentid { get; set; }
 
        public long? Courseid { get; set; }
        public long? Classid { get; set; }

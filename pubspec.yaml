@@ -58,6 +58,8 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  google_nav_bar: ^5.0.7
+  line_icons: ^2.0.3
 
 dev_dependencies:
   flutter_test:
@@ -111,3 +113,7 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+#  $env:PUB_HOSTED_URL="https://pub.flutter-io.cn"
+#  $env:FLUTTER_STORAGE_BASE_URL="https://storage.flutter-io.cn"
+#  flutter pub get
+

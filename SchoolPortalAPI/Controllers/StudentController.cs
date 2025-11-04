@@ -54,19 +54,19 @@ namespace SchoolPortalAPI.Controllers
             return Ok(student);
         }
 
-      [HttpGet("progress/1")]
+      [HttpGet("progress/{userId}")]
       public async Task<IActionResult> GetProgress(long userId)
       {
           var student = await _context.Students
               .Where(s => s.UserID == userId)
-              .Select(s => new { s.StuCode, s.Name })
+              .Select(s => s.Studentid)
               .FirstOrDefaultAsync();
 
           if (student == null)
               return NotFound("دانش‌آموز یافت نشد");
 
           var progress = await _context.Scores
-              .Where(s => s.StuCode == student.StuCode)
+              .Where(s => s.Course != null && s.Studentid == student)
               .Include(s => s.Course)
               .GroupBy(s => s.Courseid)
               .Select(g => new
@@ -76,11 +76,7 @@ namespace SchoolPortalAPI.Controllers
               })
               .ToListAsync();
 
-          return Ok(new
-          {
-              studentName = student.Name,
-              progress
-          });
+          return Ok(progress);
       }
 
 
