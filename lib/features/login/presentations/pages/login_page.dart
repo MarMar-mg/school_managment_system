@@ -7,7 +7,6 @@ import '../widgets/login_header.dart';
 import '../widgets/login_form_card.dart';
 import '../../../dashboard/presentation/pages/dashboard.dart';
 
-
 class LoginPage extends StatefulWidget {
   final Role role;
   final IconData icon;
@@ -34,7 +33,6 @@ class _LoginPageState extends State<LoginPage> {
   bool _rememberMe = false;
   bool _isLoading = false;
 
-
   void _handleLogin() async {
     final username = _emailController.text.trim();
     final password = _passwordController.text;
@@ -52,7 +50,8 @@ class _LoginPageState extends State<LoginPage> {
       print(password);
 
       if (!mounted) return;
-      if((response['role']).toString().toLowerCase() != widget.role.title.toString().toLowerCase()){
+      if ((response['role']).toString().toLowerCase() !=
+          widget.role.title.toString().toLowerCase()) {
         print((response['role']).toString().toLowerCase());
         print(widget.role.title.toString().toLowerCase());
         throw Exception('این حساب برای ${widget.role.title} نیست');
@@ -65,6 +64,7 @@ class _LoginPageState extends State<LoginPage> {
             role: _roleFromString(response['role'] ?? 'student'),
             userName: response['username'] ?? 'کاربر',
             userId: response['userid']?.toString() ?? '0',
+            userIdi: response['userid'] ?? 0,
           ),
         ),
       );
@@ -80,9 +80,9 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   void _showSnackBar(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Role _roleFromString(String role) {
@@ -97,7 +97,6 @@ class _LoginPageState extends State<LoginPage> {
         return Role.student;
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -114,9 +113,7 @@ class _LoginPageState extends State<LoginPage> {
                   const SizedBox(height: 20),
 
                   // Back Button Header
-                  LoginHeader(
-                    onBackPressed: () => Navigator.pop(context),
-                  ),
+                  LoginHeader(onBackPressed: () => Navigator.pop(context)),
 
                   const SizedBox(height: 32),
 

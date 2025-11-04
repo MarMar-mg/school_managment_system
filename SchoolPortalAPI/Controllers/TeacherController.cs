@@ -81,5 +81,56 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(progress);
         }
+
+        [HttpGet("courses/{userId}")]
+        public async Task<IActionResult> GetTeacherCourses(long userId)
+        {
+            var teacher = await _context.Teachers
+                .Where(t => t.Userid == userId)
+                .Select(t => new { t.Teacherid, t.Name })
+                .FirstOrDefaultAsync();
+
+            if (teacher == null) return NotFound("معلم یافت نشد");
+
+            var courses = await _context.Courses
+                .Where(c => c.Teacherid == teacher.Teacherid)
+                .GroupJoin(
+                    _context.Scores,
+                    c => c.Courseid,
+                    sc => sc.Courseid,
+                    (c, scores) => new { c, scores }
+                )
+                .Select(g => new
+                {
+                    courseName = g.c.Name,
+                    courseCode = g.c.Code ?? "",
+                    teacherName = teacher.Name,  // اضافه شد
+                    location = g.c.Location ?? "نامشخص",
+                    time = g.c.Time ?? "نامشخص",
+                    averageGrade = g.scores.Any()
+                        ? Math.Round(g.scores.Average(s => s.ScoreValue), 1).ToString()
+                        : "-"
+                })
+                .ToListAsync();
+
+            return Ok(courses);
+        }
+
+        [HttpGet("average/{userId}")]
+        public async Task<IActionResult> GetTeacherAverage(long userId)
+        {
+            var teacherId = await _context.Teachers
+                .Where(t => t.Userid == userId)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
+
+            if (teacherId == 0) return NotFound();
+
+            var average = await _context.Scores
+                .Where(s => s.Course != null && s.Course.Teacherid == teacherId)
+                .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
+            return Ok(new { average = Math.Round(average, 1) });
+        }
     }
 }

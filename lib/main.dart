@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'features/login/presentations/pages/register_page.dart';
-import 'package:provider/provider.dart';
-import 'core/providers/auth_provider.dart';
 
 void main() async {
   runApp(const MyApp());

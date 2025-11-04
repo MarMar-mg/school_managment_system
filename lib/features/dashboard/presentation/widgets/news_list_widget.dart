@@ -111,7 +111,7 @@ class _NewsListState extends State<NewsList> {
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
               child: Text(
-                _showAll ? 'نمایش کمتر' : ')نمایش همه ${_allNews.length})',
+                _showAll ? 'نمایش کمتر' : 'نمایش همه ${_allNews.length}',
                 style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
               ),
             ),

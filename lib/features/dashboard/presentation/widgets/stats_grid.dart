@@ -121,7 +121,7 @@ class StatCardWidget extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   stat.value,
-                  style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
                   textDirection: TextDirection.rtl,
                 ),
               ),

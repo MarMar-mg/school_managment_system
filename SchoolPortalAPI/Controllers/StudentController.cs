@@ -152,5 +152,62 @@ namespace SchoolPortalAPI.Controllers
           return Ok(result);
       }
 
+      [HttpGet("courses/{userId}")]
+      public async Task<IActionResult> GetStudentCourses(long userId)
+      {
+          var student = await _context.Students
+              .Where(s => s.UserID == userId)  // درست: Userid
+              .Select(s => new { s.Classeid, s.Studentid })
+              .FirstOrDefaultAsync();
+
+          if (student == null) return NotFound("دانش‌آموز یافت نشد");
+
+          var courses = await _context.Courses
+              .Where(c => c.Classid == student.Classeid)
+              .Include(c => c.Teacher)
+              .GroupJoin(
+                  _context.Scores.Where(sc => sc.Studentid == student.Studentid),
+                  c => c.Courseid,
+                  sc => sc.Courseid,
+                  (c, scores) => new { c, scores }
+              )
+              .SelectMany(
+                  x => x.scores.DefaultIfEmpty(),
+                  (c, sc) => new { c.c, score = sc }
+              )
+              .GroupBy(x => new { x.c.Courseid, x.c.Name, x.c.Code, x.c.Location, x.c.Time, TeacherName = x.c.Teacher != null ? x.c.Teacher.Name : "نامشخص" })
+              .Select(g => new
+              {
+                  courseName = g.Key.Name,
+                  courseCode = g.Key.Code ?? "",
+                  teacherName = g.Key.TeacherName,
+                  location = g.Key.Location ?? "نامشخص",
+                  time = g.Key.Time ?? "نامشخص",
+                  grade = g.OrderByDescending(s => s.score.Id).FirstOrDefault().score != null
+                      ? g.OrderByDescending(s => s.score.Id).FirstOrDefault().score.ScoreValue.ToString()
+                      : "-"
+              })
+              .ToListAsync();
+
+          return Ok(courses);
+      }
+
+      [HttpGet("average/{userId}")]
+      public async Task<IActionResult> GetStudentAverage(long userId)
+      {
+          var student = await _context.Students
+              .Where(s => s.UserID == userId)
+              .Select(s => s.Studentid)
+              .FirstOrDefaultAsync();
+
+          if (student == null) return NotFound();
+
+          var average = await _context.Scores
+              .Where(s => s.Studentid == student)
+              .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
+          return Ok(new { average = Math.Round(average, 1) });
+      }
+
     }
 }

@@ -8,12 +8,14 @@ class BottomNavBar extends StatefulWidget {
   final Role role;
   final String userName;
   final String userId;
+  final int userIdi;
 
   const BottomNavBar({
     Key? key,
     required this.role,
     required this.userName,
     required this.userId,
+    required this.userIdi,
   }) : super(key: key);
 
   @override
@@ -22,16 +24,57 @@ class BottomNavBar extends StatefulWidget {
 
 class _BottomNavBarState extends State<BottomNavBar> {
   late final target = <Widget>[
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    CoursesPage(role: widget.role, userName: widget.userName),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
-    Dashboard(role: widget.role, userName: widget.userName, userId: widget.userId,),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    CoursesPage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+      userIdi: widget.userIdi,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
   ];
   int _selectedIndex = 0;
 

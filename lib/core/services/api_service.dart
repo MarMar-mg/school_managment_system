@@ -221,23 +221,76 @@ class ApiService {
 
   // ==================== COURSES ====================
 
-  static Future<List<dynamic>> getCourses() async {
-    final url = Uri.parse('$baseUrl/courses');
+  // core/services/api_service.dart
+  static Future<List<Map<String, dynamic>>> getCourses(Role role, int userId) async {
+    final List<Map<String, dynamic>> courses = [];
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      switch (role) {
+        case Role.student:
+          final response = await http.get(
+            Uri.parse('$baseUrl/student/courses/$userId'),
+          );
+          if (response.statusCode == 200) {
+            final List<dynamic> data = json.decode(response.body);
+            courses.addAll(data.map((c) => {
+              'name': c['courseName'] ?? 'نامشخص',
+              'code': c['courseCode'] ?? '',
+              'teacher': c['teacherName'] ?? 'نامشخص',
+              'location': c['location'] ?? 'نامشخص',
+              'time': c['time'] ?? 'نامشخص',
+              'progress': c['progress'] ?? 0,
+              'grade': c['grade'] ?? '-',
+              'color': _getColor(c['courseName']),
+              'icon': _getIcon(c['courseName']),
+            }));
+          }
+          break;
 
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as List<dynamic>;
-      } else {
-        throw Exception('خطا در دریافت دروس: ${response.statusCode}');
+        case Role.teacher:
+          final response = await http.get(
+            Uri.parse('$baseUrl/teacher/courses/$userId'),
+          );
+          if (response.statusCode == 200) {
+            final List<dynamic> data = json.decode(response.body);
+            courses.addAll(data.map((c) => {
+              'name': c['courseName'] ?? 'نامشخص',
+              'code': c['courseCode'] ?? '',
+              'teacher': c['teacherName'] ?? 'نامشخص',
+              'location': c['location'] ?? 'نامشخص',
+              'time': c['time'] ?? 'نامشخص',
+              'progress': c['progress'] ?? 0,
+              'grade': c['grade'] ?? '-',
+              'color': _getColor(c['courseName']),
+              'icon': _getIcon(c['courseName']),
+            }));
+          }
+          break;
+
+        default:
+          break;
       }
     } catch (e) {
-      throw Exception('خطا: $e');
+      print('Error loading courses: $e');
     }
+
+    return courses;
+  }
+
+  static Color _getColor(String? name) {
+    if (name == null) return Colors.grey;
+    if (name.contains('ریاضی')) return AppColor.purple;
+    if (name.contains('شیمی')) return Colors.blue;
+    if (name.contains('فیزیک')) return Colors.orange;
+    return Colors.green;
+  }
+
+  static IconData _getIcon(String? name) {
+    if (name == null) return Icons.book;
+    if (name.contains('ریاضی')) return Icons.calculate_rounded;
+    if (name.contains('شیمی')) return Icons.science_rounded;
+    if (name.contains('فیزیک')) return Icons.flash_on_rounded;
+    return Icons.menu_book_rounded;
   }
 
   static Future<List<ProgressItem>> getProgress({
@@ -366,6 +419,24 @@ class ApiService {
     return stats;
   }
 
+  // core/services/api_service.dart
+  static Future<double> getAverageGrade(Role role, int userId) async {
+    try {
+      final endpoint = role == Role.student
+          ? '$baseUrl/student/average/$userId'
+          : '$baseUrl/teacher/average/$userId';
+
+      final response = await http.get(Uri.parse(endpoint));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return (data['average'] as num).toDouble();
+      }
+    } catch (e) {
+      print('Error loading average: $e');
+    }
+    return 0.0;
+  }
+
   // دریافت تمرین‌ها و امتحان‌های دو روز آینده
   static Future<List<AssignmentItem>> getUpcomingAssignments(int studentId) async {
     final now = DateTime.now();
@@ -458,5 +529,4 @@ class ApiService {
     }
 
   }
-
 }
