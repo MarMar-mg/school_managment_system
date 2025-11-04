@@ -128,7 +128,7 @@ namespace SchoolPortalAPI.Controllers
       {
           var student = await _context.Students
               .Where(s => s.Studentid == studentId)
-              .Select(s => s.Classeid)
+              .Select(s => new { s.Classeid })
               .FirstOrDefaultAsync();
 
           if (student == null) return NotFound("دانش‌آموز یافت نشد");
