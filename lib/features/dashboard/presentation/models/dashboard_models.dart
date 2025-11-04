@@ -17,6 +17,38 @@ class StatCard {
     required this.icon,
     required this.color,
   });
+
+  factory StatCard.fromJson(Map<String, dynamic> json) {
+    return StatCard(
+      label: json['label'] ?? '',
+      value: json['value'] ?? '0',
+      subtitle: json['subtitle'] ?? '',
+      icon: _getIcon(json['icon'] ?? 'info'),
+      color: _getColor(json['color'] ?? 'blue'),
+    );
+  }
+
+  static IconData _getIcon(String name) {
+    switch (name) {
+      case 'person': return Icons.person;
+      case 'school': return Icons.school;
+      case 'grade': return Icons.star;
+      case 'assignment': return Icons.assignment;
+      case 'event': return Icons.event;
+      default: return Icons.info;
+    }
+  }
+
+  static Color _getColor(String name) {
+    switch (name) {
+      case 'purple': return Colors.purple;
+      case 'blue': return Colors.blue;
+      case 'green': return Colors.green;
+      case 'orange': return Colors.orange;
+      case 'red': return Colors.red;
+      default: return Colors.blue;
+    }
+  }
 }
 
 class NewsItem {

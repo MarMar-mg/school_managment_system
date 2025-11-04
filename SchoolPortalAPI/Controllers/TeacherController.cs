@@ -132,5 +132,35 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(new { average = Math.Round(average, 1) });
         }
+
+        [HttpGet("stats/{userId}")]
+        public async Task<IActionResult> GetTeacherStats(long userId)
+        {
+            var teacher = await _context.Teachers
+                .Where(t => t.Userid == userId)
+                .Select(t => new { t.Name, t.Teacherid })
+                .FirstOrDefaultAsync();
+
+            if (teacher == null) return NotFound();
+
+            var totalCourses = await _context.Courses.Where(c => c.Teacherid == teacher.Teacherid).CountAsync();
+            var totalStudents = await _context.Students
+                .Where(s => _context.Courses.Any(c => c.Classid == s.Classeid && c.Teacherid == teacher.Teacherid))
+                .CountAsync();
+
+            var average = await _context.Scores
+                .Where(s => s.Course != null && s.Course.Teacherid == teacher.Teacherid)
+                .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
+            var stats = new[]
+            {
+                new { label = "نام معلم", value = teacher.Name, subtitle = "استاد", icon = "person", color = "blue" },
+                new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "تدریس", icon = "school", color = "green" },
+                new { label = "تعداد دانش‌آموز", value = totalStudents.ToString(), subtitle = "کلاس‌ها", icon = "group", color = "orange" },
+                new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "کلاس‌ها", icon = "grade", color = "purple" }
+            };
+
+            return Ok(stats);
+        }
     }
 }

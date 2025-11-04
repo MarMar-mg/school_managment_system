@@ -51,5 +51,24 @@ namespace SchoolPortalAPI.Controllers
             totalTeachers
         });
     }
+
+    [HttpGet("stats")]
+    public async Task<IActionResult> GetManagerStats()
+    {
+        var totalStudents = await _context.Students.CountAsync();
+        var totalTeachers = await _context.Teachers.CountAsync();
+        var totalCourses = await _context.Courses.CountAsync();
+        var totalClasses = await _context.Classes.CountAsync();
+
+        var stats = new[]
+        {
+            new { label = "تعداد دانش‌آموز", value = totalStudents.ToString(), subtitle = "فعال", icon = "person", color = "blue" },
+            new { label = "تعداد معلم", value = totalTeachers.ToString(), subtitle = "فعال", icon = "school", color = "green" },
+            new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "کل", icon = "menu_book", color = "purple" },
+            new { label = "تعداد کلاس", value = totalClasses.ToString(), subtitle = "فعال", icon = "class", color = "orange" }
+        };
+
+        return Ok(stats);
     }
+  }
 }

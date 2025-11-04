@@ -209,5 +209,33 @@ namespace SchoolPortalAPI.Controllers
           return Ok(new { average = Math.Round(average, 1) });
       }
 
+      [HttpGet("stats/{userId}")]
+      public async Task<IActionResult> GetStudentStats(long userId)
+      {
+          var student = await _context.Students
+              .Where(s => s.UserID == userId)
+              .Select(s => new { s.Studentid, s.Name })
+              .FirstOrDefaultAsync();
+
+          if (student == null) return NotFound();
+
+          var totalCourses = await _context.Courses
+              .Where(c => c.Classid == _context.Students.Where(s => s.UserID == userId).Select(s => s.Classeid).FirstOrDefault())
+              .CountAsync();
+
+          var average = await _context.Scores
+              .Where(s => s.Studentid == student.Studentid)
+              .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
+          var stats = new[]
+          {
+              new { label = "نام دانش‌آموز", value = student.Name, subtitle = "شناسه", icon = "person", color = "blue" },
+              new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "ثبت‌نام شده", icon = "school", color = "green" },
+              new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "از ۲۰", icon = "grade", color = "purple" },
+              new { label = "تمرین‌های تحویل‌شده", value = "۱۲", subtitle = "از ۱۵", icon = "assignment", color = "orange" }
+          };
+
+          return Ok(stats);
+      }
     }
 }

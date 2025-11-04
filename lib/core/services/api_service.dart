@@ -324,93 +324,30 @@ class ApiService {
     }
   }
 
-  // core/services/api_service.dart
+// core/services/api_service.dart
   static Future<List<StatCard>> getStats(Role role, int userId) async {
     final List<StatCard> stats = [];
 
     try {
+      String endpoint;
       switch (role) {
         case Role.student:
-        // دانش‌آموز
-          final studentRes = await http.get(Uri.parse('$baseUrl/student/dashboard/$userId'));
-          if (studentRes.statusCode == 200) {
-            final data = json.decode(studentRes.body);
-            stats.addAll([
-              StatCard(
-                label: 'نام',
-                value: data['name'] ?? 'نامشخص',
-                subtitle: 'دانش‌آموز',
-                icon: Icons.person,
-                color: Colors.blue,
-              ),
-              StatCard(
-                label: 'کلاس',
-                value: data['className'] ?? 'نامشخص',
-                subtitle: 'کلاس فعلی',
-                icon: Icons.class_,
-                color: Colors.green,
-              ),
-              StatCard(
-                label: 'معدل',
-                value: data['score']?.toStringAsFixed(1) ?? '0',
-                subtitle: 'معدل کل',
-                icon: Icons.trending_up,
-                color: Colors.orange,
-              ),
-            ]);
-          }
+          endpoint = '$baseUrl/student/stats/$userId';
           break;
-
         case Role.teacher:
-        // معلم
-          final teacherRes = await http.get(Uri.parse('$baseUrl/teacher/classes/$userId'));
-          final classes = json.decode(teacherRes.body) as List;
-          stats.addAll([
-            StatCard(
-              label: 'کلاس',
-              value: classes.length.toString(),
-              subtitle: 'کلاس‌های تدریس',
-              icon: Icons.class_,
-              color: Colors.purple,
-            ),
-            StatCard(
-              label: 'دانش‌آموز',
-              value: classes.fold<int>(0, (sum, c) => sum + (c['studentCount'] as int? ?? 0)).toString(),
-              subtitle: 'کل دانش‌آموزان',
-              icon: Icons.people,
-              color: Colors.indigo,
-            ),
-          ]);
+          endpoint = '$baseUrl/teacher/stats/$userId';
           break;
-
         case Role.manager:
-        // مدیر
-          final adminRes = await http.get(Uri.parse('$baseUrl/admin/stats'));
-          final data = json.decode(adminRes.body);
-          stats.addAll([
-            StatCard(
-              label: 'کلاس',
-              value: data['totalClasses'].toString(),
-              subtitle: 'کلاس‌های فعال',
-              icon: Icons.class_,
-              color: Colors.teal,
-            ),
-            StatCard(
-              label: 'دانش‌آموز',
-              value: data['totalStudents'].toString(),
-              subtitle: 'کل دانش‌آموزان',
-              icon: Icons.school,
-              color: Colors.cyan,
-            ),
-            StatCard(
-              label: 'معلم',
-              value: data['totalTeachers'].toString(),
-              subtitle: 'کل معلمان',
-              icon: Icons.person_search,
-              color: Colors.deepOrange,
-            ),
-          ]);
+          endpoint = '$baseUrl/manager/stats';
           break;
+        default:
+          return stats;
+      }
+
+      final response = await http.get(Uri.parse(endpoint));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        stats.addAll(data.map((s) => StatCard.fromJson(s)));
       }
     } catch (e) {
       print('Error loading stats: $e');
