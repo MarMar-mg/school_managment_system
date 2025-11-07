@@ -338,7 +338,7 @@ class ApiService {
           endpoint = '$baseUrl/teacher/stats/$userId';
           break;
         case Role.manager:
-          endpoint = '$baseUrl/manager/stats';
+          endpoint = '$baseUrl/admin/stats';//TODO fix role(its getting student)
           break;
         default:
           return stats;

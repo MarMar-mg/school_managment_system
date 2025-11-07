@@ -11,12 +11,12 @@ class BottomNavBar extends StatefulWidget {
   final int userIdi;
 
   const BottomNavBar({
-    Key? key,
+    super.key,
     required this.role,
     required this.userName,
     required this.userId,
     required this.userIdi,
-  }) : super(key: key);
+  });
 
   @override
   State<BottomNavBar> createState() => _BottomNavBarState();

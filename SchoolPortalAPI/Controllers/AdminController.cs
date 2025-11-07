@@ -36,36 +36,39 @@ namespace SchoolPortalAPI.Controllers
         return Ok(progress);
     }
 
-    // AdminController.cs
+    // Controllers/AdminController.cs
     [HttpGet("stats")]
-    public async Task<IActionResult> GetStats()
+    public async Task<IActionResult> GetAdminStats()
     {
+        // ۱. تعداد کل دانش‌آموزان
+        var totalStudents = await _context.Students.CountAsync();
+
+        // ۲. تعداد کل معلمان
+        var totalTeachers = await _context.Teachers.CountAsync();
+
+        // ۳. تعداد کل کلاس‌ها
         var totalClasses = await _context.Classes.CountAsync();
-        var totalStudents = await _context.Students.CountAsync();
-        var totalTeachers = await _context.Teachers.CountAsync();
 
-        return Ok(new
-        {
-            totalClasses,
-            totalStudents,
-            totalTeachers
-        });
-    }
-
-    [HttpGet("stats")]
-    public async Task<IActionResult> GetManagerStats()
-    {
-        var totalStudents = await _context.Students.CountAsync();
-        var totalTeachers = await _context.Teachers.CountAsync();
+        // ۴. تعداد کل دروس
         var totalCourses = await _context.Courses.CountAsync();
-        var totalClasses = await _context.Classes.CountAsync();
+
+//        // ۵. تعداد کل نمرات ثبت‌شده
+//        var totalScores = await _context.Scores.CountAsync();
+//
+//        // ۶. میانگین کل نمرات در سیستم
+//        var systemAverage = await _context.Scores
+//            .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
 
         var stats = new[]
         {
-            new { label = "تعداد دانش‌آموز", value = totalStudents.ToString(), subtitle = "فعال", icon = "person", color = "blue" },
-            new { label = "تعداد معلم", value = totalTeachers.ToString(), subtitle = "فعال", icon = "school", color = "green" },
-            new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "کل", icon = "menu_book", color = "purple" },
-            new { label = "تعداد کلاس", value = totalClasses.ToString(), subtitle = "فعال", icon = "class", color = "orange" }
+            new { label = "کل دانش‌آموزان", value = totalStudents.ToString(), subtitle = "فعال", icon = "person", color = "blue" },
+            new { label = "کل معلمان", value = totalTeachers.ToString(), subtitle = "فعال", icon = "school", color = "green" },
+            new { label = "کل کلاس‌ها", value = totalClasses.ToString(), subtitle = "تشکیل‌شده", icon = "class", color = "purple" },
+            new { label = "کل دروس", value = totalCourses.ToString(), subtitle = "تعریف‌شده", icon = "menu_book", color = "orange" },
+//            new { label = "کل نمرات", value = totalScores.ToString(), subtitle = "ثبت‌شده", icon = "grade", color = "pink" },
+//            new { label = "میانگین سیستم", value = systemAverage.ToString("F1"), subtitle = "از ۲۰", icon = "trending_up", color = "cyan" },
+
         };
 
         return Ok(stats);

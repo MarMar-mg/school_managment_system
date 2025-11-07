@@ -29,10 +29,11 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-  int _selectedIndex = 4;
 
   @override
   Widget build(BuildContext context) {
+    print(widget.role.title);
+    print('llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooo');
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
       appBar: DashboardAppBar(

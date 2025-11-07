@@ -61,7 +61,7 @@ class _LoginPageState extends State<LoginPage> {
         context,
         MaterialPageRoute(
           builder: (_) => BottomNavBar(
-            role: _roleFromString(response['role'] ?? 'student'),
+            role: widget.role,
             userName: response['username'] ?? 'کاربر',
             userId: response['userid']?.toString() ?? '0',
             userIdi: response['userid'] ?? 0,
