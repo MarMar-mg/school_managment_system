@@ -36,10 +36,9 @@ class _DashboardState extends State<Dashboard> {
     print('llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooo');
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      appBar: DashboardAppBar(
-        userName: widget.userName,
-        role: widget.role,
-      ),
+      // appBar: DashboardAppBar(
+      //   role: widget.role, userId: widget.userId.toInt(),
+      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

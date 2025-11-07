@@ -73,5 +73,16 @@ namespace SchoolPortalAPI.Controllers
 
         return Ok(stats);
     }
+
+    [HttpGet("name/{userId}")]
+    public async Task<IActionResult> GetAdminName(long userId)
+    {
+        var name = await _context.Managers
+            .Where(u => u.Userid == userId)
+            .Select(u => u.Name)
+            .FirstOrDefaultAsync();
+
+        return Ok(new { name = name ?? "مدیر" });
+    }
   }
 }

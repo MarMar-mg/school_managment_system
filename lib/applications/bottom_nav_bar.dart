@@ -3,6 +3,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:school_managment_system/applications/role.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/student/classes/presentations/pages/classes_page.dart';
+import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {
   final Role role;
@@ -82,6 +83,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
+      appBar: DashboardAppBar(
+        role: widget.role, userId: widget.userIdi,
+      ),
       body: Center(child: target[_selectedIndex]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

@@ -52,10 +52,9 @@ class _CoursesPageState extends State<CoursesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      appBar: DashboardAppBar(
-        userName: widget.userName,
-        role: widget.role,
-      ),
+      // appBar: DashboardAppBar(
+      //   role: widget.role, userId: widget.userIdi,
+      // ),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _coursesFuture,

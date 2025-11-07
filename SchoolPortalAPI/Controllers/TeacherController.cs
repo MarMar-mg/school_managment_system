@@ -143,6 +143,12 @@ namespace SchoolPortalAPI.Controllers
 
             if (teacher == null) return NotFound();
 
+            var lastCourseName = await _context.Courses
+                .Where(c => c.Teacherid == teacher.Teacherid)
+                .OrderByDescending(c => c.Courseid)
+                .Select(c => c.Name)
+                .FirstOrDefaultAsync();
+
             var totalCourses = await _context.Courses.Where(c => c.Teacherid == teacher.Teacherid).CountAsync();
             var totalStudents = await _context.Students
                 .Where(s => _context.Courses.Any(c => c.Classid == s.Classeid && c.Teacherid == teacher.Teacherid))
@@ -154,13 +160,24 @@ namespace SchoolPortalAPI.Controllers
 
             var stats = new[]
             {
-                new { label = "نام معلم", value = teacher.Name, subtitle = "استاد", icon = "person", color = "blue" },
+                new { label = "نام درس", value = lastCourseName, subtitle = "استاد", icon = "course", color = "blue" },
                 new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "تدریس", icon = "school", color = "green" },
                 new { label = "تعداد دانش‌آموز", value = totalStudents.ToString(), subtitle = "کلاس‌ها", icon = "group", color = "orange" },
                 new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "کلاس‌ها", icon = "grade", color = "purple" }
             };
 
             return Ok(stats);
+        }
+
+        [HttpGet("name/{userId}")]
+        public async Task<IActionResult> GetTeacherName(long userId)
+        {
+            var name = await _context.Teachers
+                .Where(t => t.Userid == userId)
+                .Select(t => t.Name)
+                .FirstOrDefaultAsync();
+
+            return Ok(new { name = name ?? "معلم" });
         }
     }
 }

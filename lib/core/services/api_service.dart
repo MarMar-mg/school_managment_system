@@ -8,10 +8,10 @@ import 'package:shamsi_date/shamsi_date.dart';
 import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
 
-
 class ApiService {
   // Update this based on your testing environment
   static const String baseUrl = 'http://localhost:5105/api';
+
   // For Android Emulator: 'http://10.0.2.2:5105/api'
   // For iOS Simulator: 'http://localhost:5105/api'
   // For Real Device: 'http://YOUR_COMPUTER_IP:5105/api'
@@ -26,20 +26,19 @@ class ApiService {
   // ==================== AUTH ====================
 
   static Future<Map<String, dynamic>> login(
-      String username,
-      String password,
-      ) async {
+    String username,
+    String password,
+  ) async {
     final url = Uri.parse('$baseUrl/auth/login');
 
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: json.encode({
-          'username': username,
-          'password': password,
-        }),
-      ).timeout(_timeout);
+      final response = await http
+          .post(
+            url,
+            headers: _headers,
+            body: json.encode({'username': username, 'password': password}),
+          )
+          .timeout(_timeout);
 
       print('Login Status: ${response.statusCode}');
       print('Login Body: ${response.body}');
@@ -66,10 +65,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/news');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       print('News Status: ${response.statusCode}');
       print('News Body: ${response.body}');
@@ -92,10 +88,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/news/$newsId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
@@ -115,10 +108,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/calender');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       print('Events Status: ${response.statusCode}');
       print('Events Body: ${response.body}');
@@ -139,10 +129,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/student/dashboard/$userId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       print('Student Dashboard Status: ${response.statusCode}');
 
@@ -162,10 +149,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/student/exercises/$studentId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as List<dynamic>;
@@ -181,10 +165,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/student/exams/$studentId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as List<dynamic>;
@@ -202,10 +183,7 @@ class ApiService {
     final url = Uri.parse('$baseUrl/teacher/dashboard/$userId');
 
     try {
-      final response = await http.get(
-        url,
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
@@ -222,7 +200,10 @@ class ApiService {
   // ==================== COURSES ====================
 
   // core/services/api_service.dart
-  static Future<List<Map<String, dynamic>>> getCourses(Role role, int userId) async {
+  static Future<List<Map<String, dynamic>>> getCourses(
+    Role role,
+    int userId,
+  ) async {
     final List<Map<String, dynamic>> courses = [];
 
     try {
@@ -233,17 +214,21 @@ class ApiService {
           );
           if (response.statusCode == 200) {
             final List<dynamic> data = json.decode(response.body);
-            courses.addAll(data.map((c) => {
-              'name': c['courseName'] ?? 'نامشخص',
-              'code': c['courseCode'] ?? '',
-              'teacher': c['teacherName'] ?? 'نامشخص',
-              'location': c['location'] ?? 'نامشخص',
-              'time': c['time'] ?? 'نامشخص',
-              'progress': c['progress'] ?? 0,
-              'grade': c['grade'] ?? '-',
-              'color': _getColor(c['courseName']),
-              'icon': _getIcon(c['courseName']),
-            }));
+            courses.addAll(
+              data.map(
+                (c) => {
+                  'name': c['courseName'] ?? 'نامشخص',
+                  'code': c['courseCode'] ?? '',
+                  'teacher': c['teacherName'] ?? 'نامشخص',
+                  'location': c['location'] ?? 'نامشخص',
+                  'time': c['time'] ?? 'نامشخص',
+                  'progress': c['progress'] ?? 0,
+                  'grade': c['grade'] ?? '-',
+                  'color': _getColor(c['courseName']),
+                  'icon': _getIcon(c['courseName']),
+                },
+              ),
+            );
           }
           break;
 
@@ -253,17 +238,21 @@ class ApiService {
           );
           if (response.statusCode == 200) {
             final List<dynamic> data = json.decode(response.body);
-            courses.addAll(data.map((c) => {
-              'name': c['courseName'] ?? 'نامشخص',
-              'code': c['courseCode'] ?? '',
-              'teacher': c['teacherName'] ?? 'نامشخص',
-              'location': c['location'] ?? 'نامشخص',
-              'time': c['time'] ?? 'نامشخص',
-              'progress': c['progress'] ?? 0,
-              'grade': c['grade'] ?? '-',
-              'color': _getColor(c['courseName']),
-              'icon': _getIcon(c['courseName']),
-            }));
+            courses.addAll(
+              data.map(
+                (c) => {
+                  'name': c['courseName'] ?? 'نامشخص',
+                  'code': c['courseCode'] ?? '',
+                  'teacher': c['teacherName'] ?? 'نامشخص',
+                  'location': c['location'] ?? 'نامشخص',
+                  'time': c['time'] ?? 'نامشخص',
+                  'progress': c['progress'] ?? 0,
+                  'grade': c['grade'] ?? '-',
+                  'color': _getColor(c['courseName']),
+                  'icon': _getIcon(c['courseName']),
+                },
+              ),
+            );
           }
           break;
 
@@ -324,7 +313,7 @@ class ApiService {
     }
   }
 
-// core/services/api_service.dart
+  // core/services/api_service.dart
   static Future<List<StatCard>> getStats(Role role, int userId) async {
     final List<StatCard> stats = [];
 
@@ -338,7 +327,7 @@ class ApiService {
           endpoint = '$baseUrl/teacher/stats/$userId';
           break;
         case Role.manager:
-          endpoint = '$baseUrl/admin/stats';//TODO fix role(its getting student)
+          endpoint = '$baseUrl/admin/stats';
           break;
         default:
           return stats;
@@ -354,6 +343,26 @@ class ApiService {
     }
 
     return stats;
+  }
+
+  // core/services/api_service.dart
+  static Future<String> getUserDisplayName(Role role, int userId) async {
+    try {
+      final endpoint = switch (role) {
+        Role.student => '$baseUrl/student/name/$userId',
+        Role.teacher => '$baseUrl/teacher/name/$userId',
+        Role.manager => '$baseUrl/admin/name/$userId',
+      };
+
+      final response = await http.get(Uri.parse(endpoint));
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['name'] ?? 'کاربر';
+      }
+    } catch (e) {
+      print('Error loading name: $e');
+    }
+    return 'کاربر';
   }
 
   // core/services/api_service.dart
@@ -375,7 +384,9 @@ class ApiService {
   }
 
   // دریافت تمرین‌ها و امتحان‌های دو روز آینده
-  static Future<List<AssignmentItem>> getUpcomingAssignments(int studentId) async {
+  static Future<List<AssignmentItem>> getUpcomingAssignments(
+    int studentId,
+  ) async {
     final now = DateTime.now();
     final twoDaysLater = now.add(const Duration(days: 2));
 
@@ -388,34 +399,46 @@ class ApiService {
     try {
       // تمرین‌ها
       final exerciseResponse = await http.get(
-        Uri.parse('$baseUrl/student/exercises/$studentId?start=$startDate&end=$endDate'),
+        Uri.parse(
+          '$baseUrl/student/exercises/$studentId?start=$startDate&end=$endDate',
+        ),
       );
 
       if (exerciseResponse.statusCode == 200) {
         final List<dynamic> exercises = json.decode(exerciseResponse.body);
-        assignments.addAll(exercises.map((e) => AssignmentItem(
-          title: e['title'] ?? 'تمرین',
-          subject: e['courseName'] ?? 'نامشخص',
-          badge: _formatDisplayShamsiDate(e['dueDate']),
-          badgeColor: Colors.orange,
-          icon: Icons.assignment_rounded,
-        )));
+        assignments.addAll(
+          exercises.map(
+            (e) => AssignmentItem(
+              title: e['title'] ?? 'تمرین',
+              subject: e['courseName'] ?? 'نامشخص',
+              badge: _formatDisplayShamsiDate(e['dueDate']),
+              badgeColor: Colors.orange,
+              icon: Icons.assignment_rounded,
+            ),
+          ),
+        );
       }
 
       // امتحان‌ها
       final examResponse = await http.get(
-        Uri.parse('$baseUrl/student/exams/$studentId?start=$startDate&end=$endDate'),
+        Uri.parse(
+          '$baseUrl/student/exams/$studentId?start=$startDate&end=$endDate',
+        ),
       );
 
       if (examResponse.statusCode == 200) {
         final List<dynamic> exams = json.decode(examResponse.body);
-        assignments.addAll(exams.map((e) => AssignmentItem(
-          title: e['title'] ?? 'امتحان',
-          subject: e['courseName'] ?? 'نامشخص',
-          badge: _formatDisplayShamsiDate(e['examDate']),
-          badgeColor: Colors.red,
-          icon: Icons.quiz_rounded,
-        )));
+        assignments.addAll(
+          exams.map(
+            (e) => AssignmentItem(
+              title: e['title'] ?? 'امتحان',
+              subject: e['courseName'] ?? 'نامشخص',
+              badge: _formatDisplayShamsiDate(e['examDate']),
+              badgeColor: Colors.red,
+              icon: Icons.quiz_rounded,
+            ),
+          ),
+        );
       }
     } catch (e) {
       print('Error fetching assignments: $e');
@@ -431,14 +454,13 @@ class ApiService {
     return assignments;
   }
 
-
   // تبدیل DateTime میلادی به رشته شمسی (14030825)
   static String _formatShamsiDate(DateTime date) {
     final jalali = Jalali.fromDateTime(date);
     return '${jalali.year}${jalali.month.toString().padLeft(2, '0')}${jalali.day.toString().padLeft(2, '0')}';
   }
 
-// تبدیل رشته شمسی (14030825) به نمایش (۱۴۰۳/۰۸/۲۵)
+  // تبدیل رشته شمسی (14030825) به نمایش (۱۴۰۳/۰۸/۲۵)
   static String _formatDisplayShamsiDate(String? shamsiStr) {
     if (shamsiStr == null || shamsiStr.length < 8) return 'نامشخص';
     final year = shamsiStr.substring(0, 4);
@@ -460,10 +482,13 @@ class ApiService {
     final parts = badge.split('/');
     if (parts.length != 3) return DateTime.now().add(const Duration(days: 999));
     try {
-      return DateTime(int.parse(parts[0]), int.parse(parts[1]), int.parse(parts[2]));
+      return DateTime(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
     } catch (e) {
       return DateTime.now().add(const Duration(days: 999));
     }
-
   }
 }

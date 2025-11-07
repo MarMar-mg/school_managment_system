@@ -227,15 +227,31 @@ namespace SchoolPortalAPI.Controllers
               .Where(s => s.Studentid == student.Studentid)
               .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
 
+          var lastScoreMonth = await _context.Scores
+                  .Where(s => s.Studentid == student.Studentid)
+                  .Select(s => s.Score_month)
+                  .FirstOrDefaultAsync();
+
           var stats = new[]
           {
-              new { label = "نام دانش‌آموز", value = student.Name, subtitle = "شناسه", icon = "person", color = "blue" },
+              new { label = "نمره انضباط", value = lastScoreMonth.ToString(), subtitle = "از ۱۰۰", icon = "score", color = "blue" },
               new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "ثبت‌نام شده", icon = "school", color = "green" },
-              new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "از ۲۰", icon = "grade", color = "purple" },
+              new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "از ۱۰۰", icon = "grade", color = "purple" },
               new { label = "تمرین‌های تحویل‌شده", value = "۱۲", subtitle = "از ۱۵", icon = "assignment", color = "orange" }
           };
 
           return Ok(stats);
+      }
+
+      [HttpGet("name/{userId}")]
+      public async Task<IActionResult> GetStudentName(long userId)
+      {
+          var name = await _context.Students
+              .Where(s => s.UserID == userId)
+              .Select(s => s.Name)
+              .FirstOrDefaultAsync();
+
+          return Ok(new { name = name ?? "دانش‌آموز" });
       }
     }
 }
