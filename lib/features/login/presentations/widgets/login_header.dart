@@ -24,7 +24,7 @@ class LoginHeader extends StatelessWidget {
               Text(
                 'تغییر نقش',
                 style: TextStyle(
-                  color: AppColor.purple,
+                  color: AppColor.gray,
                   fontWeight: FontWeight.w600,
                   fontSize: 15,
                 ),
@@ -33,7 +33,7 @@ class LoginHeader extends StatelessWidget {
               SizedBox(width: 8),
               Icon(
                 Icons.arrow_forward_ios_rounded,
-                color: AppColor.purple,
+                color: AppColor.gray,
                 size: 16,
               ),
             ],

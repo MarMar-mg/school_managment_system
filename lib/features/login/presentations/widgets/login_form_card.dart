@@ -1,3 +1,4 @@
+// widgets/login_form_card.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
@@ -37,103 +38,126 @@ class LoginFormCard extends StatefulWidget {
 class _LoginFormCardState extends State<LoginFormCard>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
-  late AnimationController _animationController;
-  late Animation<double> _spinAnimation;
+  late AnimationController _controller;
+
+  // انیمیشن‌های امن
+  late Animation<double> _cardSlide;
+  late Animation<double> _cardFade;
+  late Animation<double> _contentFade;
 
   @override
   void initState() {
     super.initState();
-    _animationController = AnimationController(
+    _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
-    _spinAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.linear),
+
+    // کارت از پایین میاد بالا
+    _cardSlide = Tween<double>(begin: 700, end: 0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack)),
     );
 
-    if (widget.isLoading) {
-      _animationController.repeat();
-    }
+    _cardFade = Tween<double>(begin: 300.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeOut)),
+    );
+
+    // محتوا یکی‌یکی ظاهر میشه
+    _contentFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+    );
+
+    _controller.forward();
   }
 
   @override
   void didUpdateWidget(LoginFormCard oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.isLoading != oldWidget.isLoading) {
-      if (widget.isLoading) {
-        _animationController.repeat();
-      } else {
-        _animationController.stop();
-        _animationController.reset();
+      if (!widget.isLoading) {
+        _controller.forward(from: 0.4); // دوباره محتوا رو نشون بده
       }
     }
   }
 
   @override
   void dispose() {
-    _animationController.dispose();
+    _controller.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: widget.gradientColors.first.withOpacity(0.1),
-            blurRadius: 24,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildRoleHeader(),
-          const SizedBox(height: 28),
-          CustomTextField(
-            controller: widget.emailController,
-            label: 'نام کاربری',
-            hintText: 'نام کاربری خود را وارد کنید',
-            icon: Icons.person_outlined,
-            keyboardType: TextInputType.text,
-            enabled: !widget.isLoading,
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(
-            controller: widget.passwordController,
-            label: 'رمز عبور',
-            hintText: 'رمز عبور خود را وارد کنید',
-            icon: Icons.lock_outline_rounded,
-            obscureText: _obscurePassword,
-            enabled: !widget.isLoading,
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: AppColor.lightGray,
-                size: 20,
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _cardSlide.value),
+          child: Opacity(
+            opacity: _cardFade.value.clamp(0.0, 1.0),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: widget.gradientColors.first.withOpacity(0.12),
+                    blurRadius: 30,
+                    offset: const Offset(0, 12),
+                  ),
+                ],
               ),
-              onPressed: widget.isLoading
-                  ? null
-                  : () => setState(() => _obscurePassword = !_obscurePassword),
+              child: Opacity(
+                opacity: _contentFade.value,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildRoleHeader(),
+                    const SizedBox(height: 28),
+                    _buildFieldWithDelay(
+                      delay: 0.0,
+                      child: CustomTextField(
+                        controller: widget.emailController,
+                        label: 'نام کاربری',
+                        hintText: 'نام کاربری خود را وارد کنید',
+                        icon: Icons.person_outlined,
+                        keyboardType: TextInputType.text,
+                        enabled: !widget.isLoading,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFieldWithDelay(
+                      delay: 0.1,
+                      child: CustomTextField(
+                        controller: widget.passwordController,
+                        label: 'رمز عبور',
+                        hintText: 'رمز عبور خود را وارد کنید',
+                        icon: Icons.lock_outline_rounded,
+                        obscureText: _obscurePassword,
+                        enabled: !widget.isLoading,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: AppColor.lightGray,
+                          ),
+                          onPressed: widget.isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _buildFieldWithDelay(delay: 0.2, child: _buildRememberMeRow()),
+                    const SizedBox(height: 24),
+                    _buildLoginButton(),
+                    const SizedBox(height: 20),
+                    _buildDemoCard(),
+                  ],
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 16),
-          _buildRememberMeRow(),
-          const SizedBox(height: 24),
-          _buildLoginButton(),
-          const SizedBox(height: 20),
-          if (widget.role == Role.student) DemoInfoCard(userName: 'شماره دانش آموزی', password: '123') ,
-          if (widget.role == Role.manager) DemoInfoCard(userName: 'کد معاونت', password: '123') ,
-          if (widget.role == Role.teacher) DemoInfoCard(userName: 'کد استادی', password: '123') ,
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -145,11 +169,7 @@ class _LoginFormCardState extends State<LoginFormCard>
           width: 56,
           height: 56,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: widget.gradientColors,
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            gradient: LinearGradient(colors: widget.gradientColors),
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(widget.icon, color: Colors.white, size: 28),
@@ -159,25 +179,30 @@ class _LoginFormCardState extends State<LoginFormCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'ورود به عنوان',
-                style: TextStyle(fontSize: 13, color: AppColor.lightGray),
-                textDirection: TextDirection.rtl,
-              ),
+              Text('ورود به عنوان', style: TextStyle(fontSize: 13, color: AppColor.lightGray)),
               const SizedBox(height: 4),
-              Text(
-                widget.title,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColor.darkText,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
+              Text(widget.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColor.darkText)),
             ],
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildFieldWithDelay({required double delay, required Widget child}) {
+    final start = 0.4 + delay;
+    final end = (start + 0.3).clamp(0.0, 1.0); // همیشه <= 1.0
+
+    return FadeTransition(
+      opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(parent: _controller, curve: Interval(start, end, curve: Curves.easeOut)),
+      ),
+      child: SlideTransition(
+        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
+          CurvedAnimation(parent: _controller, curve: Interval(start, end, curve: Curves.easeOut)),
+        ),
+        child: child,
+      ),
     );
   }
 
@@ -188,7 +213,6 @@ class _LoginFormCardState extends State<LoginFormCard>
       children: [
         Row(
           textDirection: TextDirection.rtl,
-          mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(
               width: 20,
@@ -197,16 +221,11 @@ class _LoginFormCardState extends State<LoginFormCard>
                 value: widget.rememberMe,
                 onChanged: widget.isLoading ? null : widget.onRememberMeChanged,
                 activeColor: widget.gradientColors.first,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(4),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
               ),
             ),
             const SizedBox(width: 8),
-            const Text(
-              'مرا به خاطر بسپار',
-              style: TextStyle(fontSize: 13, color: AppColor.darkText),
-            ),
+            const Text('مرا به خاطر بسپار', style: TextStyle(fontSize: 13)),
           ],
         ),
         GestureDetector(
@@ -215,9 +234,7 @@ class _LoginFormCardState extends State<LoginFormCard>
             'فراموشی رمز عبور؟',
             style: TextStyle(
               fontSize: 13,
-              color: widget.isLoading
-                  ? Colors.grey
-                  : widget.gradientColors.first,
+              color: widget.isLoading ? Colors.grey : widget.gradientColors.first,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -227,61 +244,52 @@ class _LoginFormCardState extends State<LoginFormCard>
   }
 
   Widget _buildLoginButton() {
-    return AnimatedBuilder(
-      animation: _animationController,
-      builder: (context, child) {
-        return Material(
-          color: Colors.transparent,
-          borderRadius: BorderRadius.circular(14),
-          child: InkWell(
-            onTap: widget.isLoading ? null : widget.onLogin,
+    return Material(
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: widget.isLoading ? null : widget.onLogin,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: widget.isLoading
+                  ? [Colors.grey.shade400, Colors.grey.shade600]
+                  : widget.gradientColors,
+            ),
             borderRadius: BorderRadius.circular(14),
-            child: Ink(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: widget.isLoading
-                      ? [Colors.grey.shade400, Colors.grey.shade600]
-                      : widget.gradientColors,
-                  begin: Alignment.centerLeft,
-                  end: Alignment.centerRight,
-                ),
-                borderRadius: BorderRadius.circular(14),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        (widget.isLoading
-                                ? Colors.grey
-                                : widget.gradientColors.first)
-                            .withOpacity(0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
+            boxShadow: [
+              BoxShadow(
+                color: (widget.isLoading ? Colors.grey : widget.gradientColors.first).withOpacity(0.4),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
-              child: Container(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                alignment: Alignment.center,
-                child: widget.isLoading
-                    ? Transform.scale(
-                        scale: 0.8,
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : const Text(
-                        'ورود',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
+            ],
+          ),
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 18),
+            alignment: Alignment.center,
+            child: widget.isLoading
+                ? const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+            )
+                : const Text(
+              'ورود',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
             ),
           ),
-        );
-      },
+        ),
+      ),
     );
+  }
+
+  Widget _buildDemoCard() {
+    return widget.role == Role.student
+        ? DemoInfoCard(userName: 'شماره دانش آموزی', password: '123')
+        : widget.role == Role.teacher
+        ? DemoInfoCard(userName: 'کد استادی', password: '123')
+        : DemoInfoCard(userName: 'کد معاونت', password: '123');
   }
 }
