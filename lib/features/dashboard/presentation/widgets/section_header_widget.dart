@@ -7,11 +7,11 @@ class SectionHeader extends StatelessWidget {
   final String actionText;
 
   const SectionHeader({
-    Key? key,
+    super.key,
     required this.title,
     required this.onSeeAll,
     this.actionText = 'مشاهده همه',
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

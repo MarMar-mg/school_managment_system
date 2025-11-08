@@ -29,16 +29,10 @@ class Dashboard extends StatefulWidget {
 }
 
 class _DashboardState extends State<Dashboard> {
-
   @override
   Widget build(BuildContext context) {
-    print(widget.role.title);
-    print('llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllooooo');
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      // appBar: DashboardAppBar(
-      //   role: widget.role, userId: widget.userId.toInt(),
-      // ),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -50,21 +44,14 @@ class _DashboardState extends State<Dashboard> {
 
               const SizedBox(height: 24),
 
-              SectionHeader(
-                title: 'اخبار',
-                onSeeAll: () {
-                },
-              ),
+              SectionHeader(title: 'اخبار', onSeeAll: () {}),
               const SizedBox(height: 12),
               const NewsList(),
 
               const SizedBox(height: 24),
 
               // Events Section
-              SectionHeader(
-                title: 'رویدادها',
-                onSeeAll: () {},
-              ),
+              SectionHeader(title: 'رویدادها', onSeeAll: () {}),
               const SizedBox(height: 12),
               const EventsList(),
 
@@ -77,23 +64,15 @@ class _DashboardState extends State<Dashboard> {
                   actionText: 'مشاهده همه',
                 ),
                 const SizedBox(height: 12),
-                AssignmentsList(
-                   studentId: widget.userId.toInt(),
-                ),
+                AssignmentsList(studentId: widget.userId.toInt()),
               ],
 
               const SizedBox(height: 24),
 
               // Progress Section
-              SectionHeader(
-                title: 'پیشرفت دروس',
-                onSeeAll: () {},
-              ),
+              SectionHeader(title: 'پیشرفت دروس', onSeeAll: () {}),
               const SizedBox(height: 12),
-              ProgressList(
-                role: widget.role,
-                userId: int.parse(widget.userId),
-              ),
+              ProgressList(role: widget.role, userId: int.parse(widget.userId)),
 
               const SizedBox(height: 24),
             ],

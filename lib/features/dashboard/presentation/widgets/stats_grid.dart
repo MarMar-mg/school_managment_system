@@ -1,4 +1,3 @@
-// features/dashboard/presentation/widgets/stats_grid.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/role.dart';
 import '../models/dashboard_models.dart';
@@ -8,11 +7,7 @@ class StatsGrid extends StatefulWidget {
   final Role role;
   final int userId;
 
-  const StatsGrid({
-    Key? key,
-    required this.role,
-    required this.userId,
-  }) : super(key: key);
+  const StatsGrid({super.key, required this.role, required this.userId});
 
   @override
   State<StatsGrid> createState() => _StatsGridState();
@@ -99,7 +94,11 @@ class StatCardWidget extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: stat.color.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+          BoxShadow(
+            color: stat.color.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
         ],
       ),
       child: Column(
@@ -121,7 +120,11 @@ class StatCardWidget extends StatelessWidget {
                 fit: BoxFit.scaleDown,
                 child: Text(
                   stat.value,
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
               ),
@@ -131,7 +134,11 @@ class StatCardWidget extends StatelessWidget {
             children: [
               Text(
                 stat.label,
-                style: const TextStyle(fontSize: 14, color: Colors.white, fontWeight: FontWeight.w500),
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
                 textDirection: TextDirection.rtl,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,
@@ -139,7 +146,10 @@ class StatCardWidget extends StatelessWidget {
               const Spacer(),
               Text(
                 stat.subtitle,
-                style: TextStyle(fontSize: 11, color: Colors.white.withOpacity(0.8)),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.white.withOpacity(0.8),
+                ),
                 textDirection: TextDirection.rtl,
                 overflow: TextOverflow.ellipsis,
                 maxLines: 1,

@@ -83,9 +83,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: DashboardAppBar(
-        role: widget.role, userId: widget.userIdi,
-      ),
+      appBar: DashboardAppBar(role: widget.role, userId: widget.userIdi),
       body: Center(child: target[_selectedIndex]),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

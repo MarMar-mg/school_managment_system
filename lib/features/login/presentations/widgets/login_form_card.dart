@@ -16,7 +16,7 @@ class LoginFormCard extends StatefulWidget {
   final VoidCallback onLogin;
 
   const LoginFormCard({
-    Key? key,
+    super.key,
     required this.role,
     required this.icon,
     required this.title,
@@ -26,7 +26,7 @@ class LoginFormCard extends StatefulWidget {
     required this.rememberMe,
     required this.onRememberMeChanged,
     required this.onLogin,
-  }) : super(key: key);
+  });
 
   @override
   State<LoginFormCard> createState() => _LoginFormCardState();
@@ -78,11 +78,14 @@ class _LoginFormCardState extends State<LoginFormCard> {
             obscureText: _obscurePassword,
             suffixIcon: IconButton(
               icon: Icon(
-                _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                _obscurePassword
+                    ? Icons.visibility_outlined
+                    : Icons.visibility_off_outlined,
                 color: AppColor.lightGray,
                 size: 20,
               ),
-              onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+              onPressed: () =>
+                  setState(() => _obscurePassword = !_obscurePassword),
             ),
           ),
 
@@ -99,10 +102,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
           const SizedBox(height: 20),
 
           // Demo Info Card
-          DemoInfoCard(
-            email: 'student@school.edu',
-            password: 'demo123',
-          ),
+          DemoInfoCard(email: 'student@school.edu', password: 'demo123'),
         ],
       ),
     );
@@ -123,11 +123,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
             ),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(
-            widget.icon,
-            color: Colors.white,
-            size: 28,
-          ),
+          child: Icon(widget.icon, color: Colors.white, size: 28),
         ),
         const SizedBox(width: 16),
         Expanded(
@@ -136,10 +132,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
             children: [
               const Text(
                 'ورود به عنوان',
-                style: TextStyle(
-                  fontSize: 13,
-                  color: AppColor.lightGray,
-                ),
+                style: TextStyle(fontSize: 13, color: AppColor.lightGray),
                 textDirection: TextDirection.rtl,
               ),
               const SizedBox(height: 4),
@@ -185,10 +178,7 @@ class _LoginFormCardState extends State<LoginFormCard> {
             const SizedBox(width: 8),
             const Text(
               'مرا به خاطر بسپار',
-              style: TextStyle(
-                fontSize: 13,
-                color: AppColor.darkText,
-              ),
+              style: TextStyle(fontSize: 13, color: AppColor.darkText),
               textDirection: TextDirection.rtl,
             ),
           ],

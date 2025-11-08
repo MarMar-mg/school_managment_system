@@ -1,4 +1,3 @@
-// features/dashboard/presentation/widgets/progress_list.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
@@ -9,11 +8,7 @@ class ProgressList extends StatefulWidget {
   final Role role;
   final int userId;
 
-  const ProgressList({
-    Key? key,
-    required this.role,
-    required this.userId,
-  }) : super(key: key);
+  const ProgressList({super.key, required this.role, required this.userId});
 
   @override
   State<ProgressList> createState() => _ProgressListState();
@@ -56,10 +51,7 @@ class _ProgressListState extends State<ProgressList> {
 class ProgressCard extends StatelessWidget {
   final ProgressItem item;
 
-  const ProgressCard({
-    Key? key,
-    required this.item,
-  }) : super(key: key);
+  const ProgressCard({Key? key, required this.item}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {

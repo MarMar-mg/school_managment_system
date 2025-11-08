@@ -1,10 +1,9 @@
-// features/dashboard/presentation/widgets/events_list.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
 
 class EventsList extends StatefulWidget {
-  const EventsList({Key? key}) : super(key: key);
+  const EventsList({super.key});
 
   @override
   State<EventsList> createState() => _EventsListState();
@@ -110,7 +109,10 @@ class _EventsListState extends State<EventsList> {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: Text(
                 _showAll ? 'نمایش کمتر' : ' نمایش همه ${_allEvents.length}',
@@ -137,7 +139,11 @@ class _EventsListState extends State<EventsList> {
             const SizedBox(height: 12),
             const Text(
               'خطا در بارگذاری رویدادها',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColor.darkText),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColor.darkText,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -200,7 +206,11 @@ class EventCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -212,7 +222,11 @@ class EventCard extends StatelessWidget {
               color: Colors.orange.withOpacity(0.1),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: const Icon(Icons.event_rounded, color: Colors.orange, size: 24),
+            child: const Icon(
+              Icons.event_rounded,
+              color: Colors.orange,
+              size: 24,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -221,13 +235,20 @@ class EventCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColor.darkText),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.darkText,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'شناسه رویداد: $eventId',
-                  style: const TextStyle(fontSize: 13, color: AppColor.lightGray),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColor.lightGray,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
               ],
@@ -236,10 +257,17 @@ class EventCard extends StatelessWidget {
           const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(color: AppColor.backgroundColor, borderRadius: BorderRadius.circular(8)),
+            decoration: BoxDecoration(
+              color: AppColor.backgroundColor,
+              borderRadius: BorderRadius.circular(8),
+            ),
             child: Text(
               date,
-              style: const TextStyle(fontSize: 11, color: AppColor.darkText, fontWeight: FontWeight.w500),
+              style: const TextStyle(
+                fontSize: 11,
+                color: AppColor.darkText,
+                fontWeight: FontWeight.w500,
+              ),
               textDirection: TextDirection.rtl,
             ),
           ),

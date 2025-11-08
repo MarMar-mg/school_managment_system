@@ -4,10 +4,7 @@ import '../../../../../applications/colors.dart';
 class CourseCardWidget extends StatelessWidget {
   final Map<String, dynamic> course;
 
-  const CourseCardWidget({
-    Key? key,
-    required this.course,
-  }) : super(key: key);
+  const CourseCardWidget({super.key, required this.course});
 
   @override
   Widget build(BuildContext context) {
@@ -62,9 +59,7 @@ class CourseCardWidget extends StatelessWidget {
           const SizedBox(width: 16),
 
           // Course Info
-          Expanded(
-            child: _buildCourseInfo(),
-          ),
+          Expanded(child: _buildCourseInfo()),
         ],
       ),
     );
@@ -78,11 +73,7 @@ class CourseCardWidget extends StatelessWidget {
         color: course['color'].withOpacity(0.1),
         borderRadius: BorderRadius.circular(14),
       ),
-      child: Icon(
-        course['icon'],
-        color: course['color'],
-        size: 28,
-      ),
+      child: Icon(course['icon'], color: course['color'], size: 28),
     );
   }
 
@@ -114,10 +105,7 @@ class CourseCardWidget extends StatelessWidget {
         // Course Code
         Text(
           course['code'],
-          style: const TextStyle(
-            fontSize: 13,
-            color: AppColor.lightGray,
-          ),
+          style: const TextStyle(fontSize: 13, color: AppColor.lightGray),
         ),
       ],
     );
@@ -125,10 +113,7 @@ class CourseCardWidget extends StatelessWidget {
 
   Widget _buildGradeBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 4,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: course['color'].withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -168,7 +153,7 @@ class CourseCardWidget extends StatelessWidget {
               Expanded(
                 child: _buildDetailItem(
                   Icons.person_outline,
-                  course['teacher']?? '',
+                  course['teacher'] ?? '',
                 ),
               ),
               Expanded(
@@ -183,10 +168,7 @@ class CourseCardWidget extends StatelessWidget {
           const SizedBox(height: 12),
 
           // Time
-          _buildDetailItem(
-            Icons.schedule_outlined,
-            course['time'],
-          ),
+          _buildDetailItem(Icons.schedule_outlined, course['time']),
 
           const SizedBox(height: 16),
 
@@ -200,19 +182,12 @@ class CourseCardWidget extends StatelessWidget {
   Widget _buildDetailItem(IconData icon, String text) {
     return Row(
       children: [
-        Icon(
-          icon,
-          size: 18,
-          color: AppColor.lightGray,
-        ),
+        Icon(icon, size: 18, color: AppColor.lightGray),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(
-              fontSize: 13,
-              color: AppColor.darkText,
-            ),
+            style: const TextStyle(fontSize: 13, color: AppColor.darkText),
             textDirection: TextDirection.rtl,
             overflow: TextOverflow.ellipsis,
           ),

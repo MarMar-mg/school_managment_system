@@ -1,10 +1,9 @@
-// features/dashboard/presentation/widgets/news_list.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
 
 class NewsList extends StatefulWidget {
-  const NewsList({Key? key}) : super(key: key);
+  const NewsList({super.key});
 
   @override
   State<NewsList> createState() => _NewsListState();
@@ -107,12 +106,21 @@ class _NewsListState extends State<NewsList> {
               onPressed: _toggleShowAll,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.purple,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
               ),
               child: Text(
                 _showAll ? 'نمایش کمتر' : 'نمایش همه ${_allNews.length}',
-                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Colors.white),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -131,7 +139,11 @@ class _NewsListState extends State<NewsList> {
             const SizedBox(height: 12),
             const Text(
               'خطا در بارگذاری اخبار',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColor.darkText),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColor.darkText,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
@@ -225,7 +237,11 @@ class NewsCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -234,7 +250,10 @@ class NewsCard extends StatelessWidget {
           Container(
             width: 48,
             height: 48,
-            decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 12),
@@ -244,13 +263,20 @@ class NewsCard extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColor.darkText),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.darkText,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
-                  style: const TextStyle(fontSize: 13, color: AppColor.lightGray),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColor.lightGray,
+                  ),
                   textDirection: TextDirection.rtl,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
@@ -277,10 +303,17 @@ class NewsCard extends StatelessWidget {
               // ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
                 child: Text(
                   endDate,
-                  style: TextStyle(fontSize: 11, color: color, fontWeight: FontWeight.w600),
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: color,
+                    fontWeight: FontWeight.w600,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
               ),

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../../../applications/colors.dart';
-import '../../../../../applications/our_app_bar.dart';
 import '../../../../../applications/role.dart';
 import '../../../../../core/services/api_service.dart';
 import '../widgets/stat_card_widget.dart';
@@ -13,12 +12,12 @@ class CoursesPage extends StatefulWidget {
   final int userIdi;
 
   const CoursesPage({
-    Key? key,
+    super.key,
     required this.role,
     required this.userName,
     required this.userId,
     required this.userIdi,
-  }) : super(key: key);
+  });
 
   @override
   State<CoursesPage> createState() => _CoursesPageState();
@@ -52,9 +51,6 @@ class _CoursesPageState extends State<CoursesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      // appBar: DashboardAppBar(
-      //   role: widget.role, userId: widget.userIdi,
-      // ),
       body: SafeArea(
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _coursesFuture,
@@ -86,17 +82,12 @@ class _CoursesPageState extends State<CoursesPage> {
   // ==================== UI States ====================
 
   Widget _buildLoadingState() {
-    return const Center(
-      child: CircularProgressIndicator(),
-    );
+    return const Center(child: CircularProgressIndicator());
   }
 
   Widget _buildErrorState(String error) {
     return Center(
-      child: Text(
-        'خطا: $error',
-        style: const TextStyle(color: Colors.red),
-      ),
+      child: Text('خطا: $error', style: const TextStyle(color: Colors.red)),
     );
   }
 

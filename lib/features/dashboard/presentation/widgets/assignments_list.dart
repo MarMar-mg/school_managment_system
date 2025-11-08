@@ -1,4 +1,3 @@
-// features/dashboard/presentation/widgets/assignments_list.dart
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../models/dashboard_models.dart';
@@ -7,7 +6,7 @@ import '../../../../core/services/api_service.dart';
 class AssignmentsList extends StatefulWidget {
   final int studentId;
 
-  const AssignmentsList({Key? key, required this.studentId}) : super(key: key);
+  const AssignmentsList({super.key, required this.studentId});
 
   @override
   State<AssignmentsList> createState() => _AssignmentsListState();
@@ -54,14 +53,16 @@ class _AssignmentsListState extends State<AssignmentsList> {
         }
 
         return Column(
-          children: assignments.map((item) => AssignmentCard(item: item)).toList(),
+          children: assignments
+              .map((item) => AssignmentCard(item: item))
+              .toList(),
         );
       },
     );
   }
 }
 
-// AssignmentCard بدون تغییر
+// AssignmentCard
 class AssignmentCard extends StatelessWidget {
   final AssignmentItem item;
 
@@ -76,7 +77,11 @@ class AssignmentCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8, offset: const Offset(0, 2)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
         ],
       ),
       child: Row(
@@ -97,13 +102,20 @@ class AssignmentCard extends StatelessWidget {
               children: [
                 Text(
                   item.title,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: AppColor.darkText),
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: AppColor.darkText,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   item.subject,
-                  style: const TextStyle(fontSize: 13, color: AppColor.lightGray),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColor.lightGray,
+                  ),
                   textDirection: TextDirection.rtl,
                 ),
               ],
@@ -118,7 +130,11 @@ class AssignmentCard extends StatelessWidget {
             ),
             child: Text(
               item.badge,
-              style: TextStyle(fontSize: 12, color: item.badgeColor, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                fontSize: 12,
+                color: item.badgeColor,
+                fontWeight: FontWeight.bold,
+              ),
               textDirection: TextDirection.rtl,
             ),
           ),

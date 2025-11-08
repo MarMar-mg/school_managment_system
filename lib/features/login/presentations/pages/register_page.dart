@@ -82,10 +82,7 @@ class RegisterPage extends StatelessWidget {
                   // Footer Text
                   const Text(
                     'دسترسی امن به پورتال آموزشی',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: AppColor.lightGray,
-                    ),
+                    style: TextStyle(fontSize: 12, color: AppColor.lightGray),
                     textAlign: TextAlign.center,
                     textDirection: TextDirection.rtl,
                   ),
@@ -101,12 +98,12 @@ class RegisterPage extends StatelessWidget {
   }
 
   void _navigateToLogin(
-      BuildContext context, {
-        required Role role,
-        required IconData icon,
-        required String title,
-        required String subtitle,
-      }) {
+    BuildContext context, {
+    required Role role,
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     Navigator.push(
       context,
       MaterialPageRoute(
