@@ -2,14 +2,14 @@ import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 
 class DemoInfoCard extends StatelessWidget {
-  final String email;
+  final String userName;
   final String password;
 
   const DemoInfoCard({
-    Key? key,
-    required this.email,
+    super.key,
+    required this.userName,
     required this.password,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +24,7 @@ class DemoInfoCard extends StatelessWidget {
         ),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
             'اطلاعات ورود آزمایشی:',
@@ -36,7 +36,7 @@ class DemoInfoCard extends StatelessWidget {
             textDirection: TextDirection.rtl,
           ),
           const SizedBox(height: 8),
-          _buildInfoRow('ایمیل:', email),
+          _buildInfoRow('نام کاربری:', userName),
           const SizedBox(height: 4),
           _buildInfoRow('رمز عبور:', password),
         ],

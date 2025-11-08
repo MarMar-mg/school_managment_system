@@ -128,7 +128,7 @@ class _LoginPageState extends State<LoginPage> {
                     onRememberMeChanged: (value) {
                       setState(() => _rememberMe = value ?? false);
                     },
-                    onLogin: _handleLogin,
+                    onLogin: _handleLogin, isLoading: _isLoading,
                   ),
 
                   const SizedBox(height: 32),
