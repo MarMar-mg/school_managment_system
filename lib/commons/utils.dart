@@ -1,8 +1,8 @@
 import 'dart:io';
 import 'dart:math';
 
-import 'package:school_managment_system/applications/colors.dart';
-import 'package:school_managment_system/commons/date_manager.dart';
+import 'package:school_management_system/applications/colors.dart';
+import 'package:school_management_system/commons/date_manager.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';

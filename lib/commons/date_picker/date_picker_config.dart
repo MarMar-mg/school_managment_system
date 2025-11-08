@@ -1,5 +1,5 @@
 import 'package:flutter/cupertino.dart';
-import 'package:school_managment_system/commons/date_picker/helper/day_date.dart';
+import 'package:school_management_system/commons/date_picker/helper/day_date.dart';
 
 class DatePickerConfig extends InheritedWidget {
   final Widget? Function(DayDate)? customWidget;

@@ -1,8 +1,7 @@
-// lib/core/services/api_service.dart
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:school_managment_system/applications/colors.dart';
+import 'package:school_management_system/applications/colors.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../features/dashboard/presentation/models/dashboard_models.dart';

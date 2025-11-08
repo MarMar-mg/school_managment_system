@@ -1,7 +1,7 @@
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:school_managment_system/features/login/presentations/pages/register_page.dart';
+import 'package:school_management_system/features/login/presentations/pages/register_page.dart';
 import '../../../../applications/bottom_nav_bar.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';

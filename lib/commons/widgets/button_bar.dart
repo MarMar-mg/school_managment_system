@@ -1,5 +1,5 @@
-import 'package:school_managment_system/applications/colors.dart';
-import 'package:school_managment_system/commons/text_style.dart';
+import 'package:school_management_system/applications/colors.dart';
+import 'package:school_management_system/commons/text_style.dart';
 import 'package:flutter/material.dart';
 
 class ButtonsBar extends StatefulWidget {

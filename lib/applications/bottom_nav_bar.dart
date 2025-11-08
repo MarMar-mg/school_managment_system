@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
-import 'package:school_managment_system/applications/role.dart';
+import 'package:school_management_system/applications/role.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/student/classes/presentations/pages/classes_page.dart';
 import 'our_app_bar.dart';

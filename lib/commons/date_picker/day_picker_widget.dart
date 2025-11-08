@@ -1,5 +1,5 @@
-import 'package:school_managment_system/commons/date_manager.dart';
-import 'package:school_managment_system/commons/date_picker/date_picker_config.dart';
+import 'package:school_management_system/commons/date_manager.dart';
+import 'package:school_management_system/commons/date_picker/date_picker_config.dart';
 
 import 'helper/day_date.dart';
 import 'widgets/year_widget.dart';

@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:school_managment_system/commons/utils.dart';
+import 'package:school_management_system/commons/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 

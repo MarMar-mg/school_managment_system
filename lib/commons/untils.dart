@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
-import 'package:school_managment_system/commons/date_manager.dart';
+import 'package:school_management_system/commons/date_manager.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:url_launcher/url_launcher.dart';
 

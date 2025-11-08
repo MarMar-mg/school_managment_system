@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:school_managment_system/commons/untils.dart';
+import 'package:school_management_system/commons/untils.dart';
 import '../../../../applications/bottom_nav_bar.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/our_app_bar.dart';
