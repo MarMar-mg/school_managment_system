@@ -1,6 +1,6 @@
 {
-    "name": "school_managment_system",
-    "short_name": "school_managment_system",
+    "name": "school_management_system",
+    "short_name": "school_management_system",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
