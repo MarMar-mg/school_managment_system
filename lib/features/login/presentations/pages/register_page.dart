@@ -1,10 +1,7 @@
-// features/login/presentations/pages/register_page.dart
 import 'package:flutter/material.dart';
-
 import '../../../../applications/app_logo.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
-import '../widgets/role_card_widget.dart';
 import 'login_page.dart';
 
 /// RegisterPage: Role selection screen with smooth staggered animations

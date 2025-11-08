@@ -1,17 +1,22 @@
 // widgets/login_form_card.dart
 import 'package:flutter/material.dart';
+
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../commons/widgets/custom_text_field.dart';
 import 'demo_info_card.dart';
 
+/// Premium login form with glassmorphism-style card, smooth entrance animations,
+/// password visibility toggle, loading state, and role-specific demo credentials.
 class LoginFormCard extends StatefulWidget {
   final Role role;
   final IconData icon;
   final String title;
   final List<Color> gradientColors;
+
   final TextEditingController emailController;
   final TextEditingController passwordController;
+
   final bool rememberMe;
   final ValueChanged<bool?> onRememberMeChanged;
   final VoidCallback onLogin;
@@ -38,45 +43,62 @@ class LoginFormCard extends StatefulWidget {
 class _LoginFormCardState extends State<LoginFormCard>
     with SingleTickerProviderStateMixin {
   bool _obscurePassword = true;
-  late AnimationController _controller;
 
-  // انیمیشن‌های امن
-  late Animation<double> _cardSlide;
-  late Animation<double> _cardFade;
-  late Animation<double> _contentFade;
+  // Animation controller for entrance sequence
+  late final AnimationController _controller;
+
+  // Card slides up from bottom
+  late final Animation<double> _cardSlide;
+
+  // Card fades in
+  late final Animation<double> _cardFade;
+
+  // Inner content fades in after card settles
+  late final Animation<double> _contentFade;
 
   @override
   void initState() {
     super.initState();
+
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
     );
 
-    // کارت از پایین میاد بالا
-    _cardSlide = Tween<double>(begin: 700, end: 0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack)),
+    // Card slides up from +700px with bounce
+    _cardSlide = Tween<double>(begin: 700.0, end: 0.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeOutBack),
+      ),
     );
 
-    _cardFade = Tween<double>(begin: 300.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeOut)),
+    // Card opacity
+    _cardFade = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.5, curve: Curves.easeOut),
+      ),
     );
 
-    // محتوا یکی‌یکی ظاهر میشه
+    // Form fields appear sequentially
     _contentFade = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.4, 1.0, curve: Curves.easeOut)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
+      ),
     );
 
+    // Start animation on mount
     _controller.forward();
   }
 
+  /// Re-animate content when loading finishes (to re-reveal fields after error/success)
   @override
-  void didUpdateWidget(LoginFormCard oldWidget) {
+  void didUpdateWidget(covariant LoginFormCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.isLoading != oldWidget.isLoading) {
-      if (!widget.isLoading) {
-        _controller.forward(from: 0.4); // دوباره محتوا رو نشون بده
-      }
+    if (widget.isLoading != oldWidget.isLoading && !widget.isLoading) {
+      _controller.forward(from: 0.4);
     }
   }
 
@@ -115,6 +137,8 @@ class _LoginFormCardState extends State<LoginFormCard>
                   children: [
                     _buildRoleHeader(),
                     const SizedBox(height: 28),
+
+                    // Username Field
                     _buildFieldWithDelay(
                       delay: 0.0,
                       child: CustomTextField(
@@ -126,7 +150,10 @@ class _LoginFormCardState extends State<LoginFormCard>
                         enabled: !widget.isLoading,
                       ),
                     ),
+
                     const SizedBox(height: 16),
+
+                    // Password Field
                     _buildFieldWithDelay(
                       delay: 0.1,
                       child: CustomTextField(
@@ -138,18 +165,34 @@ class _LoginFormCardState extends State<LoginFormCard>
                         enabled: !widget.isLoading,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            _obscurePassword
+                                ? Icons.visibility_outlined
+                                : Icons.visibility_off_outlined,
                             color: AppColor.lightGray,
                           ),
-                          onPressed: widget.isLoading ? null : () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: widget.isLoading
+                              ? null
+                              : () => setState(() => _obscurePassword = !_obscurePassword),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 16),
-                    _buildFieldWithDelay(delay: 0.2, child: _buildRememberMeRow()),
+
+                    // Remember Me + Forgot Password
+                    _buildFieldWithDelay(
+                      delay: 0.2,
+                      child: _buildRememberMeRow(),
+                    ),
+
                     const SizedBox(height: 24),
+
+                    // Login Button
                     _buildLoginButton(),
+
                     const SizedBox(height: 20),
+
+                    // Demo Credentials
                     _buildDemoCard(),
                   ],
                 ),
@@ -161,6 +204,7 @@ class _LoginFormCardState extends State<LoginFormCard>
     );
   }
 
+  /// Role header with gradient icon
   Widget _buildRoleHeader() {
     return Row(
       textDirection: TextDirection.rtl,
@@ -179,9 +223,19 @@ class _LoginFormCardState extends State<LoginFormCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('ورود به عنوان', style: TextStyle(fontSize: 13, color: AppColor.lightGray)),
+              Text(
+                'ورود به عنوان',
+                style: TextStyle(fontSize: 13, color: AppColor.lightGray),
+              ),
               const SizedBox(height: 4),
-              Text(widget.title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: AppColor.darkText)),
+              Text(
+                widget.title,
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColor.darkText,
+                ),
+              ),
             ],
           ),
         ),
@@ -189,23 +243,37 @@ class _LoginFormCardState extends State<LoginFormCard>
     );
   }
 
-  Widget _buildFieldWithDelay({required double delay, required Widget child}) {
+  /// Staggered fade + slide for form fields
+  Widget _buildFieldWithDelay({
+    required double delay,
+    required Widget child,
+  }) {
     final start = 0.4 + delay;
-    final end = (start + 0.3).clamp(0.0, 1.0); // همیشه <= 1.0
+    final end = (start + 0.3).clamp(0.0, 1.0);
 
     return FadeTransition(
       opacity: Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(parent: _controller, curve: Interval(start, end, curve: Curves.easeOut)),
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(start, end, curve: Curves.easeOut),
+        ),
       ),
       child: SlideTransition(
-        position: Tween<Offset>(begin: const Offset(0, 0.3), end: Offset.zero).animate(
-          CurvedAnimation(parent: _controller, curve: Interval(start, end, curve: Curves.easeOut)),
+        position: Tween<Offset>(
+          begin: const Offset(0, 0.3),
+          end: Offset.zero,
+        ).animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: Interval(start, end, curve: Curves.easeOut),
+          ),
         ),
         child: child,
       ),
     );
   }
 
+  /// Remember Me + Forgot Password row
   Widget _buildRememberMeRow() {
     return Row(
       textDirection: TextDirection.rtl,
@@ -221,20 +289,29 @@ class _LoginFormCardState extends State<LoginFormCard>
                 value: widget.rememberMe,
                 onChanged: widget.isLoading ? null : widget.onRememberMeChanged,
                 activeColor: widget.gradientColors.first,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(4)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
             ),
             const SizedBox(width: 8),
-            const Text('مرا به خاطر بسپار', style: TextStyle(fontSize: 13)),
+            const Text(
+              'مرا به خاطر بسپار',
+              style: TextStyle(fontSize: 13),
+            ),
           ],
         ),
         GestureDetector(
-          onTap: widget.isLoading ? null : () => debugPrint('Forgot password'),
+          onTap: widget.isLoading
+              ? null
+              : () => debugPrint('Forgot password tapped'),
           child: Text(
             'فراموشی رمز عبور؟',
             style: TextStyle(
               fontSize: 13,
-              color: widget.isLoading ? Colors.grey : widget.gradientColors.first,
+              color: widget.isLoading
+                  ? Colors.grey
+                  : widget.gradientColors.first,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -243,6 +320,7 @@ class _LoginFormCardState extends State<LoginFormCard>
     );
   }
 
+  /// Gradient login button with loading spinner
   Widget _buildLoginButton() {
     return Material(
       color: Colors.transparent,
@@ -250,6 +328,8 @@ class _LoginFormCardState extends State<LoginFormCard>
       child: InkWell(
         onTap: widget.isLoading ? null : widget.onLogin,
         borderRadius: BorderRadius.circular(14),
+        splashColor: Colors.white.withOpacity(0.2),
+        highlightColor: Colors.white.withOpacity(0.1),
         child: Ink(
           decoration: BoxDecoration(
             gradient: LinearGradient(
@@ -260,7 +340,10 @@ class _LoginFormCardState extends State<LoginFormCard>
             borderRadius: BorderRadius.circular(14),
             boxShadow: [
               BoxShadow(
-                color: (widget.isLoading ? Colors.grey : widget.gradientColors.first).withOpacity(0.4),
+                color: (widget.isLoading
+                    ? Colors.grey
+                    : widget.gradientColors.first)
+                    .withOpacity(0.4),
                 blurRadius: 16,
                 offset: const Offset(0, 8),
               ),
@@ -273,11 +356,18 @@ class _LoginFormCardState extends State<LoginFormCard>
                 ? const SizedBox(
               width: 24,
               height: 24,
-              child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+              child: CircularProgressIndicator(
+                color: Colors.white,
+                strokeWidth: 2.5,
+              ),
             )
                 : const Text(
               'ورود',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
         ),
@@ -285,11 +375,12 @@ class _LoginFormCardState extends State<LoginFormCard>
     );
   }
 
+  /// Role-specific demo credentials card
   Widget _buildDemoCard() {
-    return widget.role == Role.student
-        ? DemoInfoCard(userName: 'شماره دانش آموزی', password: '123')
-        : widget.role == Role.teacher
-        ? DemoInfoCard(userName: 'کد استادی', password: '123')
-        : DemoInfoCard(userName: 'کد معاونت', password: '123');
+    return switch (widget.role) {
+      Role.student => const DemoInfoCard(userName: 'شماره دانش آموزی', password: '123'),
+      Role.teacher => const DemoInfoCard(userName: 'کد استادی', password: '123'),
+      Role.manager => const DemoInfoCard(userName: 'کد معاونت', password: '123'),
+    };
   }
 }
