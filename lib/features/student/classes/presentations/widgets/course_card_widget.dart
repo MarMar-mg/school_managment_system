@@ -1,135 +1,229 @@
 import 'package:flutter/material.dart';
 import '../../../../../applications/colors.dart';
 
-class CourseCardWidget extends StatelessWidget {
+/// Premium animated course card with hover/press effects, ripple feedback,
+/// and smooth entrance animation when used in a list.
+class CourseCardWidget extends StatefulWidget {
   final Map<String, dynamic> course;
 
-  const CourseCardWidget({super.key, required this.course});
+  const CourseCardWidget({
+    super.key,
+    required this.course,
+  });
 
   @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        // Responsive sizing
-        final isSmall = constraints.maxWidth < 400;
-        final iconSize = isSmall ? 48.0 : 56.0;
-        final titleSize = isSmall ? 16.0 : 18.0;
-        final padding = isSmall ? 12.0 : 16.0;
+  State<CourseCardWidget> createState() => _CourseCardWidgetState();
+}
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 4),
-              ),
-            ],
-          ),
-          child: Column(
-            children: [
-              // Header Section
-              _buildHeader(),
+class _CourseCardWidgetState extends State<CourseCardWidget>
+    with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+  late AnimationController _controller;
+  late Animation<double> _elevationAnimation;
 
-              // Divider
-              _buildDivider(),
-
-              // Details Section
-              _buildDetails(),
-            ],
-          ),
-        );
-      },
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 200),
+    );
+    _elevationAnimation = Tween<double>(begin: 4.0, end: 16.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
     );
   }
 
-  // ==================== Header Section ====================
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
-  Widget _buildHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          // Course Icon
-          _buildCourseIcon(),
+  void _onTapDown(TapDownDetails details) {
+    setState(() => _isPressed = true);
+    _controller.forward();
+  }
 
-          const SizedBox(width: 16),
+  void _onTapUp(TapUpDetails details) {
+    setState(() => _isPressed = false);
+    _controller.reverse();
+  }
 
-          // Course Info
-          Expanded(child: _buildCourseInfo()),
-        ],
+  void _onTapCancel() {
+    setState(() => _isPressed = false);
+    _controller.reverse();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final color = widget.course['color'] as Color;
+
+    return AnimatedBuilder(
+      animation: _elevationAnimation,
+      builder: (context, child) {
+        return Transform.translate(
+          offset: Offset(0, _isPressed ? -4 : 0),
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.07),
+                  blurRadius: _elevationAnimation.value,
+                  offset: Offset(0, _elevationAnimation.value / 2),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: color.withOpacity(0.2),
+          highlightColor: color.withOpacity(0.1),
+          onTapDown: _onTapDown,
+          onTapUp: _onTapUp,
+          onTapCancel: _onTapCancel,
+          onTap: () {
+            // Navigate to course details
+            debugPrint('Course tapped: ${widget.course['name']}');
+          },
+          child: _buildCardContent(color),
+        ),
       ),
     );
   }
 
-  Widget _buildCourseIcon() {
+  Widget _buildCardContent(Color color) {
+    return Column(
+      children: [
+        // Header
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              _buildCourseIcon(color),
+              const SizedBox(width: 16),
+              Expanded(child: _buildCourseInfo(color)),
+            ],
+          ),
+        ),
+
+        _buildDivider(),
+
+        // Details
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildDetailItem(
+                      Icons.person_outline,
+                      widget.course['teacher'] ?? 'نامشخص',
+                      color,
+                    ),
+                  ),
+                  Expanded(
+                    child: _buildDetailItem(
+                      Icons.location_on_outlined,
+                      widget.course['location'],
+                      color,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              _buildDetailItem(Icons.schedule_outlined, widget.course['time'], color),
+              const SizedBox(height: 16),
+              _buildActionButton(color),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCourseIcon(Color color) {
     return Container(
       width: 56,
       height: 56,
       decoration: BoxDecoration(
-        color: course['color'].withOpacity(0.1),
+        color: color.withOpacity(0.12),
         borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
-      child: Icon(course['icon'], color: course['color'], size: 28),
+      child: Icon(
+        widget.course['icon'],
+        color: color,
+        size: 28,
+      ),
     );
   }
 
-  Widget _buildCourseInfo() {
+  Widget _buildCourseInfo(Color color) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Course Name and Grade
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
               child: Text(
-                course['name'],
+                widget.course['name'],
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColor.darkText,
                 ),
                 textDirection: TextDirection.rtl,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-            _buildGradeBadge(),
+            const SizedBox(width: 8),
+            _buildGradeBadge(color),
           ],
         ),
-
-        const SizedBox(height: 4),
-
-        // Course Code
+        const SizedBox(height: 6),
         Text(
-          course['code'],
-          style: const TextStyle(fontSize: 13, color: AppColor.lightGray),
+          widget.course['code'],
+          style: TextStyle(
+            fontSize: 13,
+            color: AppColor.lightGray,
+            fontWeight: FontWeight.w500,
+          ),
+          textDirection: TextDirection.rtl,
         ),
       ],
     );
   }
 
-  Widget _buildGradeBadge() {
+  Widget _buildGradeBadge(Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: course['color'].withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
+        gradient: LinearGradient(
+          colors: [color.withOpacity(0.15), color.withOpacity(0.08)],
+        ),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.3), width: 1),
       ),
       child: Text(
-        course['grade'],
+        widget.course['grade'],
         style: TextStyle(
           fontSize: 14,
           fontWeight: FontWeight.bold,
-          color: course['color'],
+          color: color,
+          letterSpacing: 0.5,
         ),
       ),
     );
   }
-
-  // ==================== Divider ====================
 
   Widget _buildDivider() {
     return Divider(
@@ -140,54 +234,19 @@ class CourseCardWidget extends StatelessWidget {
     );
   }
 
-  // ==================== Details Section ====================
-
-  Widget _buildDetails() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        children: [
-          // Teacher & Location Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.person_outline,
-                  course['teacher'] ?? '',
-                ),
-              ),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.location_on_outlined,
-                  course['location'],
-                ),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-
-          // Time
-          _buildDetailItem(Icons.schedule_outlined, course['time']),
-
-          const SizedBox(height: 16),
-
-          // Action Button
-          _buildActionButton(),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDetailItem(IconData icon, String text) {
+  Widget _buildDetailItem(IconData icon, String text, Color color) {
     return Row(
       children: [
-        Icon(icon, size: 18, color: AppColor.lightGray),
+        Icon(icon, size: 18, color: color.withOpacity(0.7)),
         const SizedBox(width: 8),
         Expanded(
           child: Text(
             text,
-            style: const TextStyle(fontSize: 13, color: AppColor.darkText),
+            style: TextStyle(
+              fontSize: 13,
+              color: AppColor.darkText.withOpacity(0.9),
+              fontWeight: FontWeight.w500,
+            ),
             textDirection: TextDirection.rtl,
             overflow: TextOverflow.ellipsis,
           ),
@@ -196,43 +255,69 @@ class CourseCardWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildActionButton() {
-    return InkWell(
-      onTap: () {
-        // Navigate to course details
-      },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: course['color'].withOpacity(0.3),
-            width: 1.5,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'مشاهده تمرین‌ها و امتحانات',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: course['color'],
-              ),
-              textDirection: TextDirection.rtl,
-            ),
-            const SizedBox(width: 8),
-            Icon(
-              Icons.arrow_back_ios_rounded,
-              size: 14,
-              color: course['color'],
-            ),
-          ],
-        ),
+  Widget _buildActionButton(Color color) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 14),
+      decoration: BoxDecoration(
+        border: Border.all(color: color.withOpacity(0.4), width: 2),
+        borderRadius: BorderRadius.circular(14),
+        color: color.withOpacity(0.05),
       ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text(
+            'مشاهده تمرین‌ها و امتحانات',
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: color,
+              letterSpacing: 0.3,
+            ),
+            textDirection: TextDirection.rtl,
+          ),
+          const SizedBox(width: 8),
+          Icon(
+            Icons.arrow_back_ios_rounded,
+            size: 15,
+            color: color,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// For use in animated lists (e.g., CoursesPage)
+class AnimatedCourseCard extends StatelessWidget {
+  final Map<String, dynamic> course;
+  final Animation<double> animation;
+
+  const AnimatedCourseCard({
+    super.key,
+    required this.course,
+    required this.animation,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: animation,
+      builder: (context, child) {
+        final value = animation.value;
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 80 * (1 - value)),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: child,
+            ),
+          ),
+        );
+      },
+      child: CourseCardWidget(course: course),
     );
   }
 }
