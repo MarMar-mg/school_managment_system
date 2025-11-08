@@ -56,26 +56,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userId,
     ),
-    Dashboard(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userId,
-    ),
-    Dashboard(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userId,
-    ),
-    Dashboard(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userId,
-    ),
-    Dashboard(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userId,
-    ),
   ];
   int _selectedIndex = 0;
 
@@ -108,16 +88,26 @@ class _BottomNavBarState extends State<BottomNavBar> {
               activeColor: Colors.purple,
               // activeColor: Colors.black,
               iconSize: 24,
-              padding: EdgeInsets.symmetric(horizontal: 14, vertical: 16),
+              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               duration: Duration(milliseconds: 200),
               tabBackgroundColor: Colors.purple.withOpacity(0.1),
               // color: Colors.black,
               tabs: [
                 GButton(icon: Icons.home_rounded, text: 'خانه'),
-                GButton(icon: Icons.bar_chart_rounded, text: 'آمار'),
-                GButton(icon: Icons.assignment_outlined, text: 'امتحانات'),
-                GButton(icon: Icons.assignment_outlined, text: 'تمربنات'),
-                GButton(icon: Icons.message_outlined, text: 'پیام‌ها'),
+                if (widget.role != Role.manager)
+                  GButton(icon: Icons.menu_book_sharp, text: 'کلاس ها'),
+                if (widget.role != Role.manager)
+                  GButton(icon: Icons.assignment_turned_in_outlined, text: 'تمربنات'),
+                if (widget.role != Role.manager)
+                  GButton(icon: Icons.edit_outlined, text: 'امتحانات'),
+                  GButton(icon: Icons.bar_chart_rounded, text: 'نمرات'),
+                // GButton(icon: Icons.message_outlined, text: 'پیام‌ها'),
+                if (widget.role == Role.manager)
+                  GButton(icon: Icons.person_add_alt_outlined, text: 'دانش آموزان'),
+                if (widget.role == Role.manager)
+                  GButton(icon: Icons.newspaper, text: 'اخبار'),
+                if (widget.role == Role.manager)
+                  GButton(icon: Icons.calendar_today_outlined, text: 'رویدادها'),
                 GButton(icon: Icons.person_outline_rounded, text: 'پروفایل'),
               ],
               selectedIndex: _selectedIndex,
