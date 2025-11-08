@@ -17,6 +17,9 @@ namespace SchoolPortalAPI.Controllers
             _context = context;
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 1. Get basic teacher dashboard info (ID, Name, Current Course)
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("dashboard/{teacherId}")]
         public async Task<IActionResult> GetDashboard(long teacherId)
         {
@@ -35,6 +38,9 @@ namespace SchoolPortalAPI.Controllers
             });
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 2. Get all students in teacher's class
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("students/{teacherId}")]
         public async Task<IActionResult> GetStudents(long teacherId)
         {
@@ -56,10 +62,12 @@ namespace SchoolPortalAPI.Controllers
             return Ok(students);
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 3. Get average score per course for this teacher
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("progress/{teacherId}")]
         public async Task<IActionResult> GetTeacherProgress(long teacherId)
         {
-            // مرحله ۱: پیدا کردن Teacherid از جدول Teachers
             var teacher = await _context.Teachers
                 .Where(t => t.Userid == teacherId)
                 .Select(t => t.Teacherid)
@@ -67,7 +75,6 @@ namespace SchoolPortalAPI.Controllers
 
             if (teacher == 0) return NotFound("معلم یافت نشد");
 
-            // مرحله ۲: پیدا کردن نمرات با Course.Teacherid
             var progress = await _context.Scores
                 .Where(s => s.Course != null && s.Course.Teacherid == teacher)
                 .Include(s => s.Course)
@@ -82,6 +89,9 @@ namespace SchoolPortalAPI.Controllers
             return Ok(progress);
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 4. Get all courses taught by teacher with details + average grade
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("courses/{userId}")]
         public async Task<IActionResult> GetTeacherCourses(long userId)
         {
@@ -104,7 +114,7 @@ namespace SchoolPortalAPI.Controllers
                 {
                     courseName = g.c.Name,
                     courseCode = g.c.Code ?? "",
-                    teacherName = teacher.Name,  // اضافه شد
+                    teacherName = teacher.Name,
                     location = g.c.Location ?? "نامشخص",
                     time = g.c.Time ?? "نامشخص",
                     averageGrade = g.scores.Any()
@@ -116,6 +126,9 @@ namespace SchoolPortalAPI.Controllers
             return Ok(courses);
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 5. Get overall average grade across all teacher's courses
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("average/{userId}")]
         public async Task<IActionResult> GetTeacherAverage(long userId)
         {
@@ -133,6 +146,13 @@ namespace SchoolPortalAPI.Controllers
             return Ok(new { average = Math.Round(average, 1) });
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 6. Get teacher stats for dashboard cards
+        //    - Last taught course
+        //    - Total courses
+        //    - Total students
+        //    - Overall average
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("stats/{userId}")]
         public async Task<IActionResult> GetTeacherStats(long userId)
         {
@@ -149,7 +169,10 @@ namespace SchoolPortalAPI.Controllers
                 .Select(c => c.Name)
                 .FirstOrDefaultAsync();
 
-            var totalCourses = await _context.Courses.Where(c => c.Teacherid == teacher.Teacherid).CountAsync();
+            var totalCourses = await _context.Courses
+                .Where(c => c.Teacherid == teacher.Teacherid)
+                .CountAsync();
+
             var totalStudents = await _context.Students
                 .Where(s => _context.Courses.Any(c => c.Classid == s.Classeid && c.Teacherid == teacher.Teacherid))
                 .CountAsync();
@@ -160,15 +183,18 @@ namespace SchoolPortalAPI.Controllers
 
             var stats = new[]
             {
-                new { label = "نام درس", value = lastCourseName, subtitle = "استاد", icon = "course", color = "blue" },
-                new { label = "تعداد دروس", value = totalCourses.ToString(), subtitle = "تدریس", icon = "school", color = "green" },
-                new { label = "تعداد دانش‌آموز", value = totalStudents.ToString(), subtitle = "کلاس‌ها", icon = "group", color = "orange" },
-                new { label = "میانگین نمرات", value = average.ToString("F1"), subtitle = "کلاس‌ها", icon = "grade", color = "purple" }
+                new { label = "آخرین درس",          value = lastCourseName ?? "ندارد", subtitle = "تدریس",     icon = "menu_book", color = "purple" },
+                new { label = "تعداد دروس",        value = totalCourses.ToString(),    subtitle = "کل",        icon = "school",    color = "green"  },
+                new { label = "تعداد دانش‌آموز",   value = totalStudents.ToString(),   subtitle = "کلاس‌ها",   icon = "group",     color = "orange" },
+                new { label = "میانگین نمرات",     value = average.ToString("F1"),     subtitle = "کلاس‌ها",   icon = "grade",     color = "blue"   }
             };
 
             return Ok(stats);
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // 7. Get teacher's full name for display (AppBar, Profile, etc.)
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("name/{userId}")]
         public async Task<IActionResult> GetTeacherName(long userId)
         {

@@ -16,7 +16,7 @@ namespace SchoolPortalAPI.Models
         public string Endtime { get; set; } = null!;
 
         public long? Courseid { get; set; }
-        public long? Classid { get; set; }  // مهم
+        public long? Classid { get; set; }
 
         [ForeignKey("Courseid")]
         public virtual Course? Course { get; set; }
