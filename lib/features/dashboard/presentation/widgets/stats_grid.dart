@@ -215,12 +215,12 @@ class StatCardWidget extends StatelessWidget {
   final double textOffsetY;
 
   const StatCardWidget({
-    Key? key,
+    super.key,
     required this.stat,
     this.iconOffsetX = 0,
     this.valueOffsetX = 0,
     this.textOffsetY = 0,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
