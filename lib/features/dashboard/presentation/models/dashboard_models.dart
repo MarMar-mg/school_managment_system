@@ -148,78 +148,78 @@ class ProgressItem {
 }
 
 // ────────────────────── DATA PROVIDER ──────────────────────
+//
+// class DashboardData {
+//   static List<StatCard> getStats() {
+//     return [
+//       StatCard(
+//         value: '۶',
+//         label: 'دروس',
+//         subtitle: 'ترم پاییز ۱۴۰۴',
+//         color: const Color(0xFF4A90E2),
+//         icon: Icons.book_rounded,
+//       ),
+//       StatCard(
+//         value: '۱۸.۵',
+//         label: 'معدل',
+//         subtitle: 'در ۸۰ واحد درسی',
+//         color: const Color(0xFF9B59B6),
+//         icon: Icons.school_rounded,
+//       ),
+//       StatCard(
+//         value: '۱۵',
+//         label: 'واحد',
+//         subtitle: 'ترم جاری',
+//         color: const Color(0xFF50C878),
+//         icon: Icons.schedule_rounded,
+//       ),
+//       StatCard(
+//         value: '۴',
+//         label: 'تکالیف',
+//         subtitle: '۲ تایم هفتگی',
+//         color: const Color(0xFFFF6B35),
+//         icon: Icons.alarm_rounded,
+//       ),
+//     ];
+//   }
+//
+//   static List<NewsItem> getNews() {
+//     return [
+//       NewsItem(
+//         title: 'آغاز ثبت‌نام ترم بهار',
+//         subtitle: '۱۴۰۴ آبان ۲۰',
+//         date: 'امروز',
+//         icon: Icons.campaign_rounded,
+//         iconColor: AppColor.purple,
+//       ),
+//       NewsItem(
+//         title: 'مهلت انتخاب واحد تا ۲۵ آبان',
+//         subtitle: '۱۴۰۴ آبان ۱۸',
+//         date: 'دیروز',
+//         icon: Icons.event_note_rounded,
+//         iconColor: Colors.blue,
+//       ),
+//     ];
+//   }
 
-class DashboardData {
-  static List<StatCard> getStats() {
-    return [
-      StatCard(
-        value: '۶',
-        label: 'دروس',
-        subtitle: 'ترم پاییز ۱۴۰۴',
-        color: const Color(0xFF4A90E2),
-        icon: Icons.book_rounded,
-      ),
-      StatCard(
-        value: '۱۸.۵',
-        label: 'معدل',
-        subtitle: 'در ۸۰ واحد درسی',
-        color: const Color(0xFF9B59B6),
-        icon: Icons.school_rounded,
-      ),
-      StatCard(
-        value: '۱۵',
-        label: 'واحد',
-        subtitle: 'ترم جاری',
-        color: const Color(0xFF50C878),
-        icon: Icons.schedule_rounded,
-      ),
-      StatCard(
-        value: '۴',
-        label: 'تکالیف',
-        subtitle: '۲ تایم هفتگی',
-        color: const Color(0xFFFF6B35),
-        icon: Icons.alarm_rounded,
-      ),
-    ];
-  }
-
-  static List<NewsItem> getNews() {
-    return [
-      NewsItem(
-        title: 'آغاز ثبت‌نام ترم بهار',
-        subtitle: '۱۴۰۴ آبان ۲۰',
-        date: 'امروز',
-        icon: Icons.campaign_rounded,
-        iconColor: AppColor.purple,
-      ),
-      NewsItem(
-        title: 'مهلت انتخاب واحد تا ۲۵ آبان',
-        subtitle: '۱۴۰۴ آبان ۱۸',
-        date: 'دیروز',
-        icon: Icons.event_note_rounded,
-        iconColor: Colors.blue,
-      ),
-    ];
-  }
-
-  static List<EventItem> getEvents() {
-    return [
-      EventItem(
-        title: 'امتحانات میان‌ترم',
-        subtitle: 'از ۱۴ آذر آغاز می‌شود',
-        date: '۱۴۰۴ آذر ۱۴',
-        icon: Icons.assignment_outlined,
-        iconColor: Colors.red,
-      ),
-      EventItem(
-        title: 'تعطیلات نیمسال',
-        subtitle: '۱ تا ۱۴ آذر',
-        date: '۱۴۰۴ آذر ۱',
-        icon: Icons.event_rounded,
-        iconColor: Colors.orange,
-      ),
-    ];
-  }
+  // static List<EventItem> getEvents() {
+  //   return [
+  //     EventItem(
+  //       title: 'امتحانات میان‌ترم',
+  //       subtitle: 'از ۱۴ آذر آغاز می‌شود',
+  //       date: '۱۴۰۴ آذر ۱۴',
+  //       icon: Icons.assignment_outlined,
+  //       iconColor: Colors.red,
+  //     ),
+  //     EventItem(
+  //       title: 'تعطیلات نیمسال',
+  //       subtitle: '۱ تا ۱۴ آذر',
+  //       date: '۱۴۰۴ آذر ۱',
+  //       icon: Icons.event_rounded,
+  //       iconColor: Colors.orange,
+  //     ),
+  //   ];
+  // }
 
   // static List<AssignmentItem> getAssignments() {
   //   return [
@@ -247,32 +247,32 @@ class DashboardData {
   //   ];
   // }
 
-  static List<ProgressItem> getProgress() {
-    return [
-      ProgressItem(
-        subject: 'ریاضی ۳',
-        grade: '-۸',
-        percentage: 88,
-        color: Colors.red,
-      ),
-      ProgressItem(
-        subject: 'شیمی ۱',
-        grade: 'A',
-        percentage: 92,
-        color: Colors.blue,
-      ),
-      ProgressItem(
-        subject: 'تاریخ جهان',
-        grade: '+۸',
-        percentage: 85,
-        color: Colors.green,
-      ),
-      ProgressItem(
-        subject: 'علوم کامپیوتر',
-        grade: 'A',
-        percentage: 94,
-        color: Colors.blue,
-      ),
-    ];
-  }
-}
+//   static List<ProgressItem> getProgress() {
+//     return [
+//       ProgressItem(
+//         subject: 'ریاضی ۳',
+//         grade: '-۸',
+//         percentage: 88,
+//         color: Colors.red,
+//       ),
+//       ProgressItem(
+//         subject: 'شیمی ۱',
+//         grade: 'A',
+//         percentage: 92,
+//         color: Colors.blue,
+//       ),
+//       ProgressItem(
+//         subject: 'تاریخ جهان',
+//         grade: '+۸',
+//         percentage: 85,
+//         color: Colors.green,
+//       ),
+//       ProgressItem(
+//         subject: 'علوم کامپیوتر',
+//         grade: 'A',
+//         percentage: 94,
+//         color: Colors.blue,
+//       ),
+//     ];
+//   }
+// }

@@ -17,6 +17,7 @@ namespace SchoolPortalAPI.Models
 
         public long? Courseid { get; set; }
         public long? Classid { get; set; }
+        public long? Score { get; set; }
 
         [ForeignKey("Courseid")]
         public virtual Course? Course { get; set; }

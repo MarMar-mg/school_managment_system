@@ -12,6 +12,7 @@ namespace SchoolPortalAPI.Models
         public string Title { get; set; } = null!;
         public string? Description { get; set; }
         public string Enddate { get; set; } = null!;
+        public string Startdate { get; set; } = null!;
         public string Starttime { get; set; } = null!;
         public string Endtime { get; set; } = null!;
 

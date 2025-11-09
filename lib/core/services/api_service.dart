@@ -6,6 +6,7 @@ import 'package:shamsi_date/shamsi_date.dart';
 
 import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
+import '../../features/student/assignments/models/assignment_model.dart.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -144,37 +145,37 @@ class ApiService {
     }
   }
 
-  static Future<List<dynamic>> getStudentExercises(int studentId) async {
-    final url = Uri.parse('$baseUrl/student/exercises/$studentId');
+  // static Future<List<dynamic>> getStudentExercises(int studentId) async {
+  //   final url = Uri.parse('$baseUrl/student/assignment/$studentId');
+  //
+  //   try {
+  //     final response = await http.get(url, headers: _headers).timeout(_timeout);
+  //
+  //     if (response.statusCode == 200) {
+  //       return json.decode(response.body) as List<dynamic>;
+  //     } else {
+  //       throw Exception('خطا در دریافت تمرین‌ها: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('خطا: $e');
+  //   }
+  // }
 
-    try {
-      final response = await http.get(url, headers: _headers).timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as List<dynamic>;
-      } else {
-        throw Exception('خطا در دریافت تمرین‌ها: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
-  static Future<List<dynamic>> getStudentExams(int studentId) async {
-    final url = Uri.parse('$baseUrl/student/exams/$studentId');
-
-    try {
-      final response = await http.get(url, headers: _headers).timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as List<dynamic>;
-      } else {
-        throw Exception('خطا در دریافت امتحانات: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
+  // static Future<List<dynamic>> getStudentExams(int studentId) async {
+  //   final url = Uri.parse('$baseUrl/student/exams/$studentId');
+  //
+  //   try {
+  //     final response = await http.get(url, headers: _headers).timeout(_timeout);
+  //
+  //     if (response.statusCode == 200) {
+  //       return json.decode(response.body) as List<dynamic>;
+  //     } else {
+  //       throw Exception('خطا در دریافت امتحانات: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     throw Exception('خطا: $e');
+  //   }
+  // }
 
   // ==================== TEACHER ====================
 
@@ -312,7 +313,6 @@ class ApiService {
     }
   }
 
-  // core/services/api_service.dart
   static Future<List<StatCard>> getStats(Role role, int userId) async {
     final List<StatCard> stats = [];
 
@@ -344,7 +344,59 @@ class ApiService {
     return stats;
   }
 
-  // core/services/api_service.dart
+  // ==================== ASSIGNMENTS (جدید و کامل) ====================
+  static Future<Map<String, List<AssignmentItemm>>> getAllAssignments(
+    int studentId,
+  ) async {
+    final url = Uri.parse('$baseUrl/student/exercises/$studentId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> json = jsonDecode(response.body);
+
+        final pending = (json['pending'] as List<dynamic>? ?? [])
+            .map((e) => AssignmentItemm.fromJson(e as Map<String, dynamic>))
+            .toList();
+
+        final submittedNoGrade =
+            (json['submittedNoGrade'] as List<dynamic>? ?? [])
+                .map(
+                  (e) => AssignmentItemm.fromJson({
+                    ...e as Map<String, dynamic>,
+                    'status': 'submitted',
+                  }),
+                )
+                .toList();
+
+        final graded = (json['graded'] as List<dynamic>? ?? [])
+            .map(
+              (e) => AssignmentItemm.fromJson({
+                ...e as Map<String, dynamic>,
+                'status': 'graded',
+              }),
+            )
+            .toList();
+
+        return {
+          'pending': pending,
+          'submitted': submittedNoGrade,
+          'graded': graded,
+        };
+      } else {
+        throw Exception('خطا: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching assignments: $e');
+      return {
+        'pending': <AssignmentItemm>[],
+        'submitted': <AssignmentItemm>[],
+        'graded': <AssignmentItemm>[],
+      };
+    }
+  }
+
   static Future<String> getUserDisplayName(Role role, int userId) async {
     try {
       final endpoint = switch (role) {
@@ -364,7 +416,6 @@ class ApiService {
     return 'کاربر';
   }
 
-  // core/services/api_service.dart
   static Future<double> getAverageGrade(Role role, int userId) async {
     try {
       final endpoint = role == Role.student
@@ -399,7 +450,7 @@ class ApiService {
       // تمرین‌ها
       final exerciseResponse = await http.get(
         Uri.parse(
-          '$baseUrl/student/exercises/$studentId?start=$startDate&end=$endDate',
+          '$baseUrl/student/assignment/$studentId?start=$startDate&end=$endDate',
         ),
       );
 

@@ -21,6 +21,7 @@ class AppColor {
   static const Color shimmerColor = Color(0xffF0F0F0);
 
   static const Color gray = Color(0xff374151);
+  static const Color primary = Color(0xFF6C5CE7);
   static const Color lightGray = Color(0xff6B7280);
   static const Color textGray = Color(0xff4B5563);
   static const Color borderGray = Color(0xffE5E7EB);

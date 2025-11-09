@@ -1,4 +1,3 @@
-// Controllers/StudentController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
@@ -85,11 +84,12 @@ namespace SchoolPortalAPI.Controllers
             return Ok(progress);
         }
 
+
         // ──────────────────────────────────────────────────────────────
         // Get exercises for student's class with optional date filtering
         // ──────────────────────────────────────────────────────────────
-        [HttpGet("exercises/{studentId}")]
-        public async Task<IActionResult> GetExercises(
+        [HttpGet("assignment/{studentId}")]
+        public async Task<IActionResult> GetExercises1(
             long studentId,
             [FromQuery] string? start,
             [FromQuery] string? end)
@@ -124,6 +124,136 @@ namespace SchoolPortalAPI.Controllers
             return Ok(result);
         }
 
+
+        // ──────────────────────────────────────────────────────────────
+        // Get exercises for student's class
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exercises/{studentId}")]
+        public async Task<IActionResult> GetExercises(long studentId)
+        {
+            var student = await _context.Students
+                .FirstOrDefaultAsync(s => s.UserID == studentId);
+
+            if (student == null)
+                return NotFound("دانش‌آموز یافت نشد");
+
+            var todayShamsi = DateTime.Now.ToShamsi().Replace("-", ""); // 14031118
+
+            // همه تمرین‌های کلاس دانش‌آموز
+            var exercises = await _context.Exercises
+                .Where(e => e.Classid == student.Classeid)
+                .Select(e => new
+                {
+                    e.Exerciseid,
+                    e.Title,
+                    e.Description,
+                    e.Enddate,
+                    e.Score,
+                    e.Courseid
+                })
+                .ToListAsync();
+
+            var pending = new List<object>();      // در انتظار پاسخ
+            var submittedNoGrade = new List<object>(); // مهلت تمام + ارسال شده + بدون نمره
+            var graded = new List<object>();       // نمره داده شده
+
+            var studentidd = await _context.Students
+                            .Where(e => e.UserID == studentId)
+                            .Select(e => e.Studentid)
+                            .FirstOrDefaultAsync();
+
+            foreach (var e in exercises)
+            {
+                string? dueDateStr = e.Enddate?.Trim();
+                bool isPastDue = false;
+                bool isUrgent = false;
+
+                if (!string.IsNullOrEmpty(dueDateStr) && dueDateStr.Length == 10)
+                {
+                    try
+                    {
+                        string todayStr = DateTime.Today.ToString("yyyy-MM-dd",
+                            new System.Globalization.CultureInfo("fa-IR"));
+
+                        // مقایسه مستقیم رشته‌ای (چون فرمت یکسانه)
+                        isPastDue = string.Compare(dueDateStr, todayStr) < 0;
+
+                        // فردا = امروز + 1 روز
+                        string tomorrowStr = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd",
+                            new System.Globalization.CultureInfo("fa-IR"));
+
+                        bool isTodayOrTomorrow = dueDateStr == todayStr || dueDateStr == tomorrowStr;
+
+                        isUrgent = !isPastDue && isTodayOrTomorrow;
+                    }
+                    catch
+                    {
+                        isPastDue = false;
+                        isUrgent = false;
+                    }
+                }
+
+                // پاسخ دانش‌آموز
+                var answer = await _context.ExerciseStuTeaches
+                    .FirstOrDefaultAsync(est => est.Exerciseid == e.Exerciseid && studentidd == studentId);
+
+                bool hasSubmitted = answer != null;
+                bool hasGrade = answer?.Score != null;
+
+                // نام درس
+                string courseName = "نامشخص";
+                if (e.Courseid.HasValue)
+                {
+                    courseName = await _context.Courses
+                        .Where(c => c.Courseid == e.Courseid.Value)
+                        .Select(c => c.Name)
+                        .FirstOrDefaultAsync() ?? "نامشخص";
+                }
+
+                var item = new
+                {
+                    id = e.Exerciseid,
+                    title = e.Title ?? "بدون عنوان",
+                    courseName,
+                    description = e.Description ?? "",
+                    dueDate = dueDateStr ?? "نامشخص",
+                    totalScore = e.Score?.ToString() ?? "نامشخص",
+                    isUrgent,
+                    status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : "pending"),
+                    finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
+                    answerImage = answer?.Answerimage,
+                    filename = answer?.Filename
+                };
+
+                // دسته‌بندی هوشمند
+                if (hasGrade)
+                {
+                    graded.Add(item);
+                }
+                else if (hasSubmitted && isPastDue)
+                {
+                    submittedNoGrade.Add(item);
+                }
+                else if (!hasSubmitted && !isPastDue)
+                {
+                    pending.Add(item);
+                }
+                else
+                {
+                    // مهلت تمام شده + نفرستاده → همون pending ولی با علامت هشدار
+                    pending.Add(item);
+                }
+            }
+
+            return Ok(new
+            {
+                pending,         // در انتظار پاسخ (هنوز وقت داره)
+                submittedNoGrade, // مهلت تمام + ارسال کرده + بدون نمره
+                graded           // نمره داده شده
+            });
+        }
+
+
         // ──────────────────────────────────────────────────────────────
         // Get exams for student's class with optional date filtering
         // ──────────────────────────────────────────────────────────────
@@ -138,15 +268,16 @@ namespace SchoolPortalAPI.Controllers
                 .Select(s => new { s.Classeid })
                 .FirstOrDefaultAsync();
 
-            if (student == null) return NotFound("دانش‌آموز یافت نشد");
+            if (student == null)
+                return NotFound("دانش‌آموز یافت نشد");
 
             var query = _context.Exams
                 .Where(e => e.Classid == student.Classeid);
 
             if (!string.IsNullOrEmpty(start))
-                query = query.Where(e => string.Compare(e.Enddate, start) >= 0);
+                query = query.Where(e => string.Compare(e.Enddate ?? "", start) >= 0);
             if (!string.IsNullOrEmpty(end))
-                query = query.Where(e => string.Compare(e.Enddate, end) <= 0);
+                query = query.Where(e => string.Compare(e.Enddate ?? "", end) <= 0);
 
             var result = await query
                 .Include(e => e.Course)
@@ -247,16 +378,14 @@ namespace SchoolPortalAPI.Controllers
         {
             var student = await _context.Students
                 .Where(s => s.UserID == userId)
-                .Select(s => new { s.Studentid, s.Name })
+                .Select(s => new { s.Studentid, s.Name, s.Classeid })
                 .FirstOrDefaultAsync();
 
-            if (student == null) return NotFound();
+            if (student == null)
+                return NotFound("دانش‌آموز یافت نشد");
 
             var totalCourses = await _context.Courses
-                .Where(c => c.Classid == _context.Students
-                    .Where(s => s.UserID == userId)
-                    .Select(s => s.Classeid)
-                    .FirstOrDefault())
+                .Where(c => c.Classid == student.Classeid)
                 .CountAsync();
 
             var average = await _context.Scores
@@ -269,16 +398,25 @@ namespace SchoolPortalAPI.Controllers
                 .Select(s => s.Score_month)
                 .FirstOrDefaultAsync();
 
+            var todayShamsi = DateTime.Now.ToShamsi(); // 1403-09-01
+
+            var upcomingExamsCount = await _context.Exams
+                .Where(e => e.Classid == student.Classeid &&
+                            e.Enddate != null &&
+                            string.Compare(e.Enddate, todayShamsi) >= 0)
+                .CountAsync();
+
             var stats = new[]
             {
                 new { label = "آخرین نمره",       value = lastScoreMonth ?? "ندارد", subtitle = "ماه",       icon = "event",     color = "purple" },
                 new { label = "تعداد دروس",       value = totalCourses.ToString(),   subtitle = "ثبت‌نام شده", icon = "school",    color = "green"  },
                 new { label = "میانگین نمرات",    value = average.ToString("F1"),    subtitle = "از ۲۰",      icon = "grade",     color = "blue"   },
-                new { label = "تمرین‌های تحویل‌شده", value = "۱۲",                   subtitle = "از ۱۵",      icon = "assignment", color = "orange" }
+                new { label = "آزمون‌های آینده",   value = upcomingExamsCount.ToString(), subtitle = "در پیش رو", icon = "upcoming",  color = "orange" }
             };
 
             return Ok(stats);
         }
+
 
         // ──────────────────────────────────────────────────────────────
         // Get student's full name for display (AppBar, Profile, etc.)
@@ -295,3 +433,14 @@ namespace SchoolPortalAPI.Controllers
         }
     }
 }
+
+public static class DateTimeExtensions
+{
+    public static string ToShamsi(this DateTime date)
+    {
+        var pc = new System.Globalization.PersianCalendar();
+        return $"{pc.GetYear(date)}-{pc.GetMonth(date):D2}-{pc.GetDayOfMonth(date):D2}";
+    }
+}
+
+

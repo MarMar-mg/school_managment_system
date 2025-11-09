@@ -9,10 +9,10 @@ class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int userId;
 
   const DashboardAppBar({
-    Key? key,
+    super.key,
     required this.role,
     required this.userId,
-  }) : super(key: key);
+  });
 
   @override
   State<DashboardAppBar> createState() => _DashboardAppBarState();
