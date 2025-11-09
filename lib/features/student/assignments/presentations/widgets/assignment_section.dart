@@ -1,8 +1,10 @@
+// features/assignments/presentation/widgets/assignment_section.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../models/assignment_model.dart.dart';
 import 'assignment_card.dart';
 
+/// Clean, elegant, perfectly animated collapsible section
 class AssignmentSection extends StatelessWidget {
   final String title;
   final Color color;
@@ -27,74 +29,170 @@ class AssignmentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Empty state
     if (items.isEmpty) {
-      return _emptySection();
+      return _buildEmptyState();
     }
 
     final displayCount = isExpanded ? items.length : (items.length > 2 ? 2 : items.length);
-    final showMore = items.length > 2;
+    final hasMore = items.length > 2;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        // Section Header
         Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColor.darkText)),
-            if (items.isNotEmpty)
-              Text('${items.length} مورد', style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-          ],
-        ),
-        const SizedBox(height: 8),
-        // Container(height: 4, width: 70, color: color),
-        const SizedBox(height: 16),
-        ...List.generate(displayCount, (i) {
-          final index = startIndex + i;
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: AnimatedAssignmentCard(item: items[i], animation: animations[index]),
-          );
-        }),
-        if (showMore)
-          Padding(
-            padding: const EdgeInsets.only(top: 12),
-            child: Center(
-              child: TextButton.icon(
-                onPressed: onToggle,
-                icon: AnimatedRotation(
-                  turns: isExpanded ? 0.5 : 0,
-                  duration: const Duration(milliseconds: 200),
-                  child: const Icon(Icons.keyboard_arrow_down_rounded, size: 20),
-                ),
-                label: Text(
-                  isExpanded ? 'نمایش کمتر' : 'نمایش همه (${items.length})',
-                  style: TextStyle(color: color, fontWeight: FontWeight.w600),
-                ),
-                style: TextButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                  backgroundColor: color.withOpacity(0.12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: AppColor.darkText,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '${items.length}',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
             ),
+          ],
+        ),
+
+        const SizedBox(height: 18),
+
+        // Cards
+        ...List.generate(displayCount, (i) {
+          final globalIndex = startIndex + i;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 14),
+            child: AnimatedAssignmentCard(
+              item: items[i],
+              animation: animations[globalIndex],
+            ),
+          );
+        }),
+
+        // Show More / Less Button
+        if (hasMore) ...[
+          const SizedBox(height: 8),
+          Center(
+            child: TextButton(
+              onPressed: onToggle,
+              style: TextButton.styleFrom(
+                padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 14),
+                backgroundColor: color.withOpacity(0.1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    isExpanded ? 'نمایش کمتر' : 'نمایش همه (${items.length})',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 14.5,
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  AnimatedRotation(
+                    turns: isExpanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 220),
+                    curve: Curves.easeOut,
+                    child: Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: color,
+                      size: 22,
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
+        ],
+
+        const SizedBox(height: 8),
       ],
     );
   }
 
-  Widget _emptySection() => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-      const SizedBox(height: 8),
-      Container(height: 4, width: 70, color: color),
-      const SizedBox(height: 16),
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(40),
-        decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16)),
-        child: Center(child: Text('موردی یافت نشد', style: TextStyle(color: Colors.grey[500]))),
-      ),
-    ],
-  );
+  Widget _buildEmptyState() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 19,
+                fontWeight: FontWeight.bold,
+                color: AppColor.darkText,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                '0',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(vertical: 48),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(22),
+            border: Border.all(color: Colors.grey.shade200),
+          ),
+          child: Center(
+            child: Column(
+              children: [
+                Icon(
+                  Icons.assignment_late_outlined,
+                  size: 48,
+                  color: Colors.grey[400],
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'موردی یافت نشد',
+                  style: TextStyle(
+                    fontSize: 15,
+                    color: Colors.grey[500],
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 }

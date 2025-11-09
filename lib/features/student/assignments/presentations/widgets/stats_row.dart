@@ -1,7 +1,8 @@
-// features/student/assignments/presentation/widgets/stats_row.dart
+// features/assignments/presentation/widgets/stats_row.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 
+/// Clean, elegant, modern stats row – perfect for 2025
 class StatsRow extends StatelessWidget {
   final int pending, submitted, graded;
 
@@ -16,101 +17,91 @@ class StatsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        Expanded(child: _buildStatCard(
+        Expanded(child: _buildStat(
           count: pending,
           label: 'در انتظار',
-          icon: Icons.timer_rounded,
-          color: const Color(0xFF34C759), // سبز نعنایی
-          gradient: const LinearGradient(
-            colors: [Color(0xFF34C759), Color(0xFF2BBF50)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          icon: Icons.timer_outlined,
+          color: const Color(0xFF32D74B), // سبز تازه
         )),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(
+        const SizedBox(width: 14),
+        Expanded(child: _buildStat(
           count: submitted,
           label: 'ارسال شده',
-          icon: Icons.description_rounded,
-          color: const Color(0xFF007AFF), // آبی کلاسیک
-          gradient: const LinearGradient(
-            colors: [Color(0xFF007AFF), Color(0xFF0056D6)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          icon: Icons.description_outlined,
+          color: const Color(0xFF0A84FF), // آبی اپل
         )),
-        const SizedBox(width: 16),
-        Expanded(child: _buildStatCard(
+        const SizedBox(width: 14),
+        Expanded(child: _buildStat(
           count: graded,
           label: 'نمره‌دار',
-          icon: Icons.check_circle_rounded,
-          color: const Color(0xFFFF9500), // نارنجی گرم
-          gradient: const LinearGradient(
-            colors: [Color(0xFFFF9500), Color(0xFFFF6B00)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          icon: Icons.check_circle_outline,
+          color: const Color(0xFFFF9F0A), // نارنجی گرم
         )),
       ],
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildStat({
     required int count,
     required String label,
     required IconData icon,
     required Color color,
-    required Gradient gradient,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
+      padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
       decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(24),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        border: Border.all(color: color.withOpacity(0.25), width: 1.8),
         boxShadow: [
           BoxShadow(
-            color: color.withOpacity(0.4),
+            color: color.withOpacity(0.12),
             blurRadius: 20,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: Column(
         children: [
-          // آیکون
+          // Icon with soft background
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.25),
+              color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              color: Colors.white,
-              size: 32,
+              color: color,
+              size: 34,
             ),
           ),
-          const SizedBox(height: 16),
-          // عدد
+
+          const SizedBox(height: 18),
+
+          // Count
           Text(
             '$count',
-            style: const TextStyle(
-              fontSize: 36,
+            style: TextStyle(
+              fontSize: 38,
               fontWeight: FontWeight.bold,
-              color: Colors.white,
+              color: color,
               height: 1,
+              letterSpacing: -1,
             ),
           ),
+
           const SizedBox(height: 8),
-          // متن
+
+          // Label
           Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 14,
-              color: Colors.white,
-              fontWeight: FontWeight.w500,
+              color: AppColor.darkText.withOpacity(0.8),
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
             ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),

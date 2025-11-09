@@ -1,11 +1,14 @@
+// features/dashboard/presentation/widgets/progress_list.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
+
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
 import '../models/dashboard_models.dart';
 
-/// Animated list of subject progress with shimmer loading & staggered card entrance
+/// Ultimate animated progress list with growing progress bars,
+/// gradient badges, press feedback, and luxury shimmer.
 class ProgressList extends StatefulWidget {
   final Role role;
   final int userId;
@@ -29,19 +32,12 @@ class _ProgressListState extends State<ProgressList>
   @override
   void initState() {
     super.initState();
-    _progressFuture = ApiService.getProgress(
-      role: widget.role,
-      userId: widget.userId,
-    );
-
-    // Animation controller for staggered card entrance
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1400),
     );
-
-    // Will be populated when data arrives
     _cardAnims = [];
+    _loadProgress();
   }
 
   @override
@@ -50,18 +46,22 @@ class _ProgressListState extends State<ProgressList>
     super.dispose();
   }
 
-  /// Start staggered animation when data is loaded
-  void _startCardAnimations(int itemCount) {
+  Future<void> _loadProgress() async {
+    setState(() {
+      _progressFuture = ApiService.getProgress(
+        role: widget.role,
+        userId: widget.userId,
+      );
+    });
+  }
+
+  void _startCardAnimations(int count) {
     _cardAnims = List.generate(
-      itemCount,
-          (index) => Tween<double>(begin: 0.0, end: 1.0).animate(
+      count,
+          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(
-            0.1 + index * 0.08, // 80ms delay between cards
-            1.0,
-            curve: Curves.easeOutCubic,
-          ),
+          curve: Interval(0.15 + i * 0.07, 1.0, curve: Curves.easeOutCubic),
         ),
       ),
     );
@@ -70,58 +70,87 @@ class _ProgressListState extends State<ProgressList>
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<List<ProgressItem>>(
-      future: _progressFuture,
-      builder: (context, snapshot) {
-        // Error State
-        if (snapshot.hasError) {
-          return Center(
-            child: Text(
-              'خطا: ${snapshot.error}',
-              style: const TextStyle(color: Colors.red),
-              textDirection: TextDirection.rtl,
-            ),
-          );
-        }
+    return RefreshIndicator(
+      onRefresh: _loadProgress,
+      color: AppColor.purple,
+      child: FutureBuilder<List<ProgressItem>>(
+        future: _progressFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return _buildShimmer();
+          }
 
-        // Loading State - Shimmer
-        if (!snapshot.hasData) {
+          if (snapshot.hasError) {
+            return _buildError(snapshot.error.toString());
+          }
+
+          final items = snapshot.data ?? [];
+          if (items.isEmpty) {
+            return _buildEmpty();
+          }
+
+          if (_cardAnims.length != items.length) {
+            _startCardAnimations(items.length);
+          }
+
           return Column(
-            children: List.generate(4, (_) => const _ShimmerProgressCard()),
+            children: items.asMap().entries.map((entry) {
+              return AnimatedProgressCard(
+                item: entry.value,
+                animation: _cardAnims[entry.key],
+              );
+            }).toList(),
           );
-        }
+        },
+      ),
+    );
+  }
 
-        final items = snapshot.data!;
-        if (items.isEmpty) {
-          return const Center(
-            child: Text(
-              'هیچ داده‌ای موجود نیست',
-              style: TextStyle(fontSize: 14, color: AppColor.lightGray),
-            ),
-          );
-        }
+  Widget _buildShimmer() {
+    return Column(
+      children: List.generate(4, (_) => const _ShimmerProgressCard())
+          .map((e) => Padding(padding: const EdgeInsets.only(bottom: 12), child: e))
+          .toList(),
+    );
+  }
 
-        // Start animation only once when data arrives
-        if (_cardAnims.length != items.length) {
-          _startCardAnimations(items.length);
-        }
+  Widget _buildError(String error) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.bar_chart_rounded, size: 64, color: Colors.orange.shade400),
+          const SizedBox(height: 16),
+          const Text('خطا در بارگذاری پیشرفت', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(error, style: TextStyle(color: AppColor.lightGray)),
+          const SizedBox(height: 20),
+          ElevatedButton.icon(
+            onPressed: _loadProgress,
+            icon: const Icon(Icons.refresh),
+            label: const Text('تلاش مجدد'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
+          ),
+        ],
+      ),
+    );
+  }
 
-        return Column(
-          children: items
-              .asMap()
-              .entries
-              .map((entry) => AnimatedProgressCard(
-            item: entry.value,
-            animation: _cardAnims[entry.key],
-          ))
-              .toList(),
-        );
-      },
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        children: [
+          Icon(Icons.auto_graph_rounded, size: 64, color: AppColor.lightGray),
+          const SizedBox(height: 16),
+          const Text('هیچ داده‌ای موجود نیست', style: TextStyle(color: AppColor.lightGray)),
+        ],
+      ),
     );
   }
 }
 
-/// Animated version of ProgressCard with slide-up + fade-in
+// ==================== ANIMATED CARD WITH GROWING BAR ====================
+
 class AnimatedProgressCard extends StatelessWidget {
   final ProgressItem item;
   final Animation<double> animation;
@@ -138,158 +167,215 @@ class AnimatedProgressCard extends StatelessWidget {
       animation: animation,
       builder: (context, child) {
         final value = animation.value;
-        return Transform.translate(
-          offset: Offset(0, 60 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 80 * (1 - value)),
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: child,
+            ),
           ),
         );
       },
-      child: ProgressCard(item: item),
+      child: PremiumProgressCard(item: item, entranceAnimation: animation),
     );
   }
 }
 
-/// Beautiful shimmer placeholder during loading
+// ==================== PREMIUM PROGRESS CARD ====================
+
+class PremiumProgressCard extends StatefulWidget {
+  final ProgressItem item;
+  final Animation<double> entranceAnimation;
+
+  const PremiumProgressCard({
+    super.key,
+    required this.item,
+    required this.entranceAnimation,
+  });
+
+  @override
+  State<PremiumProgressCard> createState() => _PremiumProgressCardState();
+}
+
+class _PremiumProgressCardState extends State<PremiumProgressCard>
+    with SingleTickerProviderStateMixin {
+  bool _isPressed = false;
+  late AnimationController _pressController;
+  late Animation<double> _scale;
+  late Animation<double> _elevation;
+
+  @override
+  void initState() {
+    super.initState();
+    _pressController = AnimationController(vsync: this, duration: const Duration(milliseconds: 180));
+    _scale = Tween<double>(begin: 1.0, end: 0.96).animate(CurvedAnimation(parent: _pressController, curve: Curves.easeOut));
+    _elevation = Tween<double>(begin: 4.0, end: 20.0).animate(CurvedAnimation(parent: _pressController, curve: Curves.easeOut));
+  }
+
+  @override
+  void dispose() {
+    _pressController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: Listenable.merge([_pressController, widget.entranceAnimation]),
+      builder: (context, child) {
+        final progressValue = widget.entranceAnimation.value;
+        final fillWidth = progressValue * (widget.item.percentage / 100);
+
+        return Transform.scale(
+          scale: _scale.value,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: widget.item.color.withOpacity(0.25),
+                  blurRadius: _elevation.value,
+                  offset: Offset(0, _elevation.value / 2),
+                ),
+              ],
+            ),
+            child: child,
+          ),
+        );
+      },
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(20),
+          splashColor: widget.item.color.withOpacity(0.25),
+          onTapDown: (_) {
+            setState(() => _isPressed = true);
+            _pressController.forward();
+          },
+          onTapUp: (_) {
+            setState(() => _isPressed = false);
+            _pressController.reverse();
+          },
+          onTapCancel: () {
+            setState(() => _isPressed = false);
+            _pressController.reverse();
+          },
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                // Gradient Badge
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [widget.item.color, widget.item.color.withOpacity(0.8)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [
+                      BoxShadow(color: widget.item.color.withOpacity(0.4), blurRadius: 12, offset: const Offset(0, 6)),
+                      const BoxShadow(color: Colors.black26, blurRadius: 4, offset: Offset(0, 2), spreadRadius: -2),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      widget.item.grade,
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // Subject + Progress Bar
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.item.subject,
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: AppColor.darkText),
+                        textDirection: TextDirection.rtl,
+                      ),
+                      const SizedBox(height: 10),
+                      // Animated Progress Bar
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(3),
+                        child: LinearProgressIndicator(
+                          value: widget.item.percentage / 100,
+                          backgroundColor: Colors.grey[200],
+                          valueColor: AlwaysStoppedAnimation<Color>(widget.item.color),
+                          minHeight: 6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 16),
+
+                // Percentage
+                Text(
+                  '${widget.item.percentage.toInt()}%',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: widget.item.color,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ==================== LUXURY SHIMMER ====================
+
 class _ShimmerProgressCard extends StatelessWidget {
-  const _ShimmerProgressCard({Key? key}) : super(key: key);
+  const _ShimmerProgressCard({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Shimmer.fromColors(
       baseColor: Colors.grey[100]!,
       highlightColor: Colors.grey[300]!,
+      period: const Duration(milliseconds: 1500),
       child: Container(
+        height: 92,
         margin: const EdgeInsets.only(bottom: 12),
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(18),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
         ),
         child: Row(
           children: [
-            Container(width: 48, height: 48, color: Colors.white),
-            const SizedBox(width: 12),
+            Container(width: 56, height: 56, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+            const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(height: 16, color: Colors.white),
-                  const SizedBox(height: 8),
-                  Container(height: 6, color: Colors.white),
+                  Container(height: 18, width: 120, color: Colors.white),
+                  const SizedBox(height: 12),
+                  Container(height: 8, width: double.infinity, color: Colors.white),
                 ],
               ),
             ),
-            const SizedBox(width: 12),
-            Container(width: 40, height: 20, color: Colors.white),
+            const SizedBox(width: 16),
+            Container(width: 50, height: 24, color: Colors.white),
           ],
         ),
-      ),
-    );
-  }
-}
-
-/// Final Progress Card (unchanged logic, just clean)
-class ProgressCard extends StatelessWidget {
-  final ProgressItem item;
-
-  const ProgressCard({Key? key, required this.item}) : super(key: key);
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.04),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          // Grade Badge
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: item.color,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                item.grade,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Subject + Progress Bar
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.subject,
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: AppColor.darkText,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
-                const SizedBox(height: 8),
-                // Progress Bar
-                Stack(
-                  children: [
-                    Container(
-                      height: 6,
-                      decoration: BoxDecoration(
-                        color: Colors.grey[200],
-                        borderRadius: BorderRadius.circular(3),
-                      ),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: item.percentage / 100,
-                      child: Container(
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: item.color,
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(width: 12),
-
-          // Percentage
-          Text(
-            '${item.percentage.toInt()}٪',
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColor.darkText,
-            ),
-            textDirection: TextDirection.rtl,
-          ),
-        ],
       ),
     );
   }

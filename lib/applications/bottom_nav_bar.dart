@@ -38,11 +38,6 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId,
       userIdi: widget.userIdi,
     ),
-    Dashboard(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userId,
-    ),
     AssignmentsPage(
       role: widget.role,
       userName: widget.userName,
@@ -53,7 +48,16 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userIdi,
     ),
-    AssignmentsPage(role: widget.role, userName: widget.userName, userId: widget.userIdi),
+    AssignmentsPage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userIdi,
+    ),
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
   ];
   int _selectedIndex = 0;
 
