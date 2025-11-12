@@ -70,7 +70,48 @@ class ExamSection extends StatelessWidget {
             );
           }),
         ],
+        // Empty state
+        if (isExpanded && items.isEmpty) _buildEmptyState(),
+        const SizedBox(height: 8),
       ],
     );
   }
+}// === EMPTY STATE ===
+Column _buildEmptyState() {
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 12),
+      Container(
+        width: 300,
+        padding: const EdgeInsets.symmetric(vertical: 32),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Center(
+          child: Column(
+            children: [
+              Icon(
+                Icons.assignment_late_outlined,
+                size: 48,
+                color: Colors.grey[400],
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'موردی یافت نشد',
+                style: TextStyle(
+                  fontSize: 15,
+                  color: Colors.grey[500],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ],
+  );
 }
+
