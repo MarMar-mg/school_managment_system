@@ -8,6 +8,7 @@ import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
 import '../../features/student/assignments/models/assignment_model.dart.dart';
 import '../../features/student/exam/models/exam_model.dart';
+import '../../features/student/scores/models/score_model.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -450,6 +451,15 @@ class ApiService {
         'graded': <AssignmentItemm>[],
       };
     }
+  }
+
+  static Future<DashboardData> getMyScore(int studentId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/student/my-score/$studentId'),
+    );
+    if (response.statusCode != 200)
+      throw Exception('Failed: ${response.statusCode}');
+    return DashboardData.fromJson(json.decode(response.body));
   }
 
   static Future<String> getUserDisplayName(Role role, int userId) async {

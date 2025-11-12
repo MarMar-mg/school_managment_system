@@ -300,6 +300,77 @@ namespace SchoolPortalAPI.Controllers
                 return Ok(exams);
             }
 
+            // GET: api/student/my-score/123
+                    [HttpGet("my-score/{studentId}")]
+                    public async Task<ActionResult<object>> GetMyScore(long studentId)
+                    {
+                        try
+                        {
+                            var studentIdd = await _context.Students
+                                                        .Where(s => s.UserID == studentId)
+                                                        .Select(s => s.Studentid)
+                                                        .FirstOrDefaultAsync();
+
+                            var student = await _context.Students
+                                .FirstOrDefaultAsync(s => s.UserID == studentId);
+
+                           if (student == null)
+                                               return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                                           // === 1. GPA (معدل کل) ===
+                                           var gpaQuery = await _context.ExamStuTeaches
+                                               .Where(e => e.Studentid == studentId && e.Score != null)
+                                               .AverageAsync(e => (double?)e.Score);
+
+                                           var gpa = gpaQuery ?? 0.0;
+
+                                           // === 2. Stats (using ExamStuTeach) ===
+                                           var totalExams = await _context.ExamStuTeaches
+                                               .CountAsync(e => e.Studentid == studentId);
+
+                                           var uniqueCourses = await _context.ExamStuTeaches
+                                               .Where(e => e.Studentid == studentId && e.Examid != null)
+                                               .Select(e => e.Exam!.Courseid)
+                                               .Distinct()
+                                               .CountAsync();
+
+                                           // هر درس = ۳ واحد (مثال)
+                                           var units = uniqueCourses * 3;
+
+                                           // === 3. Grades per subject (using Exam.Title) ===
+                                           var grades = await _context.ExamStuTeaches
+                                               .Where(e => e.Studentid == studentId && e.Score != null && e.Exam != null)
+                                               .GroupBy(e => e.Exam.Title ?? "نامشخص")
+                                               .Select(g => new
+                                               {
+                                                   name = g.Key,
+                                                   percent = (int)Math.Round(g.Average(x => (double)x.Score!) * 5), // 20 → 100%
+                                                   isTop = g.Key == "ریاضی ۳"
+                                               })
+                                               .OrderByDescending(g => g.percent)
+                                               .ToListAsync();
+
+                                           // === 4. زنگ = تعداد امتحانات (مثال) ===
+                                           var bells = totalExams;
+
+                                           var response = new
+                                           {
+                                               studentName = student.Name,
+                                               gpa = Math.Round(gpa, 1),
+                                               bells,
+                                               courses = uniqueCourses,
+                                               units,
+                                               grades
+                                           };
+
+                                           return Ok(response);
+                                       }
+                                       catch (Exception ex)
+                                       {
+                                           return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+                                       }
+                                   }
+
         // ──────────────────────────────────────────────────────────────
         // Get exams for student's class with optional date filtering
         // ──────────────────────────────────────────────────────────────
