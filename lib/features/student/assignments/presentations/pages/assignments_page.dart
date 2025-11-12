@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../../applications/colors.dart';
 import '../../../../../applications/role.dart';
+import '../../../../../commons/responsive_container.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../models/assignment_model.dart.dart';
 import '../widgets/assignment_section.dart';
+import '../widgets/shimmer_placeholder.dart';
 import '../widgets/stats_row.dart';
 
 class AssignmentsPage extends StatefulWidget {
@@ -79,93 +81,78 @@ class _AssignmentsPageState extends State<AssignmentsPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'تکالیف من',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColor.darkText,
-      ),
       body: FutureBuilder<Map<String, List<AssignmentItemm>>>(
         future: _assignmentsFuture,
         builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return _buildError(snapshot.error.toString());
-          }
-
-          if (!snapshot.hasData) {
-            return const _ShimmerAssignmentsPage();
-          }
+          if (snapshot.hasError) return _buildError(snapshot.error.toString());
+          if (!snapshot.hasData) return const ShimmerPlaceholder();
 
           final data = snapshot.data!;
-          final pending = data['pending'] ?? [];
+          final pending   = data['pending']   ?? [];
           final submitted = data['submitted'] ?? [];
-          final graded = data['graded'] ?? [];
+          final graded    = data['graded']    ?? [];
           final all = [...pending, ...submitted, ...graded];
 
-          if (all.isEmpty) {
-            return _buildEmpty();
-          }
+          if (all.isEmpty) return _buildEmpty();
 
-          // Start animation once
-          if (_cardAnims.length != all.length) {
-            _startAnimations(all.length);
-          }
+          if (_cardAnims.length != all.length) _startAnimations(all.length);
 
           return RefreshIndicator(
             onRefresh: _refresh,
             color: AppColor.purple,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  // Stats
-                  AnimatedStatsRow(
-                    pending: pending.length,
-                    submitted: submitted.length,
-                    graded: graded.length,
-                  ),
-                  const SizedBox(height: 28),
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ResponsiveContainer(
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      AnimatedStatsRow(pending: pending.length, submitted: submitted.length, graded: graded.length),
+                      const SizedBox(height: 28),
 
-                  // Sections
-                  AssignmentSection(
-                    title: 'در انتظار ارسال',
-                    color: Colors.blue.shade600,
-                    items: pending,
-                    startIndex: 0,
-                    sectionKey: 'pending',
-                    isExpanded: _expanded['pending']!,
-                    onToggle: () => _toggle('pending'),
-                    animations: _cardAnims,
+                      // Pending
+                      AssignmentSection(
+                        title: 'در انتظار',
+                        color: Colors.orange,
+                        items: pending,
+                        startIndex: 0,
+                        sectionKey: 'pending',
+                        isExpanded: _expanded['pending']!,
+                        onToggle: () => _toggle('pending'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Submitted
+                      AssignmentSection(
+                        title: 'ارسال شده',
+                        color: Colors.blue,
+                        items: submitted,
+                        startIndex: pending.length,
+                        sectionKey: 'submitted',
+                        isExpanded: _expanded['submitted']!,
+                        onToggle: () => _toggle('submitted'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Graded
+                      AssignmentSection(
+                        title: 'نمره‌دار',
+                        color: Colors.green,
+                        items: graded,
+                        startIndex: pending.length + submitted.length,
+                        sectionKey: 'graded',
+                        isExpanded: _expanded['graded']!,
+                        onToggle: () => _toggle('graded'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 100),
+                    ],
                   ),
-                  const SizedBox(height: 24),
-                  AssignmentSection(
-                    title: 'ارسال شده (بدون نمره)',
-                    color: Colors.orange.shade600,
-                    items: submitted,
-                    startIndex: pending.length,
-                    sectionKey: 'submitted',
-                    isExpanded: _expanded['submitted']!,
-                    onToggle: () => _toggle('submitted'),
-                    animations: _cardAnims,
-                  ),
-                  const SizedBox(height: 24),
-                  AssignmentSection(
-                    title: 'نمره‌دار',
-                    color: Colors.green.shade600,
-                    items: graded,
-                    startIndex: pending.length + submitted.length,
-                    sectionKey: 'graded',
-                    isExpanded: _expanded['graded']!,
-                    onToggle: () => _toggle('graded'),
-                    animations: _cardAnims,
-                  ),
-                  const SizedBox(height: 100), // Extra space for pull-to-refresh
-                ],
+                ),
               ),
             ),
           );

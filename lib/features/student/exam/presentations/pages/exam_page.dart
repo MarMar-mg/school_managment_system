@@ -7,6 +7,8 @@ import 'package:school_management_system/features/student/exam/models/exam_model
 import 'package:school_management_system/features/student/exam/presentations/widgets/exam_section.dart';
 import 'package:school_management_system/features/student/assignments/presentations/widgets/stats_row.dart';
 
+import '../../../../../commons/responsive_container.dart';
+
 class ExamPage extends StatefulWidget {
   final Role role;
   final String userName;
@@ -76,16 +78,6 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          'امتحانات من',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        foregroundColor: AppColor.darkText,
-      ),
       body: FutureBuilder<Map<String, List<ExamItem>>>(
         future: _examsFuture,
         builder: (context, snapshot) {
@@ -93,9 +85,9 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
           if (!snapshot.hasData) return const _ShimmerExamPage();
 
           final data = snapshot.data!;
-          final pending = data['pending'] ?? [];
-          final answered = data['answered'] ?? [];
-          final scored = data['scored'] ?? [];
+          final pending   = data['pending']   ?? [];
+          final answered  = data['answered']  ?? [];
+          final scored    = data['scored']    ?? [];
           final all = [...pending, ...answered, ...scored];
 
           if (all.isEmpty) return _buildEmpty();
@@ -107,49 +99,57 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
             color: AppColor.purple,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  AnimatedStatsRow(
-                    pending: pending.length,
-                    submitted: answered.length,
-                    graded: scored.length,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: ResponsiveContainer(   // ← HERE
+                  padding: EdgeInsets.zero,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 16),
+                      AnimatedStatsRow(pending: pending.length, submitted: answered.length, graded: scored.length),
+                      const SizedBox(height: 28),
+
+                      // Pending
+                      ExamSection(
+                        title: 'در انتظار',
+                        color: Colors.orange,
+                        items: pending,
+                        startIndex: 0,
+                        sectionKey: 'pending',
+                        isExpanded: _expanded['pending']!,
+                        onToggle: () => _toggle('pending'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Answered
+                      ExamSection(
+                        title: 'ارسال شده',
+                        color: Colors.blue,
+                        items: answered,
+                        startIndex: pending.length,
+                        sectionKey: 'answered',
+                        isExpanded: _expanded['answered']!,
+                        onToggle: () => _toggle('answered'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Scored
+                      ExamSection(
+                        title: 'نمره‌دار',
+                        color: Colors.green,
+                        items: scored,
+                        startIndex: pending.length + answered.length,
+                        sectionKey: 'scored',
+                        isExpanded: _expanded['scored']!,
+                        onToggle: () => _toggle('scored'),
+                        animations: _cardAnims,
+                      ),
+                      const SizedBox(height: 100),
+                    ],
                   ),
-                  const SizedBox(height: 28),
-                  ExamSection(
-                    title: 'در انتظار',
-                    color: Colors.orange,
-                    items: pending,
-                    startIndex: 0,
-                    sectionKey: 'pending',
-                    isExpanded: _expanded['pending']!,
-                    onToggle: () => _toggle('pending'),
-                    animations: _cardAnims,
-                  ),
-                  const SizedBox(height: 24),
-                  ExamSection(
-                    title: 'ارسال شده',
-                    color: Colors.blue,
-                    items: answered,
-                    startIndex: pending.length,
-                    sectionKey: 'answered',
-                    isExpanded: _expanded['answered']!,
-                    onToggle: () => _toggle('answered'),
-                    animations: _cardAnims,
-                  ),
-                  const SizedBox(height: 24),
-                  ExamSection(
-                    title: 'نمره‌دار',
-                    color: Colors.green,
-                    items: scored,
-                    startIndex: pending.length + answered.length,
-                    sectionKey: 'scored',
-                    isExpanded: _expanded['scored']!,
-                    onToggle: () => _toggle('scored'),
-                    animations: _cardAnims,
-                  ),
-                  const SizedBox(height: 100),
-                ],
+                ),
               ),
             ),
           );
