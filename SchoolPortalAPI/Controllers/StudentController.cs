@@ -1,7 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using SchoolPortalAPI.Data;
-using SchoolPortalAPI.Models;
+using SchoolPortalAPI.Data;      // <-- Make sure this is correct
+using SchoolPortalAPI.Models;    // Exam, ExamStuTeach, Course, Class
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SchoolPortalAPI.Controllers
 {
@@ -255,6 +258,49 @@ namespace SchoolPortalAPI.Controllers
 
 
         // ──────────────────────────────────────────────────────────────
+        // Get exams for student's
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exam/{studentId}")]
+        public async Task<ActionResult<IEnumerable<object>>> GetAllExams(long studentId)
+        {
+            var studentIdd = await _context.Students
+                            .Where(s => s.UserID == studentId)
+                            .Select(s => s.Studentid)
+                            .FirstOrDefaultAsync();
+
+            var exams = await _context.ExamStuTeaches
+            .Where(est => est.Studentid == studentId)
+                    .Include(est => est.Exam)
+                        .ThenInclude(e => e!.Course)
+                    .Include(est => est.Exam)
+                        .ThenInclude(e => e!.Class)
+                    .Select(est => new
+                    {
+                        id            = est.Estid,
+
+                        // Use EF.Property + ?? to safely read NULLs
+                        title         = EF.Property<string>(est.Exam, nameof(Exam.Title)) ?? "بدون عنوان",
+                        courseName    = EF.Property<string>(EF.Property<object>(est.Exam, nameof(Exam.Course)), nameof(Course.Name)) ?? "نامشخص",
+                        className     = EF.Property<string>(EF.Property<object>(est.Exam, nameof(Exam.Class)), nameof(Class.Name)),
+                        description   = EF.Property<string>(est.Exam, nameof(Exam.Description)),
+                        examDate      = EF.Property<string>(est.Exam, nameof(Exam.Enddate)),
+                        startDate     = EF.Property<string>(est.Exam, nameof(Exam.Startdate)),
+                        startTime     = EF.Property<string>(est.Exam, nameof(Exam.Starttime)),
+                        endTime       = EF.Property<string>(est.Exam, nameof(Exam.Endtime)),
+
+                        // Direct fields (safe if nullable in model)
+                        score         = est.Score,
+                        answerImage   = est.Answerimage,
+                        filename      = est.Filename,
+                        submittedDate = est.Date
+                    })
+                    .OrderBy(e => e.examDate ?? "")
+                    .ToListAsync();
+
+                return Ok(exams);
+            }
+
+        // ──────────────────────────────────────────────────────────────
         // Get exams for student's class with optional date filtering
         // ──────────────────────────────────────────────────────────────
         [HttpGet("exams/{studentId}")]
@@ -264,7 +310,7 @@ namespace SchoolPortalAPI.Controllers
             [FromQuery] string? end)
         {
             var student = await _context.Students
-                .Where(s => s.Studentid == studentId)
+                .Where(s => s.UserID == studentId)
                 .Select(s => new { s.Classeid })
                 .FirstOrDefaultAsync();
 

@@ -5,6 +5,7 @@ import 'package:school_management_system/commons/untils.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/student/assignments/presentations/pages/assignments_page.dart';
 import '../features/student/classes/presentations/pages/classes_page.dart';
+import '../features/student/exam/presentations/pages/exam_page.dart';
 import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -43,10 +44,10 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userId.toInt(),
     ),
-    AssignmentsPage(
-      role: widget.role,
-      userName: widget.userName,
-      userId: widget.userIdi,
+    ExamPage(
+      role: Role.student,
+      userName: 'علی رضایی',
+      userId: widget.userId.toInt(),
     ),
     AssignmentsPage(
       role: widget.role,

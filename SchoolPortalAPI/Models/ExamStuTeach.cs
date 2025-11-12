@@ -1,4 +1,6 @@
+// Models/ExamStuTeach.cs
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace SchoolPortalAPI.Models
 {
@@ -16,5 +18,18 @@ namespace SchoolPortalAPI.Models
         public long? Studentid { get; set; }
         public string? Description { get; set; }
         public string? Filename { get; set; }
+
+        // NAVIGATION PROPERTIES
+        [ForeignKey("Examid")]
+        public virtual Exam Exam { get; set; } = null!;
+
+        [ForeignKey("Courseid")]
+        public virtual Course Course { get; set; } = null!;
+
+        [ForeignKey("Teacherid")]
+        public virtual Teacher Teacher { get; set; } = null!;
+
+        [ForeignKey("Studentid")]
+        public virtual Student Student { get; set; } = null!;
     }
 }

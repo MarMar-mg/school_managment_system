@@ -1,28 +1,31 @@
+// Models/Exam.cs
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Collections.Generic;
 
 namespace SchoolPortalAPI.Models
 {
-    // Models/Exam.cs
     public class Exam
     {
         [Key]
         public long Examid { get; set; }
 
-        public string Title { get; set; } = null!;
+        public string? Title { get; set; }
         public string? Description { get; set; }
-        public string Enddate { get; set; } = null!;
-        public string Startdate { get; set; } = null!;
-        public string Starttime { get; set; } = null!;
-        public string Endtime { get; set; } = null!;
+        public string? Enddate { get; set; }
+        public string? Startdate { get; set; }
+        public string? Starttime { get; set; }
+        public string? Endtime { get; set; }
 
         public long? Courseid { get; set; }
-        public long? Classid { get; set; }  // مهم
+        public long? Classid { get; set; }
 
         [ForeignKey("Courseid")]
         public virtual Course? Course { get; set; }
 
         [ForeignKey("Classid")]
         public virtual Class? Class { get; set; }
+
+        public virtual ICollection<ExamStuTeach> ExamStuTeachs { get; set; } = new List<ExamStuTeach>();
     }
 }

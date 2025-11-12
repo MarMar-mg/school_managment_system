@@ -7,6 +7,7 @@ import 'package:shamsi_date/shamsi_date.dart';
 import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
 import '../../features/student/assignments/models/assignment_model.dart.dart';
+import '../../features/student/exam/models/exam_model.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -344,7 +345,61 @@ class ApiService {
     return stats;
   }
 
-  // ==================== ASSIGNMENTS (جدید و کامل) ====================
+  // ==================== EXAMS ====================
+  static Future<Map<String, List<ExamItem>>> getAllExams(int studentId) async {
+    final pending = <ExamItem>[];
+    final answered = <ExamItem>[];
+    final scored = <ExamItem>[];
+
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/student/exam/$studentId'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('خطا: ${response.statusCode}');
+      }
+      final List<dynamic> list = json.decode(response.body);
+
+      for (var json in list) {
+        final score = json['score'];
+        final status = score == null
+            ? ExamStatus.pending
+            : (score > 0 ? ExamStatus.scored : ExamStatus.answered);
+
+        final item = ExamItem(
+          title: json['title'],
+          courseName: json['courseName'],
+          dueDate: json['examDate'],
+          submittedDate: json['submittedDate'],
+          score: score,
+          totalScore: 100,
+          status: status,
+          answerImage: json['answerImage'],
+          filename: json['filename'],
+          onReminderTap: () => print('Reminder set'),
+          onViewAnswer: () => print('View answer'),
+        );
+
+        switch (status) {
+          case ExamStatus.pending:
+            pending.add(item);
+            break;
+          case ExamStatus.answered:
+            answered.add(item);
+            break;
+          case ExamStatus.scored:
+            scored.add(item);
+            break;
+        }
+      }
+    } catch (e) {
+      throw Exception('خطا در بارگذاری');
+    }
+
+    return {'pending': pending, 'answered': answered, 'scored': scored};
+  }
+
+  // ==================== ASSIGNMENTS ====================
   static Future<Map<String, List<AssignmentItemm>>> getAllAssignments(
     int studentId,
   ) async {
