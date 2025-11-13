@@ -6,6 +6,8 @@ class ExamItem {
   final String title;
   final String courseName;
   final String? dueDate;
+  final String? startTime;
+  final String? endTime;
   final String? submittedDate;
   final int? score;
   final int totalScore;
@@ -27,5 +29,7 @@ class ExamItem {
     this.filename,
     this.onReminderTap,
     this.onViewAnswer,
+    this.startTime,
+    this.endTime,
   });
 }

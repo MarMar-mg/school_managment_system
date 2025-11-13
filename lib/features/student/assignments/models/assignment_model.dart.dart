@@ -8,6 +8,7 @@ class AssignmentItemm {
   final String subject;
   final String? description;
   final String? dueDate; // "1403-08-25"
+  final String? endTime;
   final String? totalScore;
   final bool isUrgent;
   final String status; // pending | submitted | graded
@@ -23,6 +24,7 @@ class AssignmentItemm {
     this.isUrgent = false,
     required this.status,
     this.finalScore,
+    this.endTime,
   });
 
   factory AssignmentItemm.fromJson(Map<String, dynamic> json) {
@@ -35,6 +37,7 @@ class AssignmentItemm {
       subject: json['courseName'] ?? 'نامشخص',
       description: json['description'],
       dueDate: json['dueDate'],
+      endTime: json['endTime'],
       totalScore: json['totalScore'],
       isUrgent: urgent,
       status: status,
@@ -46,11 +49,12 @@ class AssignmentItemm {
   String get badge => switch (status) {
     'graded' => finalScore ?? 'نمره‌دار',
     'submitted' => 'ارسال شده',
+    'notSubmitted' => 'ارسال نشده',
     _ =>
     isUrgent
         ? 'فوری'
         : dueDate != null
-        ? dueDate!
+        ? _formatDate(dueDate!)
         : 'در انتظار',
   };
 
@@ -67,4 +71,16 @@ class AssignmentItemm {
     'submitted' => Icons.send_rounded,
     _ => isUrgent ? Icons.warning_rounded : Icons.assignment_rounded,
   };
+}
+
+String _formatDate(dynamic date) {
+  if (date == null) return '';
+  final dateStr = date.toString().trim();
+  if (dateStr.length >= 8) {
+    final year = dateStr.substring(0, 4);
+    final month = dateStr.substring(5, 7);
+    final day = dateStr.substring(8, 10);
+    return '$year/$month/$day';
+  }
+  return dateStr;
 }

@@ -131,130 +131,132 @@ namespace SchoolPortalAPI.Controllers
         // ──────────────────────────────────────────────────────────────
         // Get exercises for student's class
         // ──────────────────────────────────────────────────────────────
-        [HttpGet("exercises/{studentId}")]
-        public async Task<IActionResult> GetExercises(long studentId)
-        {
-            var student = await _context.Students
-                .FirstOrDefaultAsync(s => s.UserID == studentId);
+       [HttpGet("exercises/{studentId}")]
+       public async Task<IActionResult> GetExercises(long studentId)
+       {
+           var student = await _context.Students
+               .FirstOrDefaultAsync(s => s.UserID == studentId);
 
-            if (student == null)
-                return NotFound("دانش‌آموز یافت نشد");
+           if (student == null)
+               return NotFound("دانش‌آموز یافت نشد");
 
-            var todayShamsi = DateTime.Now.ToShamsi().Replace("-", ""); // 14031118
+           var todayShamsi = DateTime.Now.ToShamsi().Replace("-", ""); // 14031118
 
-            // همه تمرین‌های کلاس دانش‌آموز
-            var exercises = await _context.Exercises
-                .Where(e => e.Classid == student.Classeid)
-                .Select(e => new
-                {
-                    e.Exerciseid,
-                    e.Title,
-                    e.Description,
-                    e.Enddate,
-                    e.Score,
-                    e.Courseid
-                })
-                .ToListAsync();
+           // همه تمرین‌های کلاس دانش‌آموز
+           var exercises = await _context.Exercises
+               .Where(e => e.Classid == student.Classeid)
+               .Select(e => new
+               {
+                   e.Exerciseid,
+                   e.Title,
+                   e.Description,
+                   e.Enddate,
+                   e.Endtime,
+                   e.Score,
+                   e.Courseid
+               })
+               .ToListAsync();
 
-            var pending = new List<object>();      // در انتظار پاسخ
-            var submittedNoGrade = new List<object>(); // مهلت تمام + ارسال شده + بدون نمره
-            var graded = new List<object>();       // نمره داده شده
+           var pending = new List<object>();      // در انتظار پاسخ
+           var submittedNoGrade = new List<object>(); // مهلت تمام + ارسال شده + بدون نمره
+           var graded = new List<object>();       // نمره داده شده
 
-            var studentidd = await _context.Students
-                            .Where(e => e.UserID == studentId)
-                            .Select(e => e.Studentid)
-                            .FirstOrDefaultAsync();
+           var studentidd = await _context.Students
+                           .Where(e => e.UserID == studentId)
+                           .Select(e => e.Studentid)
+                           .FirstOrDefaultAsync();
 
-            foreach (var e in exercises)
-            {
-                string? dueDateStr = e.Enddate?.Trim();
-                bool isPastDue = false;
-                bool isUrgent = false;
+           foreach (var e in exercises)
+           {
+               string? dueDateStr = e.Enddate?.Trim();
+               bool isPastDue = false;
+               bool isUrgent = false;
 
-                if (!string.IsNullOrEmpty(dueDateStr) && dueDateStr.Length == 10)
-                {
-                    try
-                    {
-                        string todayStr = DateTime.Today.ToString("yyyy-MM-dd",
-                            new System.Globalization.CultureInfo("fa-IR"));
+               if (!string.IsNullOrEmpty(dueDateStr) && dueDateStr.Length == 10)
+               {
+                   try
+                   {
+                       string todayStr = DateTime.Today.ToString("yyyy-MM-dd",
+                           new System.Globalization.CultureInfo("fa-IR"));
 
-                        // مقایسه مستقیم رشته‌ای (چون فرمت یکسانه)
-                        isPastDue = string.Compare(dueDateStr, todayStr) < 0;
+                       // مقایسه مستقیم رشته‌ای (چون فرمت یکسانه)
+                       isPastDue = string.Compare(dueDateStr, todayStr) < 0;
 
-                        // فردا = امروز + 1 روز
-                        string tomorrowStr = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd",
-                            new System.Globalization.CultureInfo("fa-IR"));
+                       // فردا = امروز + 1 روز
+                       string tomorrowStr = DateTime.Today.AddDays(1).ToString("yyyy-MM-dd",
+                           new System.Globalization.CultureInfo("fa-IR"));
 
-                        bool isTodayOrTomorrow = dueDateStr == todayStr || dueDateStr == tomorrowStr;
+                       bool isTodayOrTomorrow = dueDateStr == todayStr || dueDateStr == tomorrowStr;
 
-                        isUrgent = !isPastDue && isTodayOrTomorrow;
-                    }
-                    catch
-                    {
-                        isPastDue = false;
-                        isUrgent = false;
-                    }
-                }
+                       isUrgent = !isPastDue && isTodayOrTomorrow;
+                   }
+                   catch
+                   {
+                       isPastDue = false;
+                       isUrgent = false;
+                   }
+               }
 
-                // پاسخ دانش‌آموز
-                var answer = await _context.ExerciseStuTeaches
-                    .FirstOrDefaultAsync(est => est.Exerciseid == e.Exerciseid && studentidd == studentId);
+               // پاسخ دانش‌آموز
+               var answer = await _context.ExerciseStuTeaches
+                   .FirstOrDefaultAsync(est => est.Exerciseid == e.Exerciseid && est.Studentid == studentidd);
 
-                bool hasSubmitted = answer != null;
-                bool hasGrade = answer?.Score != null;
+               bool hasSubmitted = answer != null;
+               bool hasGrade = answer?.Score != null;
 
-                // نام درس
-                string courseName = "نامشخص";
-                if (e.Courseid.HasValue)
-                {
-                    courseName = await _context.Courses
-                        .Where(c => c.Courseid == e.Courseid.Value)
-                        .Select(c => c.Name)
-                        .FirstOrDefaultAsync() ?? "نامشخص";
-                }
+               // نام درس
+               string courseName = "نامشخص";
+               if (e.Courseid.HasValue)
+               {
+                   courseName = await _context.Courses
+                       .Where(c => c.Courseid == e.Courseid.Value)
+                       .Select(c => c.Name)
+                       .FirstOrDefaultAsync() ?? "نامشخص";
+               }
 
-                var item = new
-                {
-                    id = e.Exerciseid,
-                    title = e.Title ?? "بدون عنوان",
-                    courseName,
-                    description = e.Description ?? "",
-                    dueDate = dueDateStr ?? "نامشخص",
-                    totalScore = e.Score?.ToString() ?? "نامشخص",
-                    isUrgent,
-                    status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : "pending"),
-                    finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
-                    answerImage = answer?.Answerimage,
-                    filename = answer?.Filename
-                };
+               var item = new
+               {
+                   id = e.Exerciseid,
+                   title = e.Title ?? "بدون عنوان",
+                   courseName,
+                   description = e.Description ?? "",
+                   endTime = e.Endtime ?? "نامشخص",
+                   dueDate = dueDateStr ?? "نامشخص",
+                   totalScore = e.Score?.ToString() ?? "نامشخص",
+                   isUrgent,
+                   status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : (!isPastDue ? "pending" : "notSubmitted")),
+                   finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
+                   answerImage = answer?.Answerimage,
+                   filename = answer?.Filename
+               };
 
-                // دسته‌بندی هوشمند
-                if (hasGrade)
-                {
-                    graded.Add(item);
-                }
-                else if (hasSubmitted && isPastDue)
-                {
-                    submittedNoGrade.Add(item);
-                }
-                else if (!hasSubmitted && !isPastDue)
-                {
-                    pending.Add(item);
-                }
-                else
-                {
-                    // مهلت تمام شده + نفرستاده → همون pending ولی با علامت هشدار
-                    pending.Add(item);
-                }
-            }
+               // دسته‌بندی هوشمند
+               if (hasGrade)
+               {
+                   graded.Add(item);
+               }
+               else if (hasSubmitted)
+               {
+                   submittedNoGrade.Add(item);
+               }
+               else if (!isPastDue)
+               {
+                   pending.Add(item);
+               }
+               else
+               {
+                   // مهلت تمام شده + نفرستاده → به submittedNoGrade اضافه شود
+                   submittedNoGrade.Add(item);
+               }
+           }
 
-            return Ok(new
-            {
-                pending,         // در انتظار پاسخ (هنوز وقت داره)
-                submittedNoGrade, // مهلت تمام + ارسال کرده + بدون نمره
-                graded           // نمره داده شده
-            });
-        }
+           return Ok(new
+           {
+               pending = pending,         // در انتظار پاسخ (هنوز وقت داره)
+               submittedNoGrade = submittedNoGrade, // مهلت تمام (ارسال شده بدون نمره یا ارسال نشده)
+               graded = graded           // نمره داده شده
+           });
+       }
 
 
         // ──────────────────────────────────────────────────────────────

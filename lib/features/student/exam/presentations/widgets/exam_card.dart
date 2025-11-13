@@ -11,6 +11,7 @@ class ExamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final due = item.dueDate != null ? _formatJalali(item.dueDate!) : null;
+    final time = '${item.startTime} تا ${item.endTime}';
     final submitted = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
         : null;
@@ -90,7 +91,8 @@ class ExamCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // State-specific content
-            if (item.status == ExamStatus.pending) ..._pendingContent(due),
+            if (item.status == ExamStatus.pending)
+              ..._pendingContent(due, time),
             if (item.status == ExamStatus.answered)
               ..._answeredContent(submitted),
             if (item.status == ExamStatus.scored) ..._scoredContent(),
@@ -135,12 +137,12 @@ class ExamCard extends StatelessWidget {
     );
   }
 
-  List<Widget> _pendingContent(String? due) => [
+  List<Widget> _pendingContent(String? due, String? time) => [
     Row(
       children: [
-        _infoChip("ساعت", "نامشخص", Icons.access_time),
+        _infoChip("", time ?? "نامشخص", Icons.access_time),
         const SizedBox(width: 12),
-        _infoChip("تاریخ", due ?? "نامشخص", Icons.calendar_today),
+        _infoChip("تاریخ", _formatDate(due) ?? "نامشخص", Icons.calendar_today),
       ],
     ),
     const SizedBox(height: 16),
@@ -276,6 +278,18 @@ class ExamCard extends StatelessWidget {
     } catch (e) {
       return jalali;
     }
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return '';
+    final dateStr = date.toString().trim();
+    if (dateStr.length >= 8) {
+      final year = dateStr.substring(0, 4);
+      final month = dateStr.substring(5, 7);
+      final day = dateStr.substring(8, 10);
+      return '$year/$month/$day';
+    }
+    return dateStr;
   }
 
   String _twoDigits(int n) => n.toString().padLeft(2, '0');

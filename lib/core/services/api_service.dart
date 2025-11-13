@@ -371,6 +371,8 @@ class ApiService {
           title: json['title'],
           courseName: json['courseName'],
           dueDate: json['examDate'],
+          startTime: json['startTime'],
+          endTime: json['endTime'],
           submittedDate: json['submittedDate'],
           score: score,
           totalScore: 100,
@@ -421,7 +423,6 @@ class ApiService {
                 .map(
                   (e) => AssignmentItemm.fromJson({
                     ...e as Map<String, dynamic>,
-                    'status': 'submitted',
                   }),
                 )
                 .toList();
@@ -453,6 +454,7 @@ class ApiService {
     }
   }
 
+  // ==================== SCORES ====================
   static Future<DashboardData> getMyScore(int studentId) async {
     final response = await http.get(
       Uri.parse('$baseUrl/student/my-score/$studentId'),
@@ -553,7 +555,7 @@ class ApiService {
               badge: _formatDisplayShamsiDate(e['examDate']),
               badgeColor: Colors.red,
               icon: Icons.quiz_rounded,
-              endTime: e['endTime'] ,
+              endTime: e['endTime'],
             ),
           ),
         );

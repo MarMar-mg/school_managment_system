@@ -39,10 +39,7 @@ class AnimatedAssignmentCard extends StatelessWidget {
 class AssignmentCard extends StatelessWidget {
   final AssignmentItemm item;
 
-  const AssignmentCard({
-    super.key,
-    required this.item,
-  });
+  const AssignmentCard({super.key, required this.item});
 
   @override
   Widget build(BuildContext context) {
@@ -76,11 +73,7 @@ class AssignmentCard extends StatelessWidget {
                     width: 1.5,
                   ),
                 ),
-                child: Icon(
-                  item.icon,
-                  color: item.badgeColor,
-                  size: 32,
-                ),
+                child: Icon(item.icon, color: item.badgeColor, size: 32),
               ),
 
               const SizedBox(width: 16),
@@ -115,7 +108,10 @@ class AssignmentCard extends StatelessWidget {
 
               // Status Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 9,
+                ),
                 decoration: BoxDecoration(
                   color: item.badgeColor,
                   borderRadius: BorderRadius.circular(14),
@@ -152,10 +148,14 @@ class AssignmentCard extends StatelessWidget {
           Row(
             children: [
               if (item.dueDate != null) ...[
-                Icon(Icons.calendar_today_rounded, size: 19, color: Colors.orange.shade600),
+                Icon(
+                  Icons.calendar_today_rounded,
+                  size: 19,
+                  color: Colors.orange.shade600,
+                ),
                 const SizedBox(width: 8),
                 Text(
-                  item.dueDate!,
+                  '${_formatDate(item.dueDate!)}(${item.endTime})',
                   style: TextStyle(
                     color: Colors.orange.shade700,
                     fontWeight: FontWeight.w600,
@@ -166,7 +166,7 @@ class AssignmentCard extends StatelessWidget {
               const Spacer(),
               if (item.totalScore != null && item.totalScore != 'نامشخص')
                 Text(
-                  item.totalScore!,
+                  'نمره از ${item.totalScore!}',
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.bold,
@@ -230,5 +230,17 @@ class AssignmentCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  String _formatDate(dynamic date) {
+    if (date == null) return '';
+    final dateStr = date.toString().trim();
+    if (dateStr.length >= 8) {
+      final year = dateStr.substring(0, 4);
+      final month = dateStr.substring(5, 7);
+      final day = dateStr.substring(8, 10);
+      return '$year/$month/$day';
+    }
+    return dateStr;
   }
 }
