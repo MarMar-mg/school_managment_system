@@ -3,6 +3,7 @@ import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:school_management_system/applications/role.dart';
 import 'package:school_management_system/commons/untils.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
+import '../features/profile/presentations/pages/profile_page.dart';
 import '../features/student/assignments/presentations/pages/assignments_page.dart';
 import '../features/student/classes/presentations/pages/classes_page.dart';
 import '../features/student/exam/presentations/pages/exam_page.dart';
@@ -51,7 +52,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId.toInt(),
     ),
     MyScorePage(studentId: widget.userIdi),
-    Dashboard(
+    ProfilePage(
       role: widget.role,
       userName: widget.userName,
       userId: widget.userId,
