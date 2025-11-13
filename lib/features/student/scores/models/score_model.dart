@@ -32,6 +32,8 @@ class DashboardData {
 class SubjectGrade {
   final String name;
   final int percent;
+  final int avgExam;
+  final int avgExercise;
   final String letter;
   final Color color;
   final bool isTop;
@@ -39,6 +41,8 @@ class SubjectGrade {
   SubjectGrade({
     required this.name,
     required this.percent,
+    required this.avgExam,
+    required this.avgExercise,
     required this.letter,
     required this.color,
     this.isTop = false,
@@ -49,9 +53,11 @@ class SubjectGrade {
     return SubjectGrade(
       name: json['name'] ?? '',
       percent: p,
-      letter: _letter(p),
+      letter: p ==0? 'بدون نمره': _letter(p),
       color: _color(p),
       isTop: json['isTop'] == true,
+      avgExam: json['avgExams'],
+      avgExercise: json['avgExercises'],
     );
   }
 

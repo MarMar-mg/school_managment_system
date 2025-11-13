@@ -302,76 +302,126 @@ namespace SchoolPortalAPI.Controllers
                 return Ok(exams);
             }
 
-            // GET: api/student/my-score/123
-                    [HttpGet("my-score/{studentId}")]
-                    public async Task<ActionResult<object>> GetMyScore(long studentId)
+            // ──────────────────────────────────────────────────────────────
+            // Get scores for student's courses
+            // ──────────────────────────────────────────────────────────────
+            [HttpGet("my-score/{studentId}")]
+            public async Task<ActionResult<object>> GetMyScore(long studentId)
+            {
+                try
+                {
+                    var studentIdd = await _context.Students
+                                                .Where(s => s.UserID == studentId)
+                                                .Select(s => s.Studentid)
+                                                .FirstOrDefaultAsync();
+
+                    var student = await _context.Students
+                        .FirstOrDefaultAsync(s => s.UserID == studentId);
+
+                    if (student == null)
+                        return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                    // === 1. GPA (معدل کل) ===
+                    var gpaQuery = await _context.Scores
+                        .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid)
+                        .AverageAsync(s => (double?)s.ScoreValue);
+
+                    var gpa = gpaQuery ?? 0.0;
+
+                    var courses = await _context.Courses
+                                    .Where(c => c.Classid == student.Classeid)
+                                    .Select(s => s.Courseid)
+                                                            .Distinct()
+                                                            .ToListAsync();
+
+                    // === 2. Collect all unique course IDs from Scores, Exercises, Exams ===
+                    var courseIdsFromScores = await _context.Scores
+                        .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid && s.Courseid.HasValue)
+                        .Select(s => s.Courseid.Value)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var courseIdsFromExercises = await _context.ExerciseStuTeaches
+                        .Where(est => est.Studentid == studentIdd)
+                        .Select(est => est.Courseid)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var courseIdsFromExams = await _context.ExamStuTeaches
+                        .Where(est => est.Studentid == studentIdd && est.Exam != null && est.Exam.Courseid.HasValue)
+                        .Select(est => est.Exam.Courseid.Value)
+                        .Distinct()
+                        .ToListAsync();
+
+                    var allCourseIds = courses
+                        .ToList();
+
+                    // Get course details
+                    var courseDetails = await _context.Courses
+                        .Where(c => allCourseIds.Contains(c.Courseid))
+                        .Select(c => new { c.Courseid, Name = c.Name ?? "نامشخص" })
+                        .ToListAsync();
+
+                    // === 3. Grades per course ===
+                    var grades = new List<object>();
+
+                    foreach (var course in courseDetails)
                     {
-                        try
+                        var avgScore = await _context.Scores
+                            .Where(s => s.Studentid == studentIdd && s.Courseid == course.Courseid)
+                            .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+
+                        var percent = (int)Math.Round(avgScore);
+
+                        var avgExercises = await _context.ExerciseStuTeaches
+                            .Where(est => est.Studentid == studentIdd && est.Score != null && est.Courseid == course.Courseid)
+                            .AverageAsync(est => (double?)est.Score) ?? 0.0;
+
+                        var avgExams = await _context.ExamStuTeaches
+                            .Where(est => est.Studentid == studentIdd && est.Score != null && est.Exam.Courseid == course.Courseid)
+                            .AverageAsync(est => (double?)est.Score) ?? 0.0;
+
+                        grades.Add(new
                         {
-                            var studentIdd = await _context.Students
-                                                        .Where(s => s.UserID == studentId)
-                                                        .Select(s => s.Studentid)
-                                                        .FirstOrDefaultAsync();
+                            name = course.Name,
+                            percent,
+                            isTop = course.Name == "ریاضی ۳",
+                            avgExercises,
+                            avgExams
+                        });
+                    }
 
-                            var student = await _context.Students
-                                .FirstOrDefaultAsync(s => s.UserID == studentId);
+                    grades = grades.OrderByDescending(g => ((dynamic)g).percent).ToList();
 
-                           if (student == null)
-                                               return NotFound(new { message = "دانش‌آموز یافت نشد" });
+                    // === 4. Stats ===
+                    var totalScores = await _context.Scores
+                        .CountAsync(s => s.Studentid == studentIdd && s.Classid == student.Classeid);
 
-                                           // === 1. GPA (معدل کل) ===
-                                           var gpaQuery = await _context.ExamStuTeaches
-                                               .Where(e => e.Studentid == studentId && e.Score != null)
-                                               .AverageAsync(e => (double?)e.Score);
+                    var uniqueCourses = allCourseIds.Count;
 
-                                           var gpa = gpaQuery ?? 0.0;
+                    // هر درس = ۳ واحد (مثال)
+                    var units = uniqueCourses * 3;
 
-                                           // === 2. Stats (using ExamStuTeach) ===
-                                           var totalExams = await _context.ExamStuTeaches
-                                               .CountAsync(e => e.Studentid == studentId);
+                    // زنگ = تعداد امتیازات (مثال)
+                    var bells = totalScores;
 
-                                           var uniqueCourses = await _context.ExamStuTeaches
-                                               .Where(e => e.Studentid == studentId && e.Examid != null)
-                                               .Select(e => e.Exam!.Courseid)
-                                               .Distinct()
-                                               .CountAsync();
+                    var response = new
+                    {
+                        studentName = student.Name,
+                        gpa = Math.Round(gpa, 1),
+                        bells,
+                        courses = uniqueCourses,
+                        units,
+                        grades
+                    };
 
-                                           // هر درس = ۳ واحد (مثال)
-                                           var units = uniqueCourses * 3;
-
-                                           // === 3. Grades per subject (using Exam.Title) ===
-                                           var grades = await _context.ExamStuTeaches
-                                               .Where(e => e.Studentid == studentId && e.Score != null && e.Exam != null)
-                                               .GroupBy(e => e.Exam.Title ?? "نامشخص")
-                                               .Select(g => new
-                                               {
-                                                   name = g.Key,
-                                                   percent = (int)Math.Round(g.Average(x => (double)x.Score!) * 5), // 20 → 100%
-                                                   isTop = g.Key == "ریاضی ۳"
-                                               })
-                                               .OrderByDescending(g => g.percent)
-                                               .ToListAsync();
-
-                                           // === 4. زنگ = تعداد امتحانات (مثال) ===
-                                           var bells = totalExams;
-
-                                           var response = new
-                                           {
-                                               studentName = student.Name,
-                                               gpa = Math.Round(gpa, 1),
-                                               bells,
-                                               courses = uniqueCourses,
-                                               units,
-                                               grades
-                                           };
-
-                                           return Ok(response);
-                                       }
-                                       catch (Exception ex)
-                                       {
-                                           return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
-                                       }
-                                   }
+                    return Ok(response);
+                }
+                catch (Exception ex)
+                {
+                    return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+                }
+            }
 
         // ──────────────────────────────────────────────────────────────
         // Get exams for student's class with optional date filtering
@@ -514,7 +564,7 @@ namespace SchoolPortalAPI.Controllers
             var lastScoreMonth = await _context.Scores
                 .Where(s => s.Studentid == student.Studentid)
                 .OrderByDescending(s => s.Id)
-                .Select(s => s.Score_month)
+                .Select(s => s.ScoreValue)
                 .FirstOrDefaultAsync();
 
             var todayShamsi = DateTime.Now.ToShamsi(); // 1403-09-01
@@ -527,7 +577,7 @@ namespace SchoolPortalAPI.Controllers
 
             var stats = new[]
             {
-                new { label = "آخرین نمره",       value = lastScoreMonth ?? "ندارد", subtitle = "ماه",       icon = "event",     color = "purple" },
+                new { label = "آخرین نمره",       value = lastScoreMonth.ToString() ?? "ندارد", subtitle = "ماه",       icon = "event",     color = "purple" },
                 new { label = "تعداد دروس",       value = totalCourses.ToString(),   subtitle = "ثبت‌نام شده", icon = "school",    color = "green"  },
                 new { label = "میانگین نمرات",    value = average.ToString("F1"),    subtitle = "از ۲۰",      icon = "grade",     color = "blue"   },
                 new { label = "آزمون‌های آینده",   value = upcomingExamsCount.ToString(), subtitle = "در پیش رو", icon = "upcoming",  color = "orange" }

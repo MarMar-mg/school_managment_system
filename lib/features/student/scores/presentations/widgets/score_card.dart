@@ -41,7 +41,7 @@ class ScoreCard extends StatelessWidget {
               // Percent + Subject
               Expanded(
                 child: Text(
-                  '$percent% $subject',
+                  percent == 0? subject: '$subject ($percent%) ',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -89,11 +89,11 @@ class ScoreCard extends StatelessWidget {
 
               const SizedBox(width: 12),
 
-              // Label
-              const Text(
-                'تکالیف',
-                style: TextStyle(color: Colors.grey, fontSize: 14),
-              ),
+              // // Label
+              // const Text(
+              //   'تکالیف',
+              //   style: TextStyle(color: Colors.grey, fontSize: 14),
+              // ),
 
               const Spacer(),
             ],
@@ -118,7 +118,7 @@ class ScoreCard extends StatelessWidget {
         SizedBox(
           width: 50,
           child: Text(
-            '${s.percent}%',
+            s.percent == 0? '': '${s.percent}%',
             style: const TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,

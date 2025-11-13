@@ -21,7 +21,7 @@ class StatCard {
   factory StatCard.fromJson(Map<String, dynamic> json) {
     return StatCard(
       label: json['label'] ?? '',
-      value: json['value'] ?? '0',
+      value: json['value'] ?? 'ندارد',
       subtitle: json['subtitle'] ?? '',
       icon: _getIcon(json['icon'] ?? 'info'),
       color: _getColor(json['color'] ?? 'blue'),

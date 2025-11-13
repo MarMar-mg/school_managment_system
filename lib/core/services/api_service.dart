@@ -465,6 +465,7 @@ class ApiService {
     return DashboardData.fromJson(json.decode(response.body));
   }
 
+  // ==================== USERNAME ====================
   static Future<String> getUserDisplayName(Role role, int userId) async {
     try {
       final endpoint = switch (role) {
@@ -484,6 +485,7 @@ class ApiService {
     return 'کاربر';
   }
 
+  // ==================== AVERAGE_GRADE ====================
   static Future<double> getAverageGrade(Role role, int userId) async {
     try {
       final endpoint = role == Role.student
