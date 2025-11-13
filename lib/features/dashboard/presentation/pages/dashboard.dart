@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:school_management_system/commons/untils.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
+import '../../../../commons/responsive_container.dart';
 import '../widgets/events_list_widget.dart';
 import '../widgets/news_list_widget.dart';
 import '../widgets/section_header_widget.dart';
@@ -71,7 +72,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // ====================== STATS GRID ======================
               _buildAnimatedSection(
@@ -80,74 +80,81 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
               ),
 
               const SizedBox(height: 24),
-
-              // ====================== NEWS SECTION ======================
-              _buildAnimatedSection(
-                index: 1,
+              ResponsiveContainer(
+                padding: EdgeInsets.zero,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SectionHeader(title: 'اخبار', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    const NewsList(),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 24),
-
-              // ====================== EVENTS SECTION ======================
-              _buildAnimatedSection(
-                index: 2,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SectionHeader(title: 'رویدادها', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    const EventsList(),
-                  ],
-                ),
-              ),
-
-              // ====================== ASSIGNMENTS (STUDENT ONLY) ======================
-              if (widget.role == Role.student) ...[
-                const SizedBox(height: 24),
-                _buildAnimatedSection(
-                  index: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      SectionHeader(
-                        title: 'تکالیف پیش رو',
-                        onSeeAll: () {},
-                        actionText: 'مشاهده همه',
+                    // ====================== NEWS SECTION ======================
+                    _buildAnimatedSection(
+                      index: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'اخبار', onSeeAll: () {}),
+                          const SizedBox(height: 12),
+                          const NewsList(),
+                        ],
                       ),
-                      const SizedBox(height: 12),
-                      AssignmentsList(studentId: widget.userId.toInt()),
-                    ],
-                  ),
-                ),
-              ],
-
-              const SizedBox(height: 24),
-
-              // ====================== PROGRESS SECTION ======================
-              _buildAnimatedSection(
-                index: widget.role == Role.student ? 4 : 3,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SectionHeader(title: 'پیشرفت دروس', onSeeAll: () {}),
-                    const SizedBox(height: 12),
-                    ProgressList(
-                      role: widget.role,
-                      userId: int.parse(widget.userId),
                     ),
+
+                    const SizedBox(height: 24),
+
+                    // ====================== EVENTS SECTION ======================
+                    _buildAnimatedSection(
+                      index: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'رویدادها', onSeeAll: () {}),
+                          const SizedBox(height: 12),
+                          const EventsList(),
+                        ],
+                      ),
+                    ),
+
+                    // ====================== ASSIGNMENTS (STUDENT ONLY) ======================
+                    if (widget.role == Role.student) ...[
+                      const SizedBox(height: 24),
+                      _buildAnimatedSection(
+                        index: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SectionHeader(
+                              title: 'تکالیف پیش رو',
+                              onSeeAll: () {},
+                              actionText: 'مشاهده همه',
+                            ),
+                            const SizedBox(height: 12),
+                            AssignmentsList(studentId: widget.userId.toInt()),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // ====================== PROGRESS SECTION ======================
+                    _buildAnimatedSection(
+                      index: widget.role == Role.student ? 4 : 3,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'پیشرفت دروس', onSeeAll: () {}),
+                          const SizedBox(height: 12),
+                          ProgressList(
+                            role: widget.role,
+                            userId: int.parse(widget.userId),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
-
-              const SizedBox(height: 40),
             ],
           ),
         ),

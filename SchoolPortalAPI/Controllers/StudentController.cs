@@ -443,16 +443,16 @@ namespace SchoolPortalAPI.Controllers
                     x.c.Name,
                     x.c.Code,
                     x.c.Location,
-                    x.c.Time,
+                    x.c.Classtime,
                     TeacherName = x.c.Teacher != null ? x.c.Teacher.Name : "نامشخص"
                 })
                 .Select(g => new
                 {
                     courseName = g.Key.Name,
-                    courseCode = g.Key.Code ?? "",
+                    courseCode = g.Key.Code,
                     teacherName = g.Key.TeacherName,
-                    location = g.Key.Location ?? "نامشخص",
-                    time = g.Key.Time ?? "نامشخص",
+                    location = g.Key.Location,
+                    Classtime = g.Key.Classtime,
                     grade = g.OrderByDescending(s => s.score != null ? s.score.Id : 0)
                              .FirstOrDefault().score != null
                         ? g.OrderByDescending(s => s.score != null ? s.score.Id : 0)

@@ -140,7 +140,7 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
                 ],
               ),
               const SizedBox(height: 12),
-              _buildDetailItem(Icons.schedule_outlined, widget.course['time'], color),
+              _buildDetailItem(Icons.schedule_outlined, widget.course['Classtime'], color),
               const SizedBox(height: 16),
               _buildActionButton(color),
             ],

@@ -92,6 +92,7 @@ class AssignmentItem {
   final String badge;
   final Color badgeColor;
   final IconData icon;
+  final String endTime;
 
   AssignmentItem({
     required this.title,
@@ -99,10 +100,9 @@ class AssignmentItem {
     required this.badge,
     required this.badgeColor,
     required this.icon,
+    required  this.endTime,
   });
 }
-
-// features/dashboard/presentation/models/dashboard_models.dart
 
 class ProgressItem {
   final String subject;

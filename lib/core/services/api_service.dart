@@ -223,7 +223,7 @@ class ApiService {
                   'code': c['courseCode'] ?? '',
                   'teacher': c['teacherName'] ?? 'نامشخص',
                   'location': c['location'] ?? 'نامشخص',
-                  'time': c['time'] ?? 'نامشخص',
+                  'Classtime': c['classtime'] ?? 'نامشخص',
                   'progress': c['progress'] ?? 0,
                   'grade': c['grade'] ?? '-',
                   'color': _getColor(c['courseName']),
@@ -457,8 +457,9 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/student/my-score/$studentId'),
     );
-    if (response.statusCode != 200)
+    if (response.statusCode != 200) {
       throw Exception('Failed: ${response.statusCode}');
+    }
     return DashboardData.fromJson(json.decode(response.body));
   }
 
@@ -527,6 +528,7 @@ class ApiService {
               title: e['title'] ?? 'تمرین',
               subject: e['courseName'] ?? 'نامشخص',
               badge: _formatDisplayShamsiDate(e['dueDate']),
+              endTime: e['endTime'] ?? 'نامشخص',
               badgeColor: Colors.orange,
               icon: Icons.assignment_rounded,
             ),
@@ -551,6 +553,7 @@ class ApiService {
               badge: _formatDisplayShamsiDate(e['examDate']),
               badgeColor: Colors.red,
               icon: Icons.quiz_rounded,
+              endTime: e['endTime'] ,
             ),
           ),
         );
