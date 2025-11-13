@@ -48,7 +48,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ),
     ExamPage(
       role: Role.student,
-      userName: 'علی رضایی',
+      userName: widget.userName,
       userId: widget.userId.toInt(),
     ),
     MyScorePage(studentId: widget.userIdi),
