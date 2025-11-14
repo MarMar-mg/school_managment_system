@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../../applications/role.dart';
 import '../../../../../core/services/api_service.dart';
-import '../widgets/add_dialog.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_card.dart';
 import '../widgets/delete_dialog.dart';
@@ -323,11 +322,12 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => showAddDialog(
+              onPressed: () => showAddEditDialog(
                 context,
                 courses: _courses,
                 userId: widget.userId,
                 addData: _fetchData,
+                isAdd: true,
               ),
               icon: const Icon(Icons.add),
               label: const Text('افزودن تمرین'),
@@ -354,11 +354,12 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
               _buildAnimatedWidget(
                 index: 0,
                 child: HeaderSection(
-                  onAdd: () => showAddDialog(
+                  onAdd: () => showAddEditDialog(
                     context,
                     courses: _courses,
                     userId: widget.userId,
                     addData: _fetchData,
+                    isAdd: true,
                   ),
                 ),
               ),
@@ -439,7 +440,10 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                       ),
                       // _deleteData(data['id']),
                       onEdit: () =>
-                          showAddEditDialog(context, assignment: data),
+                          showAddEditDialog(context, assignment: data, isAdd: false,
+                            courses: _courses,
+                            userId: widget.userId,
+                            addData: _fetchData,),
                       onView: () {},
                     ),
                   ),

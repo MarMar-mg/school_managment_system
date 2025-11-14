@@ -318,6 +318,7 @@ namespace SchoolPortalAPI.Controllers
                     subject = course.Name ?? "نامشخص",
                     dueDate = e.Enddate ?? "نامشخص",
                     dueTime = e.Endtime ?? "نامشخص",
+                    description = e.Description,
                     score = e.Score?.ToString() ?? "0",
                     submissions = $"{submissions}/{totalStudents}",
                     percentage = $"{percentage}%",
@@ -334,6 +335,12 @@ namespace SchoolPortalAPI.Controllers
         [HttpPut("exercises/{exerciseId}")]
         public async Task<IActionResult> UpdateExercise(long exerciseId, [FromBody] UpdateExerciseDto model)
         {
+
+            var teacherIdd = await _context.Teachers
+                   .Where(t => t.Userid == model.Teacherid)
+                   .Select(t => t.Teacherid)
+                   .FirstOrDefaultAsync();
+
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
@@ -343,7 +350,7 @@ namespace SchoolPortalAPI.Controllers
             if (exercise == null) return NotFound("تمرین یافت نشد");
 
             var course = await _context.Courses.FindAsync(exercise.Courseid);
-            if (course == null || course.Teacherid != model.Teacherid)
+            if (course == null || course.Teacherid != teacherIdd)
             {
                 return BadRequest("مجوز ویرایش ندارید");
             }

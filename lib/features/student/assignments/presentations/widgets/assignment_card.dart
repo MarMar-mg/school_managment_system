@@ -133,7 +133,7 @@ class AssignmentCard extends StatelessWidget {
           if (item.description?.isNotEmpty == true) ...[
             const SizedBox(height: 16),
             Text(
-              item.description!,
+              'توضبحات: ${item.description!}',
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[700],

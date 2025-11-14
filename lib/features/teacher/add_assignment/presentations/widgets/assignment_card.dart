@@ -52,16 +52,15 @@ class _AssignmentCardState extends State<AssignmentCard>
       vsync: this,
     );
 
-    _opacityAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _enterController, curve: Curves.easeOut),
-    );
+    _opacityAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(parent: _enterController, curve: Curves.easeOut));
 
-    _slideAnimation = Tween<Offset>(
-      begin: const Offset(1.0, 0.0),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic),
-    );
+    _slideAnimation =
+        Tween<Offset>(begin: const Offset(1.0, 0.0), end: Offset.zero).animate(
+          CurvedAnimation(parent: _enterController, curve: Curves.easeOutCubic),
+        );
 
     _enterController.forward();
   }
@@ -116,7 +115,9 @@ class _AssignmentCardState extends State<AssignmentCard>
                     borderRadius: BorderRadius.circular(16),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.06 * _shadowAnimation.value),
+                        color: Colors.black.withOpacity(
+                          0.06 * _shadowAnimation.value,
+                        ),
                         blurRadius: 12 * _shadowAnimation.value,
                         offset: Offset(0, 4 * _shadowAnimation.value),
                       ),
@@ -186,7 +187,10 @@ class _AssignmentCardState extends State<AssignmentCard>
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.grey.shade50,
                           borderRadius: BorderRadius.circular(10),
@@ -210,75 +214,96 @@ class _AssignmentCardState extends State<AssignmentCard>
 
                 // Middle section
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: Row(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 12,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.blue.shade100),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'نسبت تحویل',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textDirection: TextDirection.rtl,
-                              ),
-                              const SizedBox(height: 3),
-                              Text(
-                                widget.data['submissions'],
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.blue.shade700,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                      Text(
+                        'توضبحات: ${widget.data['description']}',
+                        textDirection: TextDirection.rtl,
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: Colors.amber.shade100),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              const Text(
-                                'مهلت تحویل',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.black54,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                textDirection: TextDirection.rtl,
+                      const SizedBox(height: 12,),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
                               ),
-                              const SizedBox(height: 3),
-                              Text(
-                                '${_formatDate(widget.data['dueDate'])}(${widget.data['dueTime']})',
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.black87,
+                              decoration: BoxDecoration(
+                                color: Colors.blue.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.blue.shade100),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'نسبت تحویل',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black54,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textDirection: TextDirection.rtl,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    widget.data['submissions'],
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.blue.shade700,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade50,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: Colors.amber.shade100,
                                 ),
                               ),
-                            ],
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'مهلت تحویل',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      color: Colors.black54,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    textDirection: TextDirection.rtl,
+                                  ),
+                                  const SizedBox(height: 3),
+                                  Text(
+                                    '${_formatDate(widget.data['dueDate'])}(${widget.data['dueTime']})',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w700,
+                                      color: Colors.black87,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
@@ -288,7 +313,10 @@ class _AssignmentCardState extends State<AssignmentCard>
 
                 // Bottom section with hover buttons
                 Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   child: Row(
                     children: [
                       _HoverButton(
@@ -301,8 +329,11 @@ class _AssignmentCardState extends State<AssignmentCard>
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.red.shade200),
                           ),
-                          child: Icon(Icons.delete_outline,
-                              color: Colors.red.shade600, size: 18),
+                          child: Icon(
+                            Icons.delete_outline,
+                            color: Colors.red.shade600,
+                            size: 18,
+                          ),
                         ),
                       ),
                       const SizedBox(width: 8),
@@ -319,8 +350,11 @@ class _AssignmentCardState extends State<AssignmentCard>
                             child: const Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Icon(Icons.visibility_outlined,
-                                    size: 16, color: Colors.grey),
+                                Icon(
+                                  Icons.visibility_outlined,
+                                  size: 16,
+                                  color: Colors.grey,
+                                ),
                                 SizedBox(width: 4),
                                 Text(
                                   'مشاهده رسالت‌ها',
@@ -347,8 +381,11 @@ class _AssignmentCardState extends State<AssignmentCard>
                             borderRadius: BorderRadius.circular(8),
                             border: Border.all(color: Colors.grey.shade200),
                           ),
-                          child: const Icon(Icons.edit_outlined,
-                              color: Colors.grey, size: 18),
+                          child: const Icon(
+                            Icons.edit_outlined,
+                            color: Colors.grey,
+                            size: 18,
+                          ),
                         ),
                       ),
                     ],
@@ -369,10 +406,7 @@ class _HoverButton extends StatefulWidget {
   final VoidCallback onTap;
   final Widget child;
 
-  const _HoverButton({
-    required this.onTap,
-    required this.child,
-  });
+  const _HoverButton({required this.onTap, required this.child});
 
   @override
   State<_HoverButton> createState() => _HoverButtonState();
@@ -391,9 +425,10 @@ class _HoverButtonState extends State<_HoverButton>
       vsync: this,
     );
 
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.08).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 1.08,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
   }
 
   @override
@@ -412,10 +447,7 @@ class _HoverButtonState extends State<_HoverButton>
         child: AnimatedBuilder(
           animation: _scaleAnimation,
           builder: (context, child) {
-            return Transform.scale(
-              scale: _scaleAnimation.value,
-              child: child,
-            );
+            return Transform.scale(scale: _scaleAnimation.value, child: child);
           },
           child: widget.child,
         ),
