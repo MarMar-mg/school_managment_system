@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../../applications/role.dart';
-import '../../../../../applications/colors.dart';
 import '../../../../../core/services/api_service.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_card.dart';
+import '../widgets/delete_dialog.dart';
 import '../widgets/stat_card.dart';
 import '../widgets/header_section.dart';
 import '../widgets/section_divider.dart';
@@ -78,6 +78,29 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
     }
   }
 
+  Future<void> _deleteData(int exID) async {
+    try {
+      await ApiService.deleteTeacherAssignment(exID, widget.userId);
+      setState(() => _isLoading = true);
+      final assignments = await ApiService.getTeacherAssignments(widget.userId);
+      final courses = await ApiService.getCourses(Role.teacher, widget.userId);
+
+      setState(() {
+        _assignments = assignments;
+        _courses = courses;
+        _isLoading = false;
+        _error = '';
+      });
+
+      _initializeAnimations();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -116,24 +139,6 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey.shade100,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black87),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'مدیریت تمرین‌ها',
-          style: TextStyle(
-            color: Colors.black87,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-          textDirection: TextDirection.rtl,
-        ),
-        centerTitle: true,
-      ),
       body: RefreshIndicator(
         onRefresh: _fetchData,
         color: Colors.purple,
@@ -430,7 +435,9 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                     padding: const EdgeInsets.only(bottom: 14),
                     child: AssignmentCard(
                       data: data,
-                      onDelete: () => _fetchData(),
+                      onDelete: () =>
+                          showDeleteDialog(context, _deleteData(data['id']) as VoidCallback, assignment: data),
+                          // _deleteData(data['id']),
                       onEdit: () =>
                           showAddEditDialog(context, assignment: data),
                       onView: () {},
@@ -451,7 +458,7 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
 // ==================== SHIMMER CARD WIDGET ====================
 
 class _ShimmerAssignmentCard extends StatelessWidget {
-  const _ShimmerAssignmentCard({Key? key}) : super(key: key);
+  const _ShimmerAssignmentCard({super.key});
 
   @override
   Widget build(BuildContext context) {
