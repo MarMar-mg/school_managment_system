@@ -62,6 +62,7 @@ dependencies:
   line_icons: ^2.0.3
   shimmer: ^3.0.0
   dio: ^5.9.0
+  persian_datetime_picker: ^3.2.0
 
 dev_dependencies:
   flutter_test:

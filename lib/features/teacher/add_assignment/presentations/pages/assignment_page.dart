@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../../applications/role.dart';
 import '../../../../../core/services/api_service.dart';
+import '../widgets/add_dialog.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_card.dart';
 import '../widgets/delete_dialog.dart';
@@ -44,11 +45,7 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
       return Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(
-            0.1 + (index * 0.1),
-            1.0,
-            curve: Curves.easeOutCubic,
-          ),
+          curve: Interval(0.1 + (index * 0.1), 1.0, curve: Curves.easeOutCubic),
         ),
       );
     });
@@ -107,10 +104,7 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
     super.dispose();
   }
 
-  Widget _buildAnimatedWidget({
-    required int index,
-    required Widget child,
-  }) {
+  Widget _buildAnimatedWidget({required int index, required Widget child}) {
     if (_animations.isEmpty || index >= _animations.length) {
       return child;
     }
@@ -178,11 +172,12 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
               const SizedBox(height: 16),
 
               // Shimmer Cards
-              ...List.generate(4, (_) => const _ShimmerAssignmentCard())
-                  .map((card) => Padding(
-                padding: const EdgeInsets.only(bottom: 14),
-                child: card,
-              )),
+              ...List.generate(4, (_) => const _ShimmerAssignmentCard()).map(
+                (card) => Padding(
+                  padding: const EdgeInsets.only(bottom: 14),
+                  child: card,
+                ),
+              ),
             ],
           ),
         ),
@@ -208,10 +203,7 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
     return Shimmer.fromColors(
       baseColor: Colors.grey[100]!,
       highlightColor: Colors.grey[300]!,
-      child: Container(
-        height: 2,
-        color: Colors.white,
-      ),
+      child: Container(height: 2, color: Colors.white),
     );
   }
 
@@ -323,8 +315,7 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assignment_outlined,
-                size: 80, color: Colors.grey[400]),
+            Icon(Icons.assignment_outlined, size: 80, color: Colors.grey[400]),
             const SizedBox(height: 16),
             Text(
               'تمرینی یافت نشد',
@@ -332,7 +323,12 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => showAddEditDialog(context),
+              onPressed: () => showAddDialog(
+                context,
+                courses: _courses,
+                userId: widget.userId,
+                addData: _fetchData,
+              ),
               icon: const Icon(Icons.add),
               label: const Text('افزودن تمرین'),
               style: ElevatedButton.styleFrom(
@@ -358,15 +354,17 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
               _buildAnimatedWidget(
                 index: 0,
                 child: HeaderSection(
-                  onAdd: () => showAddEditDialog(context),
+                  onAdd: () => showAddDialog(
+                    context,
+                    courses: _courses,
+                    userId: widget.userId,
+                    addData: _fetchData,
+                  ),
                 ),
               ),
 
               const SizedBox(height: 24),
-              _buildAnimatedWidget(
-                index: 1,
-                child: const SectionDivider(),
-              ),
+              _buildAnimatedWidget(index: 1, child: const SectionDivider()),
               const SizedBox(height: 24),
 
               // Animated Stats Row
@@ -374,14 +372,13 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                 index: 2,
                 child: LayoutBuilder(
                   builder: (context, constraints) {
-                    final spacing =
-                    constraints.maxWidth > 600 ? 16.0 : 12.0;
+                    final spacing = constraints.maxWidth > 600 ? 16.0 : 12.0;
                     return Row(
                       children: [
                         Expanded(
                           child: StatCard(
                             count:
-                            '${_assignments.where((a) => DateTime.parse(a['dueDate']).isAfter(DateTime.now())).length}',
+                                '${_assignments.where((a) => DateTime.parse(a['dueDate']).isAfter(DateTime.now())).length}',
                             label: 'تمرین فعال',
                           ),
                         ),
@@ -435,9 +432,12 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                     padding: const EdgeInsets.only(bottom: 14),
                     child: AssignmentCard(
                       data: data,
-                      onDelete: () =>
-                          showDeleteDialog(context, _deleteData(data['id']) as VoidCallback, assignment: data),
-                          // _deleteData(data['id']),
+                      onDelete: () => showDeleteDialog(
+                        context,
+                        _deleteData(data['id']) as VoidCallback,
+                        assignment: data,
+                      ),
+                      // _deleteData(data['id']),
                       onEdit: () =>
                           showAddEditDialog(context, assignment: data),
                       onView: () {},

@@ -226,6 +226,7 @@ class ApiService {
                   'Classtime': c['classtime'] ?? 'نامشخص',
                   'progress': c['progress'] ?? 0,
                   'grade': c['grade'] ?? '-',
+                  'id': c['courseId'] ?? '',
                   'color': _getColor(c['courseName']),
                   'icon': _getIcon(c['courseName']),
                 },
@@ -245,6 +246,7 @@ class ApiService {
                 (c) => {
                   'name': c['courseName'] ?? 'نامشخص',
                   'code': c['courseCode'] ?? '',
+                  'id': c['courseId'] ?? '',
                   'teacher': c['teacherName'] ?? 'نامشخص',
                   'location': c['location'] ?? 'نامشخص',
                   'Classtime': c['time'] ?? 'نامشخص',
@@ -284,6 +286,7 @@ class ApiService {
     return Icons.menu_book_rounded;
   }
 
+  // =================== GET PROGRESS ====================================
   static Future<List<ProgressItem>> getProgress({
     required Role role,
     required int userId,
@@ -594,6 +597,7 @@ class ApiService {
     }
   }
 
+  // ====================== ADD ASSIGNMENT ===============================
   static Future<Map<String, dynamic>> addTeacherAssignment({
     required int teacherId,
     required int courseId,
@@ -601,6 +605,8 @@ class ApiService {
     String? description,
     String? endDate,
     String? endTime,
+    String? startDate,
+    String? startTime,
     int? score,
   }) async {
     final url = Uri.parse('$baseUrl/teacher/exercises');
@@ -612,6 +618,8 @@ class ApiService {
       'description': description,
       'enddate': endDate,
       'endtime': endTime,
+      'startdate': startDate,
+      'starttime': startTime,
       'score': score,
     });
 
@@ -628,6 +636,7 @@ class ApiService {
     }
   }
 
+  // ========================= UPDATE ASSIGNMENT ================================
   static Future<Map<String, dynamic>> updateTeacherAssignment({
     required int exerciseId,
     required int teacherId,
@@ -678,6 +687,7 @@ class ApiService {
     }
   }
 
+ // ================================= GET SUBMISSION FOR ASSIGNMENT =============================
   static Future<List<dynamic>> getAssignmentSubmissions(int exerciseId, int teacherId) async {
     final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId/submissions?teacherId=$teacherId');
 

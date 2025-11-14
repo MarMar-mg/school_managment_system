@@ -13,6 +13,8 @@ namespace SchoolPortalAPI.Controllers
         public string? Description { get; set; }
         public string? Enddate { get; set; }
         public string? Endtime { get; set; }
+        public string? Startdate { get; set; }
+        public string? Starttime { get; set; }
         public int? Score { get; set; }
     }
 
@@ -133,6 +135,7 @@ namespace SchoolPortalAPI.Controllers
                 .Select(g => new
                 {
                     courseName = g.c.Name,
+                    courseId = g.c.Courseid,
                     courseCode = g.c.Code ?? "",
                     teacherName = teacher.Name,
                     location = g.c.Location ?? "نامشخص",
@@ -237,8 +240,13 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            var teacherIdd = await _context.Teachers
+                            .Where(t => t.Userid == model.Teacherid)
+                            .Select(t => t.Teacherid)
+                            .FirstOrDefaultAsync();
+
             var course = await _context.Courses
-                .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == model.Teacherid);
+                .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
 
             if (course == null)
             {
@@ -251,6 +259,8 @@ namespace SchoolPortalAPI.Controllers
                 Description = model.Description,
                 Enddate = model.Enddate,
                 Endtime = model.Endtime,
+                Startdate = model.Startdate,
+                Starttime = model.Starttime,
                 Score = model.Score,
                 Courseid = model.Courseid,
                 Classid = course.Classid
