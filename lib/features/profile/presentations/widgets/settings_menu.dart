@@ -65,63 +65,126 @@ class _SettingsMenuState extends State<SettingsMenu> {
       onEnter: (_) => setState(() => _hoveredIndex = index),
       onExit: (_) => setState(() => _hoveredIndex = null),
       child: GestureDetector(
-        onTap: onTap,
+        onTapDown: (_) => setState(() => _hoveredIndex = index),
+        onTapUp: (_) {
+          setState(() => _hoveredIndex = null);
+          onTap();
+        },
+        onTapCancel: () => setState(() => _hoveredIndex = null),
         child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
+          duration: const Duration(milliseconds: 400),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           decoration: BoxDecoration(
-            color: isHovered ? Colors.grey.shade50 : Colors.white,
+            color: isHovered ? iconBgColor.withOpacity(0.08) : Colors.white,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
               color: isHovered
-                  ? iconBgColor.withOpacity(0.3)
-                  : Colors.transparent,
-              width: 2,
+                  ? iconBgColor.withOpacity(0.6)
+                  : Colors.grey.shade200,
+              width: isHovered ? 2 : 1.5,
             ),
             boxShadow: [
               BoxShadow(
                 color: isHovered
-                    ? iconBgColor.withOpacity(0.15)
-                    : Colors.grey.withOpacity(0.08),
-                blurRadius: isHovered ? 12 : 8,
-                offset: isHovered ? const Offset(0, 4) : const Offset(0, 2),
+                    ? iconBgColor.withOpacity(0.3)
+                    : Colors.black.withOpacity(0.05),
+                blurRadius: isHovered ? 20 : 8,
+                offset: isHovered ? const Offset(0, 10) : const Offset(0, 2),
+                spreadRadius: isHovered ? 2 : 0,
               ),
             ],
           ),
           child: Row(
             children: [
-              AnimatedScale(
-                duration: const Duration(milliseconds: 300),
-                scale: isHovered ? 1.1 : 1.0,
-                child: Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: iconBgColor.withOpacity(isHovered ? 0.25 : 0.15),
-                    borderRadius: BorderRadius.circular(12),
+              // Icon with gradient and scale
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 400),
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isHovered
+                        ? [
+                      iconBgColor.withOpacity(0.4),
+                      iconBgColor.withOpacity(0.15),
+                    ]
+                        : [
+                      iconBgColor.withOpacity(0.15),
+                      iconBgColor.withOpacity(0.08),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: iconBgColor.withOpacity(isHovered ? 0.5 : 0.2),
+                  ),
+                ),
+                child: Transform.scale(
+                  scale: isHovered ? 1.2 : 1.0,
                   child: Icon(icon, color: iconBgColor, size: 22),
                 ),
               ),
               const SizedBox(width: 14),
+              // Label with underline animation
               Expanded(
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: isHovered ? iconBgColor : Colors.black87,
-                  ),
-                  textDirection: TextDirection.rtl,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      label,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: isHovered ? FontWeight.w700 : FontWeight.w600,
+                        color: isHovered ? iconBgColor : Colors.black87,
+                        letterSpacing: isHovered ? 0.3 : 0,
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    if (isHovered)
+                      Padding(
+                        padding: const EdgeInsets.only(top: 4),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 300),
+                          height: 2,
+                          width: 40,
+                          decoration: BoxDecoration(
+                            color: iconBgColor,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
-              AnimatedRotation(
-                turns: isHovered ? 0.25 : 0,
-                duration: const Duration(milliseconds: 300),
-                child: Icon(
-                  Icons.arrow_forward_ios,
-                  color: isHovered ? iconBgColor : Colors.grey.shade300,
-                  size: 16,
-                ),
+              // Sliding arrow with color change
+              Stack(
+                alignment: Alignment.center,
+                children: [
+                  AnimatedOpacity(
+                    opacity: isHovered ? 0 : 1,
+                    duration: const Duration(milliseconds: 300),
+                    child: Transform.translate(
+                      offset: Offset(isHovered ? 15 : 0, 0),
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: Colors.grey.shade300,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                  AnimatedOpacity(
+                    opacity: isHovered ? 1 : 0,
+                    duration: const Duration(milliseconds: 300),
+                    child: Transform.translate(
+                      offset: Offset(isHovered ? 0 : -15, 0),
+                      child: Icon(
+                        Icons.arrow_forward_ios,
+                        color: iconBgColor,
+                        size: 16,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -131,24 +194,36 @@ class _SettingsMenuState extends State<SettingsMenu> {
   }
 
   Widget _buildLogoutButton() {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: widget.onLogout,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.red.shade50,
-          foregroundColor: Colors.red,
-          elevation: 0,
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-            side: BorderSide(color: Colors.red.shade200),
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.red.withOpacity(0.12),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
-        ),
-        icon: const Icon(Icons.logout),
-        label: const Text(
-          'خروج از حساب',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        ],
+      ),
+      child: SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: widget.onLogout,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.red.shade50,
+            foregroundColor: Colors.red,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+              side: BorderSide(color: Colors.red.shade200, width: 1.5),
+            ),
+          ),
+          icon: const Icon(Icons.logout),
+          label: const Text(
+            'خروج از حساب',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
         ),
       ),
     );
@@ -161,6 +236,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
         duration: const Duration(seconds: 2),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         behavior: SnackBarBehavior.floating,
+        backgroundColor: Colors.black.withOpacity(0.8),
       ),
     );
   }
