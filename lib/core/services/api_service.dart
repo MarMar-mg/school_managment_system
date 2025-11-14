@@ -247,7 +247,7 @@ class ApiService {
                   'code': c['courseCode'] ?? '',
                   'teacher': c['teacherName'] ?? 'نامشخص',
                   'location': c['location'] ?? 'نامشخص',
-                  'time': c['time'] ?? 'نامشخص',
+                  'Classtime': c['time'] ?? 'نامشخص',
                   'progress': c['progress'] ?? 0,
                   'grade': c['grade'] ?? '-',
                   'color': _getColor(c['courseName']),
