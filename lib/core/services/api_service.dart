@@ -576,6 +576,125 @@ class ApiService {
     return assignments;
   }
 
+  // ==================== TEACHER ASSIGNMENTS ====================
+
+  static Future<List<dynamic>> getTeacherAssignments(int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$teacherId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('خطا در دریافت تمرین‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> addTeacherAssignment({
+    required int teacherId,
+    required int courseId,
+    required String title,
+    String? description,
+    String? endDate,
+    String? endTime,
+    int? score,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises');
+
+    final body = json.encode({
+      'teacherid': teacherId,
+      'courseid': courseId,
+      'title': title,
+      'description': description,
+      'enddate': endDate,
+      'endtime': endTime,
+      'score': score,
+    });
+
+    try {
+      final response = await http.post(url, headers: _headers, body: body).timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در اضافه کردن تمرین: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> updateTeacherAssignment({
+    required int exerciseId,
+    required int teacherId,
+    String? title,
+    String? description,
+    String? endDate,
+    String? endTime,
+    int? score,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId');
+
+    final body = json.encode({
+      'teacherid': teacherId,
+      'title': title,
+      'description': description,
+      'enddate': endDate,
+      'endtime': endTime,
+      'score': score,
+    });
+
+    try {
+      final response = await http.put(url, headers: _headers, body: body).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در به‌روزرسانی تمرین: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteTeacherAssignment(int exerciseId, int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId?teacherId=$teacherId');
+
+    try {
+      final response = await http.delete(url, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در حذف تمرین: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  static Future<List<dynamic>> getAssignmentSubmissions(int exerciseId, int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId/submissions?teacherId=$teacherId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('خطا در دریافت رسالت‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  ///////////////////////////////////////////
+
   // تبدیل DateTime میلادی به رشته شمسی (14030825)
   static String _formatShamsiDate(DateTime date) {
     final jalali = Jalali.fromDateTime(date);

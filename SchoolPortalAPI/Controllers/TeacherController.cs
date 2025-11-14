@@ -1,4 +1,3 @@
-// Controllers/TeacherController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
@@ -6,6 +5,27 @@ using SchoolPortalAPI.Models;
 
 namespace SchoolPortalAPI.Controllers
 {
+    public class AddExerciseDto
+    {
+        public long Teacherid { get; set; }
+        public long Courseid { get; set; }
+        public string Title { get; set; } = null!;
+        public string? Description { get; set; }
+        public string? Enddate { get; set; }
+        public string? Endtime { get; set; }
+        public int? Score { get; set; }
+    }
+
+    public class UpdateExerciseDto
+    {
+        public long Teacherid { get; set; }
+        public string? Title { get; set; }
+        public string? Description { get; set; }
+        public string? Enddate { get; set; }
+        public string? Endtime { get; set; }
+        public int? Score { get; set; }
+    }
+
     [ApiController]
     [Route("api/teacher")]
     public class TeacherController : ControllerBase
@@ -204,6 +224,192 @@ namespace SchoolPortalAPI.Controllers
                 .FirstOrDefaultAsync();
 
             return Ok(new { name = name ?? "معلم" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 8. Add new exercise
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("exercises")]
+        public async Task<IActionResult> AddExercise([FromBody] AddExerciseDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var course = await _context.Courses
+                .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == model.Teacherid);
+
+            if (course == null)
+            {
+                return BadRequest("درس یافت نشد یا متعلق به شما نیست");
+            }
+
+            var exercise = new Exercise
+            {
+                Title = model.Title,
+                Description = model.Description,
+                Enddate = model.Enddate,
+                Endtime = model.Endtime,
+                Score = model.Score,
+                Courseid = model.Courseid,
+                Classid = course.Classid
+            };
+
+            _context.Exercises.Add(exercise);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { id = exercise.Exerciseid, message = "تمرین با موفقیت اضافه شد" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 9. Get exercises for teacher
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exercises/{teacherId}")]
+        public async Task<IActionResult> GetTeacherExercises(long teacherId)
+        {
+            var teacherIdd = await _context.Teachers
+                .Where(t => t.Userid == teacherId)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
+
+            var teacherCourses = await _context.Courses
+                .Where(c => c.Teacherid == teacherIdd)
+                .Select(c => new { c.Courseid, c.Name, c.Classid })
+                .ToListAsync();
+
+            if (!teacherCourses.Any()) return Ok(new List<object>());
+
+            var exercises = await _context.Exercises
+                .Where(e => teacherCourses.Select(tc => tc.Courseid).Contains(e.Courseid.Value))
+                .ToListAsync();
+
+            var result = new List<object>();
+
+            foreach (var e in exercises)
+            {
+                var course = teacherCourses.FirstOrDefault(tc => tc.Courseid == e.Courseid);
+                if (course == null) continue;
+
+                var totalStudents = await _context.Students
+                    .Where(s => s.Classeid == course.Classid)
+                    .CountAsync();
+
+                var submissions = await _context.ExerciseStuTeaches
+                    .Where(est => est.Exerciseid == e.Exerciseid)
+                    .CountAsync();
+
+                var percentage = totalStudents > 0 ? Math.Round((double)submissions / totalStudents * 100) : 0;
+
+                result.Add(new
+                {
+                    id = e.Exerciseid,
+                    title = e.Title ?? "بدون عنوان",
+                    subject = course.Name ?? "نامشخص",
+                    dueDate = e.Enddate ?? "نامشخص",
+                    dueTime = e.Endtime ?? "نامشخص",
+                    score = e.Score?.ToString() ?? "0",
+                    submissions = $"{submissions}/{totalStudents}",
+                    percentage = $"{percentage}%",
+                    // color not in backend
+                });
+            }
+
+            return Ok(result);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 10. Update exercise
+        // ──────────────────────────────────────────────────────────────
+        [HttpPut("exercises/{exerciseId}")]
+        public async Task<IActionResult> UpdateExercise(long exerciseId, [FromBody] UpdateExerciseDto model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var exercise = await _context.Exercises.FindAsync(exerciseId);
+            if (exercise == null) return NotFound("تمرین یافت نشد");
+
+            var course = await _context.Courses.FindAsync(exercise.Courseid);
+            if (course == null || course.Teacherid != model.Teacherid)
+            {
+                return BadRequest("مجوز ویرایش ندارید");
+            }
+
+            exercise.Title = model.Title ?? exercise.Title;
+            exercise.Description = model.Description ?? exercise.Description;
+            exercise.Enddate = model.Enddate ?? exercise.Enddate;
+            exercise.Endtime = model.Endtime ?? exercise.Endtime;
+            exercise.Score = model.Score ?? exercise.Score;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "تمرین به‌روزرسانی شد" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 11. Delete exercise
+        // ──────────────────────────────────────────────────────────────
+        [HttpDelete("exercises/{exerciseId}")]
+        public async Task<IActionResult> DeleteExercise(long exerciseId, [FromQuery] long teacherId)
+        {
+            var exercise = await _context.Exercises.FindAsync(exerciseId);
+            if (exercise == null) return NotFound("تمرین یافت نشد");
+
+            var teacherIdd = await _context.Teachers
+                            .Where(t => t.Userid == teacherId)
+                            .Select(t => t.Teacherid)
+                            .FirstOrDefaultAsync();
+
+            var course = await _context.Courses.FindAsync(exercise.Courseid);
+            if (course == null || course.Teacherid != teacherIdd)
+            {
+                return BadRequest("مجوز حذف ندارید");
+            }
+
+            _context.Exercises.Remove(exercise);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "تمرین حذف شد" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 12. Get submissions for exercise
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exercises/{exerciseId}/submissions")]
+        public async Task<IActionResult> GetSubmissions(long exerciseId, [FromQuery] long teacherId)
+        {
+            var teacherIdd = await _context.Teachers
+                                        .Where(t => t.Userid == teacherId)
+                                        .Select(t => t.Teacherid)
+                                        .FirstOrDefaultAsync();
+
+            var exercise = await _context.Exercises.FindAsync(exerciseId);
+            if (exercise == null) return NotFound("تمرین یافت نشد");
+
+            var course = await _context.Courses.FindAsync(exercise.Courseid);
+            if (course == null || course.Teacherid != teacherIdd)
+            {
+                return BadRequest("مجوز مشاهده ندارید");
+            }
+
+            var submissions = await (from est in _context.ExerciseStuTeaches
+                                     where est.Exerciseid == exerciseId
+                                     join s in _context.Students on est.Studentid equals s.Studentid into studentGroup
+                                     from student in studentGroup.DefaultIfEmpty()
+                                     select new
+                                     {
+                                         studentId = est.Studentid,
+                                         studentName = student != null ? student.Name : "نامشخص",
+                                         score = est.Score,
+                                         answerImage = est.Answerimage,
+                                         filename = est.Filename,
+                                         date = est.Date
+                                     }).ToListAsync();
+
+            return Ok(submissions);
         }
     }
 }

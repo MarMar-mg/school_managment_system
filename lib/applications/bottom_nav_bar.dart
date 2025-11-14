@@ -8,6 +8,7 @@ import '../features/student/assignments/presentations/pages/assignments_page.dar
 import '../features/student/classes/presentations/pages/classes_page.dart';
 import '../features/student/exam/presentations/pages/exam_page.dart';
 import '../features/student/scores/presentations/pages/scores_page.dart';
+import '../features/teacher/add_assignment/presentations/pages/assignment_page.dart';
 import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -29,7 +30,7 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  late final target = <Widget>[
+  late final targetStudent = <Widget>[
     Dashboard(
       role: widget.role,
       userName: widget.userName,
@@ -58,6 +59,32 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId,
     ),
   ];
+
+  late final targetTeacher = <Widget>[
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    CoursesPage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+      userIdi: widget.userIdi,
+    ),
+    AddAssignmentPage(userId: widget.userId.toInt(),),
+    ExamPage(
+      role: Role.student,
+      userName: widget.userName,
+      userId: widget.userId.toInt(),
+    ),
+    MyScorePage(studentId: widget.userIdi),
+    ProfilePage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+  ];
   int _selectedIndex = 0;
 
   @override
@@ -65,7 +92,13 @@ class _BottomNavBarState extends State<BottomNavBar> {
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: DashboardAppBar(role: widget.role, userId: widget.userIdi),
-      body: Center(child: target[_selectedIndex]),
+      body: Center(
+        child: widget.role == Role.student
+            ? targetStudent[_selectedIndex]
+            : (widget.role == Role.teacher
+                  ? targetTeacher[_selectedIndex]
+                  : targetStudent[_selectedIndex]),
+      ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
           color: Colors.white,
