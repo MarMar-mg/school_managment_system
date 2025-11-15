@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/assignment_model.dart.dart';
+import '../../data/models/assignment_model.dart.dart';
 import 'assignment_card.dart';
 
 /// Expandable section – works exactly like ExamSection

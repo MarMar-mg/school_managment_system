@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
-import '../models/dashboard_models.dart';
+import '../../../../commons/utils/manager/date_manager.dart';
+import '../../data/models/dashboard_models.dart';
 // ==================== PREMIUM ASSIGNMENT CARD ====================
 
 class AssignmentCard extends StatefulWidget {
@@ -169,7 +170,7 @@ class _AssignmentCardState extends State<AssignmentCard>
                         ),
                       ),
                       child: Text(
-                        _formatDate(widget.item.badge),
+                        DateFormatManager.formatDate(widget.item.badge),
                         style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.bold,
@@ -211,16 +212,4 @@ class _AssignmentCardState extends State<AssignmentCard>
       ),
     );
   }
-}
-
-String _formatDate(dynamic date) {
-  if (date == null) return '';
-  final dateStr = date.toString().trim();
-  if (dateStr.length >= 8) {
-    final year = dateStr.substring(0, 4);
-    final month = dateStr.substring(5, 7);
-    final day = dateStr.substring(8, 10);
-    return '$year/$month/$day';
-  }
-  return dateStr;
 }

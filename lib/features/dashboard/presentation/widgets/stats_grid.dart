@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
-import '../models/dashboard_models.dart';
+import '../../data/models/dashboard_models.dart';
 
 /// Responsive animated stats grid with:
 /// - Shimmer loading placeholder

@@ -4,7 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
-import '../models/dashboard_models.dart';
+import '../../data/models/dashboard_models.dart';
 import 'assignmrnt_card.dart';
 
 /// Premium animated upcoming assignments list with shimmer,

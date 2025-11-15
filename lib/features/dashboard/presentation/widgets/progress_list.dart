@@ -5,7 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
-import '../models/dashboard_models.dart';
+import '../../data/models/dashboard_models.dart';
 
 /// Ultimate animated progress list with growing progress bars,
 /// gradient badges, press feedback, and luxury shimmer.

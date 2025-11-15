@@ -3,7 +3,7 @@ import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
 import 'package:school_management_system/core/services/api_service.dart';
-import 'package:school_management_system/features/student/exam/models/exam_model.dart';
+import 'package:school_management_system/features/student/exam/entities/models/exam_model.dart';
 import 'package:school_management_system/features/student/exam/presentations/widgets/exam_section.dart';
 import 'package:school_management_system/features/student/assignments/presentations/widgets/stats_row.dart';
 

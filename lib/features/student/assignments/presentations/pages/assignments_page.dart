@@ -4,7 +4,7 @@ import '../../../../../applications/colors.dart';
 import '../../../../../applications/role.dart';
 import '../../../../../commons/responsive_container.dart';
 import '../../../../../core/services/api_service.dart';
-import '../../models/assignment_model.dart.dart';
+import '../../data/models/assignment_model.dart.dart';
 import '../widgets/assignment_section.dart';
 import '../widgets/shimmer_placeholder.dart';
 import '../widgets/stats_row.dart';

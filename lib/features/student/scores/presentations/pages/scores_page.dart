@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
-import 'package:school_management_system/features/student/scores/models/score_model.dart';
 import '../../../../../commons/responsive_container.dart';
+import '../../data/models/score_model.dart';
 import '../widgets/score_header_card.dart';
 import '../widgets/score_card.dart';
 

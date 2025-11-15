@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../../applications/colors.dart';
+import '../../../../commons/utils/mappers/color_mapper.dart';
+import '../../../../commons/utils/mappers/icon_mapper.dart';
+import '../../../../commons/utils/mappers/grade_mapper.dart';
 
 // ────────────────────── MODELS ──────────────────────
 
@@ -23,34 +25,9 @@ class StatCard {
       label: json['label'] ?? '',
       value: json['value'] ?? 'ندارد',
       subtitle: json['subtitle'] ?? '',
-      icon: _getIcon(json['icon'] ?? 'info'),
-      color: _getColor(json['color'] ?? 'blue'),
+      icon: IconMapper.getIcon(json['icon'] ?? 'info'),
+      color: ColorMapper.getColor(json['color'] ?? 'blue'),
     );
-  }
-
-  static IconData _getIcon(String name) {
-    switch (name) {
-      case 'person': return Icons.person;
-      case 'group': return Icons.group;
-      case 'school': return Icons.school;
-      case 'course': return Icons.menu_book;
-      case 'score': return Icons.star;
-      case 'grade': return Icons.score;
-      case 'assignment': return Icons.assignment;
-      case 'event': return Icons.event;
-      default: return Icons.info;
-    }
-  }
-
-  static Color _getColor(String name) {
-    switch (name) {
-      case 'purple': return Colors.purple;
-      case 'blue': return Colors.blue;
-      case 'green': return Colors.green;
-      case 'orange': return Colors.orange;
-      case 'red': return Colors.red;
-      default: return Colors.blue;
-    }
   }
 }
 
@@ -100,7 +77,7 @@ class AssignmentItem {
     required this.badge,
     required this.badgeColor,
     required this.icon,
-    required  this.endTime,
+    required this.endTime,
   });
 }
 
@@ -119,8 +96,8 @@ class ProgressItem {
 
   factory ProgressItem.fromJson(Map<String, dynamic> json) {
     final percent = (json['average'] as num).toDouble();
-    final grade = _getGrade(percent);
-    final color = _getColor(percent);
+    final grade = GradeMapper.getGrade(percent);
+    final color = ColorMapper.getProgressColor(percent);
 
     return ProgressItem(
       subject: json['courseName'] ?? 'نامشخص',
@@ -129,24 +106,7 @@ class ProgressItem {
       color: color,
     );
   }
-
-  static String _getGrade(double percent) {
-    if (percent >= 90) return 'A';
-    if (percent >= 80) return 'B';
-    if (percent >= 70) return 'C';
-    if (percent >= 60) return 'D';
-    return 'F';
-  }
-
-  static Color _getColor(double percent) {
-    if (percent >= 90) return Colors.green;
-    if (percent >= 80) return Colors.lightGreen;
-    if (percent >= 70) return Colors.yellow;
-    if (percent >= 60) return Colors.orange;
-    return Colors.red;
-  }
 }
-
 // ────────────────────── DATA PROVIDER ──────────────────────
 //
 // class DashboardData {
@@ -202,50 +162,50 @@ class ProgressItem {
 //     ];
 //   }
 
-  // static List<EventItem> getEvents() {
-  //   return [
-  //     EventItem(
-  //       title: 'امتحانات میان‌ترم',
-  //       subtitle: 'از ۱۴ آذر آغاز می‌شود',
-  //       date: '۱۴۰۴ آذر ۱۴',
-  //       icon: Icons.assignment_outlined,
-  //       iconColor: Colors.red,
-  //     ),
-  //     EventItem(
-  //       title: 'تعطیلات نیمسال',
-  //       subtitle: '۱ تا ۱۴ آذر',
-  //       date: '۱۴۰۴ آذر ۱',
-  //       icon: Icons.event_rounded,
-  //       iconColor: Colors.orange,
-  //     ),
-  //   ];
-  // }
+// static List<EventItem> getEvents() {
+//   return [
+//     EventItem(
+//       title: 'امتحانات میان‌ترم',
+//       subtitle: 'از ۱۴ آذر آغاز می‌شود',
+//       date: '۱۴۰۴ آذر ۱۴',
+//       icon: Icons.assignment_outlined,
+//       iconColor: Colors.red,
+//     ),
+//     EventItem(
+//       title: 'تعطیلات نیمسال',
+//       subtitle: '۱ تا ۱۴ آذر',
+//       date: '۱۴۰۴ آذر ۱',
+//       icon: Icons.event_rounded,
+//       iconColor: Colors.orange,
+//     ),
+//   ];
+// }
 
-  // static List<AssignmentItem> getAssignments() {
-  //   return [
-  //     AssignmentItem(
-  //       subject: 'ریاضی ۳',
-  //       title: 'آزمون ریاضی ۳',
-  //       badge: 'فوری',
-  //       badgeColor: Colors.red,
-  //       icon: Icons.calculate_rounded,
-  //     ),
-  //     AssignmentItem(
-  //       subject: 'شیمی',
-  //       title: 'گزارش آزمایشگاه',
-  //       badge: '۴ آبان',
-  //       badgeColor: Colors.orange,
-  //       icon: Icons.science_rounded,
-  //     ),
-  //     AssignmentItem(
-  //       subject: 'تاریخ',
-  //       title: 'پیش‌نویس مقاله',
-  //       badge: '۶ آبان',
-  //       badgeColor: Colors.blue,
-  //       icon: Icons.history_edu_rounded,
-  //     ),
-  //   ];
-  // }
+// static List<AssignmentItem> getAssignments() {
+//   return [
+//     AssignmentItem(
+//       subject: 'ریاضی ۳',
+//       title: 'آزمون ریاضی ۳',
+//       badge: 'فوری',
+//       badgeColor: Colors.red,
+//       icon: Icons.calculate_rounded,
+//     ),
+//     AssignmentItem(
+//       subject: 'شیمی',
+//       title: 'گزارش آزمایشگاه',
+//       badge: '۴ آبان',
+//       badgeColor: Colors.orange,
+//       icon: Icons.science_rounded,
+//     ),
+//     AssignmentItem(
+//       subject: 'تاریخ',
+//       title: 'پیش‌نویس مقاله',
+//       badge: '۶ آبان',
+//       badgeColor: Colors.blue,
+//       icon: Icons.history_edu_rounded,
+//     ),
+//   ];
+// }
 
 //   static List<ProgressItem> getProgress() {
 //     return [

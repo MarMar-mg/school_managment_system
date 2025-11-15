@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../models/exam_model.dart';
+import '../../entities/models/exam_model.dart';
 import 'exam_card.dart' hide ExamItem;
 
 class ExamSection extends StatelessWidget {

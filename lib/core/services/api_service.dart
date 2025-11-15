@@ -3,12 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:school_management_system/applications/colors.dart';
 import 'package:shamsi_date/shamsi_date.dart';
-
-import '../../features/dashboard/presentation/models/dashboard_models.dart';
 import '../../applications/role.dart';
-import '../../features/student/assignments/models/assignment_model.dart.dart';
-import '../../features/student/exam/models/exam_model.dart';
-import '../../features/student/scores/models/score_model.dart';
+import '../../features/dashboard/data/models/dashboard_models.dart';
+import '../../features/student/assignments/data/models/assignment_model.dart.dart';
+import '../../features/student/exam/entities/models/exam_model.dart';
+import '../../features/student/scores/data/models/score_model.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -721,7 +720,7 @@ class ApiService {
     return shamsiStr;
   }
 
-  // static String _formatDate(DateTime date.) {
+  // static String DateFormatManager.formatDate(DateTime date.) {
   //   return '${date.year}${date.month.toString().padLeft(2, '0')}${date.day.toString().padLeft(2, '0')}';
   // }
   //

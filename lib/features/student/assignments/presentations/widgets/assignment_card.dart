@@ -1,7 +1,8 @@
 // features/assignments/presentation/widgets/assignment_card.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
-import '../../models/assignment_model.dart.dart';
+import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../data/models/assignment_model.dart.dart';
 
 /// Subtle, elegant entrance animation – feels premium, not flashy
 class AnimatedAssignmentCard extends StatelessWidget {
@@ -155,7 +156,7 @@ class AssignmentCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${_formatDate(item.dueDate!)}(${item.endTime})',
+                  '${DateFormatManager.formatDate(item.dueDate!)}(${item.endTime})',
                   style: TextStyle(
                     color: Colors.orange.shade700,
                     fontWeight: FontWeight.w600,
@@ -230,17 +231,5 @@ class AssignmentCard extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return '';
-    final dateStr = date.toString().trim();
-    if (dateStr.length >= 8) {
-      final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(5, 7);
-      final day = dateStr.substring(8, 10);
-      return '$year/$month/$day';
-    }
-    return dateStr;
   }
 }

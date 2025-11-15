@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../commons/utils/manager/date_manager.dart';
 
 /// Premium animated events list with shimmer, pull-to-refresh,
 /// staggered card entrance, and smooth "Show More" animation.
@@ -300,7 +301,7 @@ class _EventCardState extends State<EventCard>
   @override
   Widget build(BuildContext context) {
     final title = widget.item['title'] ?? 'بدون عنوان';
-    final date = _formatDate(widget.item['date']);
+    final date = DateFormatManager.formatDate(widget.item['date']);
     final eventId = widget.item['eventId'];
 
     return AnimatedBuilder(
@@ -420,18 +421,6 @@ class _EventCardState extends State<EventCard>
         ),
       ),
     );
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return '';
-    final dateStr = date.toString().trim();
-    if (dateStr.length >= 8) {
-      final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(5, 7);
-      final day = dateStr.substring(8, 10);
-      return '$year/$month/$day';
-    }
-    return dateStr;
   }
 }
 

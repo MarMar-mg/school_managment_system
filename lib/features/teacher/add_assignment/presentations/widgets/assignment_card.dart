@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../commons/utils/manager/date_manager.dart';
+
 class AssignmentCard extends StatefulWidget {
   final Map<String, dynamic> data;
   final VoidCallback onDelete;
@@ -78,18 +80,6 @@ class _AssignmentCardState extends State<AssignmentCard>
 
   void _onPressUp() {
     _pressController.reverse();
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return '';
-    final dateStr = date.toString().trim();
-    if (dateStr.length >= 8) {
-      final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(5, 7);
-      final day = dateStr.substring(8, 10);
-      return '$year/$month/$day';
-    }
-    return dateStr;
   }
 
   @override
@@ -292,7 +282,7 @@ class _AssignmentCardState extends State<AssignmentCard>
                                   ),
                                   const SizedBox(height: 3),
                                   Text(
-                                    '${_formatDate(widget.data['dueDate'])}(${widget.data['dueTime']})',
+                                    '${DateFormatManager.formatDate(widget.data['dueDate'])}(${widget.data['dueTime']})',
                                     style: const TextStyle(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w700,

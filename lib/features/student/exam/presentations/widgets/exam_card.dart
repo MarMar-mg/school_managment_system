@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:school_management_system/applications/colors.dart';
-import '../../models/exam_model.dart';
+import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../entities/models/exam_model.dart';
 
 class ExamCard extends StatelessWidget {
   final ExamItem item;
@@ -142,7 +143,7 @@ class ExamCard extends StatelessWidget {
       children: [
         _infoChip("", time ?? "نامشخص", Icons.access_time),
         const SizedBox(width: 12),
-        _infoChip("تاریخ", _formatDate(due) ?? "نامشخص", Icons.calendar_today),
+        _infoChip("تاریخ", DateFormatManager.formatDate(due) ?? "نامشخص", Icons.calendar_today),
       ],
     ),
     const SizedBox(height: 16),
@@ -278,18 +279,6 @@ class ExamCard extends StatelessWidget {
     } catch (e) {
       return jalali;
     }
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return '';
-    final dateStr = date.toString().trim();
-    if (dateStr.length >= 8) {
-      final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(5, 7);
-      final day = dateStr.substring(8, 10);
-      return '$year/$month/$day';
-    }
-    return dateStr;
   }
 
   String _twoDigits(int n) => n.toString().padLeft(2, '0');

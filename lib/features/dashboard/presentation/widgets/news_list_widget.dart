@@ -4,6 +4,7 @@ import 'package:shimmer/shimmer.dart';
 
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
+import '../../../../commons/utils/manager/date_manager.dart';
 
 /// Premium animated news list with category colors, shimmer loading,
 /// pull-to-refresh, and stunning staggered card animations.
@@ -296,7 +297,7 @@ class _NewsCardState extends State<NewsCard>
     final title = widget.item['title'] ?? 'بدون عنوان';
     final description = widget.item['description'] ?? '';
     final category = widget.item['category'] ?? '';
-    final endDate = _formatDate(widget.item['enddate']);
+    final endDate = DateFormatManager.formatDate(widget.item['enddate']);
 
     final color = _getCategoryColor(category);
     final icon = _getCategoryIcon(category);
@@ -447,18 +448,6 @@ class _NewsCardState extends State<NewsCard>
       default:
         return Icons.info_rounded;
     }
-  }
-
-  String _formatDate(dynamic date) {
-    if (date == null) return '';
-    final dateStr = date.toString().trim();
-    if (dateStr.length >= 8) {
-      final year = dateStr.substring(0, 4);
-      final month = dateStr.substring(5, 7);
-      final day = dateStr.substring(8, 10);
-      return '$year/$month/$day';
-    }
-    return dateStr;
   }
 }
 
