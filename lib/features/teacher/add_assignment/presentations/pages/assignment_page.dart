@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../../../../applications/role.dart';
+import '../../../../../commons/utils/manager/date_manager.dart';
 import '../../../../../core/services/api_service.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_card.dart';
@@ -379,24 +380,30 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                         Expanded(
                           child: StatCard(
                             count:
-                                '${_assignments.where((a) => DateTime.parse(a['dueDate']).isAfter(DateTime.now())).length}',
+                                '${_assignments.where((a) {
+                                  final dueDate = DateFormatManager.convertToDateTime(a['dueDate']);
+                                  return dueDate.isAfter(DateTime.now());
+                                }).length}',
                             label: 'تمرین فعال',
                           ),
                         ),
                         SizedBox(width: spacing),
                         Expanded(
-                          child: const StatCard(
-                            count: '67',
-                            label: 'رسالت‌های جدید',
+                          child: StatCard(
+                            count: '${_assignments.length - _assignments.where((a) {
+                              final dueDate = DateFormatManager.convertToDateTime(a['dueDate']);
+                              return dueDate.isAfter(DateTime.now());
+                            }).length}',
+                            label: 'تمرین غیر فعال',
                           ),
                         ),
                         SizedBox(width: spacing),
-                        Expanded(
-                          child: const StatCard(
-                            count: '25',
-                            label: 'نیاز به بررسی',
-                          ),
-                        ),
+                        // Expanded(
+                        //   child: const StatCard(
+                        //     count: '25',
+                        //     label: 'نیاز به بررسی',
+                        //   ),
+                        // ),
                       ],
                     );
                   },
@@ -439,11 +446,14 @@ class _AddAssignmentPageState extends State<AddAssignmentPage>
                         assignment: data,
                       ),
                       // _deleteData(data['id']),
-                      onEdit: () =>
-                          showAddEditDialog(context, assignment: data, isAdd: false,
-                            courses: _courses,
-                            userId: widget.userId,
-                            addData: _fetchData,),
+                      onEdit: () => showAddEditDialog(
+                        context,
+                        assignment: data,
+                        isAdd: false,
+                        courses: _courses,
+                        userId: widget.userId,
+                        addData: _fetchData,
+                      ),
                       onView: () {},
                     ),
                   ),
