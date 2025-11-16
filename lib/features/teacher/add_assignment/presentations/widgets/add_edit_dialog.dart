@@ -1,16 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:persian_datetime_picker/persian_datetime_picker.dart';
 import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import '../../../../../commons/shamsi_date_picker_dialog.dart';
 import '../../../../../core/services/api_service.dart';
 
 void showAddEditDialog(
-    BuildContext context, {
-      dynamic assignment,
-      required int userId,
-      required VoidCallback addData,
-      required bool isAdd,
-      required List<Map<String, dynamic>> courses,
-    }) {
+  BuildContext context, {
+  dynamic assignment,
+  required int userId,
+  required VoidCallback addData,
+  required bool isAdd,
+  required List<Map<String, dynamic>> courses,
+}) {
   showDialog(
     context: context,
     builder: (context) {
@@ -54,7 +56,7 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
 
   String? _selectedClass;
   String? _selectedSubject;
-  DateTime? _selectedDate;
+  Jalali? _selectedDate;
   TimeOfDay? _selectedTime;
 
   late AnimationController _enterController;
@@ -123,9 +125,9 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
         endDate: endDate,
         endTime: endTime,
         startDate:
-        '${Jalali.now().formatter.yyyy}-${Jalali.now().formatter.mm}-${Jalali.now().formatter.dd}',
+            '${Jalali.now().formatter.yyyy}-${Jalali.now().formatter.mm}-${Jalali.now().formatter.dd}',
         startTime:
-        '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}',
+            '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}',
         score: score,
       );
 
@@ -175,19 +177,24 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
     super.dispose();
   }
 
+
   Future<void> _selectDate() async {
-    final picked = await showDatePicker(
+    // Show custom Shamsi date picker dialog
+    final picked = await showDialog<Jalali>(
       context: context,
-      initialDate: _selectedDate ?? DateTime.now(),
-      firstDate: DateTime.now(),
-      lastDate: DateTime(2030),
+      builder: (context) => ShamsiDatePickerDialog(
+        initialDate: _selectedDate ?? Jalali.now(),
+        firstDate: Jalali(1400, 1, 1),
+        lastDate: Jalali(1410, 12, 29),
+      ),
     );
+
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        final jalali = Jalali.fromDateTime(picked);
+        // Format as Shamsi date: 1403/09/20
         _dateController.text =
-        '${jalali.formatter.yyyy}-${jalali.formatter.mm}-${jalali.formatter.dd}';
+        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
       });
     }
   }
@@ -201,7 +208,7 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
       setState(() {
         _selectedTime = picked;
         _timeController.text =
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       });
     }
   }
@@ -255,45 +262,45 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                 // Class dropdown
                 widget.isAdd
                     ? Text(
-                  'انتخاب کلاس',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
-                  textDirection: TextDirection.rtl,
-                )
+                        'انتخاب کلاس',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.grey.shade700,
+                        ),
+                        textDirection: TextDirection.rtl,
+                      )
                     : SizedBox(),
                 const SizedBox(height: 8),
                 widget.isAdd
                     ? Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey.shade300),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: DropdownButton<String>(
-                    value: _selectedClass,
-                    hint: const Text(
-                      'درس را انتخاب کنید',
-                      textDirection: TextDirection.rtl,
-                    ),
-                    isExpanded: true,
-                    underline: const SizedBox(),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    items: widget.courses.map((course) {
-                      return DropdownMenuItem(
-                        value: course['id'].toString(),
-                        child: Text(
-                          course['name'] ?? 'نام نامشخص',
-                          textDirection: TextDirection.rtl,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade300),
+                          borderRadius: BorderRadius.circular(10),
                         ),
-                      );
-                    }).toList(),
-                    onChanged: (value) {
-                      setState(() => _selectedClass = value);
-                    },
-                  ),
-                )
+                        child: DropdownButton<String>(
+                          value: _selectedClass,
+                          hint: const Text(
+                            'درس را انتخاب کنید',
+                            textDirection: TextDirection.rtl,
+                          ),
+                          isExpanded: true,
+                          underline: const SizedBox(),
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          items: widget.courses.map((course) {
+                            return DropdownMenuItem(
+                              value: course['id'].toString(),
+                              child: Text(
+                                course['name'] ?? 'نام نامشخص',
+                                textDirection: TextDirection.rtl,
+                              ),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() => _selectedClass = value);
+                          },
+                        ),
+                      )
                     : SizedBox(),
                 const SizedBox(height: 20),
 
@@ -561,31 +568,31 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                             setState(() {
                               widget.isAdd
                                   ? _addData(
-                                courseId: _selectedClass!.toInt(),
-                                // ID of the selected course
-                                title: _titleController.text,
-                                // Assignment title
-                                description: _descriptionController.text,
-                                // Optional
-                                endDate: _dateController.text,
-                                // Optional
-                                endTime: _timeController.text,
-                                // Optional
-                                score: _scoreController.text
-                                    .toInt(), // Optional
-                              )
+                                      courseId: _selectedClass!.toInt(),
+                                      // ID of the selected course
+                                      title: _titleController.text,
+                                      // Assignment title
+                                      description: _descriptionController.text,
+                                      // Optional
+                                      endDate: _dateController.text,
+                                      // Optional
+                                      endTime: _timeController.text,
+                                      // Optional
+                                      score: _scoreController.text
+                                          .toInt(), // Optional
+                                    )
                                   : _editData(
-                                title: _titleController.text,
-                                // Assignment title
-                                description: _descriptionController.text,
-                                // Optional
-                                endDate: _dateController.text,
-                                // Optional
-                                endTime: _timeController.text,
-                                // Optional
-                                score: _scoreController.text
-                                    .toInt(), // Optional
-                              );
+                                      title: _titleController.text,
+                                      // Assignment title
+                                      description: _descriptionController.text,
+                                      // Optional
+                                      endDate: _dateController.text,
+                                      // Optional
+                                      endTime: _timeController.text,
+                                      // Optional
+                                      score: _scoreController.text
+                                          .toInt(), // Optional
+                                    );
                             });
                             widget.addData();
                             Navigator.pop(context);
