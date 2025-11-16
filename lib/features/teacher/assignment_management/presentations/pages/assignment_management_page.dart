@@ -10,16 +10,16 @@ import '../widgets/stat_card.dart';
 import '../widgets/header_section.dart';
 import '../widgets/section_divider.dart';
 
-class AddAssignmentPage extends StatefulWidget {
+class AssignmentManagementPage extends StatefulWidget {
   final int userId;
 
-  const AddAssignmentPage({super.key, required this.userId});
+  const AssignmentManagementPage({super.key, required this.userId});
 
   @override
-  State<AddAssignmentPage> createState() => _AddAssignmentPageState();
+  State<AssignmentManagementPage> createState() => _AssignmentManagementPageState();
 }
 
-class _AddAssignmentPageState extends State<AddAssignmentPage>
+class _AssignmentManagementPageState extends State<AssignmentManagementPage>
     with TickerProviderStateMixin {
   late AnimationController _controller;
   late List<Animation<double>> _animations;

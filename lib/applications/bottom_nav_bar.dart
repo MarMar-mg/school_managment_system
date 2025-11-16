@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:school_management_system/applications/role.dart';
-import 'package:school_management_system/commons/untils.dart';
+import 'package:school_management_system/applications/colors.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/profile/presentations/pages/profile_page.dart';
 import '../features/student/assignments/presentations/pages/assignments_page.dart';
 import '../features/student/classes/presentations/pages/classes_page.dart';
 import '../features/student/exam/presentations/pages/exam_page.dart';
 import '../features/student/scores/presentations/pages/scores_page.dart';
-import '../features/teacher/add_assignment/presentations/pages/assignment_page.dart';
+import '../features/teacher/assignment_management/presentations/pages/assignment_management_page.dart';
+import '../features/teacher/exam_management/presentations/pages/exam_management_page.dart';
 import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -30,7 +31,7 @@ class BottomNavBar extends StatefulWidget {
 }
 
 class _BottomNavBarState extends State<BottomNavBar> {
-  late final targetStudent = <Widget>[
+  late final List<Widget> targetStudent = <Widget>[
     Dashboard(
       role: widget.role,
       userName: widget.userName,
@@ -45,12 +46,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
     AssignmentsPage(
       role: widget.role,
       userName: widget.userName,
-      userId: widget.userId.toInt(),
+      userId: widget.userIdi,
     ),
     ExamPage(
       role: Role.student,
       userName: widget.userName,
-      userId: widget.userId.toInt(),
+      userId: widget.userIdi,
     ),
     MyScorePage(studentId: widget.userIdi),
     ProfilePage(
@@ -60,7 +61,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ),
   ];
 
-  late final targetTeacher = <Widget>[
+  late final List<Widget> targetTeacher = <Widget>[
     Dashboard(
       role: widget.role,
       userName: widget.userName,
@@ -72,11 +73,12 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId,
       userIdi: widget.userIdi,
     ),
-    AddAssignmentPage(userId: widget.userId.toInt(),),
-    ExamPage(
-      role: Role.student,
+    AssignmentManagementPage(userId: widget.userIdi),
+    ExamManagementPage(
+      // Assuming parameters based on similar pages; adjust as needed
+      role: widget.role,
       userName: widget.userName,
-      userId: widget.userId.toInt(),
+      userId: widget.userIdi,
     ),
     MyScorePage(studentId: widget.userIdi),
     ProfilePage(
@@ -85,23 +87,53 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId,
     ),
   ];
+
+  // Placeholder for manager pages; replace with actual implementations
+  late final List<Widget> targetManager = <Widget>[
+    Dashboard(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+    // Placeholder for Students page (e.g., from TeacherController getStudents or custom)
+    const Center(child: Text('صفحه دانش‌آموزان', style: TextStyle(fontSize: 20))),
+    // Placeholder for News page (e.g., from ApiService getNews)
+    const Center(child: Text('صفحه اخبار', style: TextStyle(fontSize: 20))),
+    // Placeholder for Events page (e.g., from ApiService getEvents)
+    const Center(child: Text('صفحه رویدادها', style: TextStyle(fontSize: 20))),
+    ProfilePage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userId,
+    ),
+  ];
+
   int _selectedIndex = 0;
 
   @override
   Widget build(BuildContext context) {
+    // Determine the target pages based on role
+    late List<Widget> targetPages;
+    if (widget.role == Role.student) {
+      targetPages = targetStudent;
+    } else if (widget.role == Role.teacher) {
+      targetPages = targetTeacher;
+    } else {
+      targetPages = targetManager;
+    }
+
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColor.backgroundColor,
       appBar: DashboardAppBar(role: widget.role, userId: widget.userIdi),
-      body: Center(
-        child: widget.role == Role.student
-            ? targetStudent[_selectedIndex]
-            : (widget.role == Role.teacher
-                  ? targetTeacher[_selectedIndex]
-                  : targetStudent[_selectedIndex]),
+      body: Directionality(
+        textDirection: TextDirection.rtl,
+        child: Center(
+          child: targetPages[_selectedIndex],
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
+          color: AppColor.backgroundColor,
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
@@ -117,41 +149,37 @@ class _BottomNavBarState extends State<BottomNavBar> {
               rippleColor: Colors.grey[300]!,
               hoverColor: Colors.grey[100]!,
               gap: 8,
-              color: Colors.grey[800],
-              // unselected icon color
-              activeColor: Colors.purple,
-              // activeColor: Colors.black,
+              color: AppColor.lightGray,
+              activeColor: AppColor.purple,
               iconSize: 24,
-              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-              duration: Duration(milliseconds: 200),
-              tabBackgroundColor: Colors.purple.withOpacity(0.1),
-              // color: Colors.black,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+              duration: const Duration(milliseconds: 200),
+              tabBackgroundColor: AppColor.purple.withOpacity(0.1),
               tabs: [
-                GButton(icon: Icons.home_rounded, text: 'خانه'),
+                const GButton(icon: Icons.home_rounded, text: 'خانه'),
                 if (widget.role != Role.manager)
-                  GButton(icon: Icons.menu_book_sharp, text: 'کلاس ها'),
+                  const GButton(icon: Icons.menu_book_sharp, text: 'کلاس ها'),
                 if (widget.role != Role.manager)
-                  GButton(
+                  const GButton(
                     icon: Icons.assignment_turned_in_outlined,
-                    text: 'تمربنات',
+                    text: 'تمرینات',
                   ),
                 if (widget.role != Role.manager)
-                  GButton(icon: Icons.edit_outlined, text: 'امتحانات'),
-                GButton(icon: Icons.bar_chart_rounded, text: 'نمرات'),
-                // GButton(icon: Icons.message_outlined, text: 'پیام‌ها'),
+                  const GButton(icon: Icons.edit_outlined, text: 'امتحانات'),
+                const GButton(icon: Icons.bar_chart_rounded, text: 'نمرات'),
                 if (widget.role == Role.manager)
-                  GButton(
+                  const GButton(
                     icon: Icons.person_add_alt_outlined,
                     text: 'دانش آموزان',
                   ),
                 if (widget.role == Role.manager)
-                  GButton(icon: Icons.newspaper, text: 'اخبار'),
+                  const GButton(icon: Icons.newspaper, text: 'اخبار'),
                 if (widget.role == Role.manager)
-                  GButton(
+                  const GButton(
                     icon: Icons.calendar_today_outlined,
                     text: 'رویدادها',
                   ),
-                GButton(icon: Icons.person_outline_rounded, text: 'پروفایل'),
+                const GButton(icon: Icons.person_outline_rounded, text: 'پروفایل'),
               ],
               selectedIndex: _selectedIndex,
               onTabChange: (index) {
