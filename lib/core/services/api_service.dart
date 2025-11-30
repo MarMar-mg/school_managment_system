@@ -671,8 +671,8 @@ class ApiService {
   }
 
   // ===============================DELETE ASSIGNMENT======================================
-  static Future<Map<String, dynamic>> deleteTeacherAssignment(int exerciseId, int teacherId) async {
-    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId?teacherId=$teacherId');
+  static Future<Map<String, dynamic>> deleteTeacherAssignment(int ExamId, int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$ExamId?teacherId=$teacherId');
 
     try {
       final response = await http.delete(url, headers: _headers).timeout(_timeout);
@@ -842,6 +842,23 @@ class ApiService {
       }
     } catch (e) {
       print('Error batch updating scores: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ===============================DELETE EXAM======================================
+  static Future<Map<String, dynamic>> deleteTeacherExam(int examId, int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId?teacherId=$teacherId');
+
+    try {
+      final response = await http.delete(url, headers: _headers).timeout(_timeout);
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در حذف تمرین: ${response.statusCode}');
+      }
+    } catch (e) {
       throw Exception('خطا: $e');
     }
   }

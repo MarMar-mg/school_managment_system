@@ -5,8 +5,13 @@ import '../../data/models/exam_model.dart';
 
 class TeacherExamCard extends StatefulWidget {
   final ExamModelT exam;
+  final VoidCallback onDelete;
 
-  const TeacherExamCard({super.key, required this.exam});
+  const TeacherExamCard({
+    super.key,
+    required this.exam,
+    required this.onDelete,
+  });
 
   @override
   State<TeacherExamCard> createState() => _TeacherExamCardState();
@@ -243,7 +248,8 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                                     TextButton(
                                       onPressed: () {
                                         Navigator.pop(ctx);
-                                        // Add delete logic here
+                                        print('deleted');
+                                        widget.onDelete();
                                       },
                                       child: const Text(
                                         'حذف',

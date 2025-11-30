@@ -5,6 +5,7 @@ import 'package:school_management_system/applications/role.dart';
 import '../../../../../commons/shamsi_date_picker_dialog.dart';
 import '../../../../../commons/widgets/section_divider.dart';
 import '../../../../../core/services/api_service.dart';
+import '../../../assignment_management/presentations/widgets/delete_dialog.dart';
 import '../../data/models/exam_model.dart';
 import '../../../../../commons/responsive_container.dart';
 import '../widgets/exam_section.dart';
@@ -81,6 +82,19 @@ class _ExamManagementPageState extends State<ExamManagementPage>
         _error = e.toString();
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _deleteExam(int examID) async {
+    try {
+      await ApiService.deleteTeacherExam(examID, widget.userId);
+      _fetchExams();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('خطا در حذف: $e')),
+        );
+      }
     }
   }
 
@@ -331,6 +345,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
               isExpanded: _expanded['upcoming']!,
               onToggle: () => _toggle('upcoming'),
               animations: _cardAnimations,
+              onDelete: (data) => _deleteExam(data),
             ),
             const SizedBox(height: 24),
 
@@ -344,6 +359,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
               isExpanded: _expanded['completed']!,
               onToggle: () => _toggle('completed'),
               animations: _cardAnimations,
+              onDelete: (data) => _deleteExam(data['id'])
             ),
             const SizedBox(height: 100),
           ],

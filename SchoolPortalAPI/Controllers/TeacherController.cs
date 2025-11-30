@@ -451,7 +451,7 @@ namespace SchoolPortalAPI.Controllers
 
             foreach (var e in examData)
             {
-                // Get class capacity (already has capacity field in Class model)
+                // Get class capacity
                 int capacity = e.Class?.Capacity ?? 0;
 
                 // Get submission counts
@@ -515,7 +515,9 @@ namespace SchoolPortalAPI.Controllers
             return Ok(result);
         }
 
-        // Get submissions for an exam
+        // ──────────────────────────────────────────────────────────────
+        // 14. Get Exams Submissions
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("exams/{examId}/submissions")]
         public async Task<IActionResult> GetExamSubmissions(long examId)
         {
@@ -541,7 +543,9 @@ namespace SchoolPortalAPI.Controllers
             return Ok(submissions);
         }
 
-        // Update student exam score
+        // ──────────────────────────────────────────────────────────────
+        // 14. Update Exams Score
+        // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/submissions/{submissionId}/score")]
         public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
         {
@@ -569,7 +573,9 @@ namespace SchoolPortalAPI.Controllers
             });
         }
 
-        // Add/Update multiple student scores
+        // ──────────────────────────────────────────────────────────────
+        // 14. Update Exams Score(group)
+        // ──────────────────────────────────────────────────────────────
         [HttpPost("exams/{examId}/scores/batch")]
         public async Task<IActionResult> BatchUpdateScores(long examId, [FromBody] List<BatchScoreUpdate> scores)
         {
@@ -596,7 +602,9 @@ namespace SchoolPortalAPI.Controllers
             return Ok(new { message = "Scores updated successfully" });
         }
 
-        // Get exam statistics
+        // ──────────────────────────────────────────────────────────────
+        // 14. Get Exams Statistic
+        // ──────────────────────────────────────────────────────────────
         [HttpGet("exams/{examId}/stats")]
         public async Task<IActionResult> GetExamStats(long examId)
         {
@@ -648,6 +656,56 @@ namespace SchoolPortalAPI.Controllers
             public decimal Score { get; set; }
         }
 
+
+
+        // ──────────────────────────────────────────────────────────────
+        // 14. Create Exams
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost]
+        public async Task<IActionResult> CreateExam([FromBody] Exam newExam)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            _context.Exams.Add(newExam);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetExam), new { id = newExam.Examid }, newExam);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 11. Delete Exam
+        // ──────────────────────────────────────────────────────────────
+        [HttpDelete("exams/{ExamId}")]
+        public async Task<IActionResult> DeleteExams(long ExamId, [FromQuery] long teacherId)
+        {
+            var exam = await _context.Exams.FindAsync(ExamId);
+            if (exam == null) return NotFound("امتجان یافت نشد");
+
+            var teacherIdd = await _context.Teachers
+                            .Where(t => t.Userid == teacherId)
+                            .Select(t => t.Teacherid)
+                            .FirstOrDefaultAsync();
+
+            var course = await _context.Courses.FindAsync(exam.Courseid);
+            if (course == null || course.Teacherid != teacherIdd)
+            {
+                return BadRequest("مجوز حذف ندارید");
+            }
+
+            _context.Exams.Remove(exam);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "امتجان حذف شد" });
+        }
+
+        // Fix GetExam
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetExam(long id)
+        {
+            var exam = await _context.Exams.FindAsync(id);
+            if (exam == null) return NotFound();
+            return Ok(exam);
+        }
+//////////////////////////
         private DateTime JalaliToGregorian(int jy, int jm, int jd)
         {
             int dayOfYear = 0;
@@ -669,77 +727,5 @@ namespace SchoolPortalAPI.Controllers
 
             return gregorianDate;
         }
-
-        // ──────────────────────────────────────────────────────────────
-        // 14. Create Exams
-        // ──────────────────────────────────────────────────────────────
-        [HttpPost]
-        public async Task<IActionResult> CreateExam([FromBody] Exam newExam)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
-
-            _context.Exams.Add(newExam);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetExam), new { id = newExam.Examid }, newExam);
-        }
-
-        // Fix GetExam
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetExam(long id)
-        {
-            var exam = await _context.Exams.FindAsync(id);
-            if (exam == null) return NotFound();
-            return Ok(exam);
-        }
-
-//        // Convert Gregorian to Jalali (Persian) calendar
-//        private (int Year, int Month, int Day) ConvertGregorianToJalali(DateTime gregorianDate)
-//        {
-//            int gy = gregorianDate.Year;
-//            int gm = gregorianDate.Month;
-//            int gd = gregorianDate.Day;
-//
-//            int[] g_d_n_array = new[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
-//
-//            int g_d_n = 365 * gy + ((gy + 3) / 4) - ((gy + 99) / 100) + ((gy + 399) / 400) + gd + g_d_n_array[gm - 1];
-//
-//            int j_d_n = g_d_n - 79;
-//
-//            int j_np = j_d_n / 12053;
-//            j_d_n = j_d_n % 12053;
-//
-//            int jy = 979 + 33 * j_np + 4 * (j_d_n / 1461);
-//
-//            j_d_n %= 1461;
-//
-//            if (j_d_n >= 366)
-//            {
-//                jy += (j_d_n - 1) / 365;
-//                j_d_n = (j_d_n - 1) % 365;
-//            }
-//
-//            int jm = j_d_n < 186 ? 1 + (j_d_n / 31) : 7 + ((j_d_n - 186) / 30);
-//            int jd = 1 + (j_d_n < 186 ? (j_d_n % 31) : ((j_d_n - 186) % 30));
-//
-//            return (jy, jm, jd);
-//        }
-//
-//        // Convert Jalali to Gregorian calendar
-//        private DateTime ConvertJalaliToGregorian(int jy, int jm, int jd)
-//        {
-//            jy += 1474;
-//            if (jm > 7)
-//                jy += 1;
-//
-//            int days = 365 * jy + ((jy / 33) * 8) + ((jy % 33 + 3) / 4) + 78 + jd;
-//
-//            if (jm < 7)
-//                days += (jm - 1) * 31;
-//            else
-//                days += (jm - 7) * 30 + 186;
-//
-//            DateTime gregorianDate = new DateTime(400, 1, 1).AddDays(days);
-//            return gregorianDate;
-//        }
     }
 }
