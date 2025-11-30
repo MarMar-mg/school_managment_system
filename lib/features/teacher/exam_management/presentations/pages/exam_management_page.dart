@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
+import '../../../../../commons/shamsi_date_picker_dialog.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../data/models/exam_model.dart';
 import '../../../../../commons/responsive_container.dart';
 import '../widgets/exam_section.dart';
 import '../widgets/stat_card.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
 class ExamManagementPage extends StatefulWidget {
   final Role role;
@@ -39,6 +41,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     'upcoming': false,
     'completed': false,
   };
+
 
   @override
   void initState() {
@@ -98,144 +101,18 @@ class _ExamManagementPageState extends State<ExamManagementPage>
   }
 
   void _showAddExamDialog() {
-    final titleController = TextEditingController();
-    final subjectController = TextEditingController();
-    final dateController = TextEditingController();
-    final timeController = TextEditingController();
-    final durationController = TextEditingController();
-    final capacityController = TextEditingController();
-
     showDialog(
       context: context,
-      builder: (context) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: AppColor.backgroundColor,
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'افزودن امتحان جدید',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: AppColor.darkText,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
-                const SizedBox(height: 24),
-                _buildTextField(
-                  controller: titleController,
-                  label: 'عنوان امتحان',
-                  hint: 'مثال: آزمون میانترم ریاضی',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: subjectController,
-                  label: 'درس',
-                  hint: 'مثال: ریاضی - بخش الف',
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: dateController,
-                  label: 'تاریخ',
-                  hint: 'مثال: 20 آبان 1403',
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: _buildTextField(
-                        controller: timeController,
-                        label: 'ساعت',
-                        hint: '9:00 صبح',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: _buildTextField(
-                        controller: durationController,
-                        label: 'مدت (دقیقه)',
-                        hint: '90',
-                        isNumber: true,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: capacityController,
-                  label: 'ظرفیت',
-                  hint: '100',
-                  isNumber: true,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.pop(context),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.lightGray,
-                          foregroundColor: AppColor.darkText,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('انصراف'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () async {
-                          try {
-                            final examData = ExamModelT(
-                              id: 0,
-                              title: titleController.text,
-                              status: 'upcoming',
-                              subject: subjectController.text,
-                              date: dateController.text,
-                              students: 0,
-                              classTime: timeController.text,
-                              capacity: int.tryParse(capacityController.text) ?? 0,
-                              duration: int.tryParse(durationController.text) ?? 0,
-                              possibleScore: 20,
-                            ).toJson();
-
-                            await ApiService.createExam(widget.userId, examData);
-                            Navigator.pop(context);
-                            _fetchExams();
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text('خطا: $e')),
-                            );
-                          }
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColor.purple,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text('ایجاد'),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        ),
+      builder: (context) => _AddExamDialogContent(
+        userId: widget.userId,
+        onSuccess: () {
+          Navigator.pop(context);
+          _fetchExams();
+        },
       ),
     );
   }
+
 
   Widget _buildTextField({
     required TextEditingController controller,
@@ -507,6 +384,246 @@ class _ExamManagementPageState extends State<ExamManagementPage>
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AddExamDialogContent extends StatefulWidget {
+  final int userId;
+  final VoidCallback onSuccess;
+
+  const _AddExamDialogContent({
+    required this.userId,
+    required this.onSuccess,
+  });
+
+  @override
+  State<_AddExamDialogContent> createState() => _AddExamDialogContentState();
+}
+
+class _AddExamDialogContentState extends State<_AddExamDialogContent>
+    with TickerProviderStateMixin {
+
+  final _titleController = TextEditingController();
+  final _subjectController = TextEditingController();
+  final _capacityController = TextEditingController();
+  final _durationController = TextEditingController();
+  final _dateController = TextEditingController();
+  final _timeController = TextEditingController();
+
+  Jalali? _selectedDate;
+  TimeOfDay? _selectedTime;
+
+  late AnimationController _animController;
+  late Animation<double> _scaleAnimation;
+  late Animation<Offset> _slideAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _animController = AnimationController(
+      duration: const Duration(milliseconds: 450),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween(begin: 0.9, end: 1.0).animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
+    );
+
+    _slideAnimation = Tween(begin: const Offset(0, .25), end: Offset.zero)
+        .animate(
+      CurvedAnimation(parent: _animController, curve: Curves.easeOutExpo),
+    );
+
+    _animController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animController.dispose();
+    _titleController.dispose();
+    _subjectController.dispose();
+    _capacityController.dispose();
+    _durationController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    super.dispose();
+  }
+
+  // ------- PICKERS -------
+
+  Future<void> _pickDate() async {
+    final picked = await showDialog<Jalali>(
+      context: context,
+      builder: (context) => ShamsiDatePickerDialog(
+        initialDate: Jalali.now(),
+        firstDate: Jalali(1400, 1, 1),
+        lastDate: Jalali(1410, 12, 29),
+      ),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedDate = picked;
+        _dateController.text =
+        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+
+    if (picked != null) {
+      setState(() {
+        _selectedTime = picked;
+        _timeController.text =
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+      });
+    }
+  }
+
+  // ------- SUBMIT -------
+
+  Future<void> _submit() async {
+    if (_titleController.text.isEmpty ||
+        _subjectController.text.isEmpty ||
+        _selectedDate == null ||
+        _selectedTime == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('لطفا تمام فیلدها را پر کنید')),
+      );
+      return;
+    }
+
+    try {
+      final examData = {
+        "title": _titleController.text,
+        "subject": _subjectController.text,
+        "date": _dateController.text,
+        "classTime": _timeController.text,
+        "capacity": int.tryParse(_capacityController.text) ?? 0,
+        "duration": int.tryParse(_durationController.text) ?? 0,
+        "status": "upcoming",
+        "possibleScore": 20,
+        "students": 0
+      };
+
+      await ApiService.createExam(widget.userId, examData);
+
+      widget.onSuccess();
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطا: $e')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _animController,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: SlideTransition(position: _slideAnimation, child: child),
+        );
+      },
+      child: Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Text(
+                  'افزودن امتحان جدید',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 20),
+
+                // fields
+                _input('عنوان', 'مثال: آزمون ریاضی', _titleController),
+                const SizedBox(height: 14),
+                _input('درس', 'مثال: ریاضی', _subjectController),
+                const SizedBox(height: 14),
+
+                // date + time
+                Row(
+                  children: [
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _pickDate,
+                        child: AbsorbPointer(
+                          child: _input('تاریخ', '1403/09/12', _dateController),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: GestureDetector(
+                        onTap: _pickTime,
+                        child: AbsorbPointer(
+                          child: _input('ساعت', '09:00', _timeController),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
+                _input('مدت (دقیقه)', '90', _durationController, number: true),
+                const SizedBox(height: 14),
+                _input('ظرفیت', '100', _capacityController, number: true),
+
+                const SizedBox(height: 26),
+
+                ElevatedButton(
+                  onPressed: _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.deepPurple,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  child: const Text('ایجاد', style: TextStyle(color: Colors.white)),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _input(String label, String hint, TextEditingController controller,
+      {bool number = false}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
+        const SizedBox(height: 6),
+        TextField(
+          controller: controller,
+          textAlign: TextAlign.right,
+          keyboardType: number ? TextInputType.number : TextInputType.text,
+          decoration: InputDecoration(
+            hintText: hint,
+            filled: true,
+            fillColor: Colors.grey.shade100,
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none),
+            contentPadding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+          ),
+        )
+      ],
     );
   }
 }

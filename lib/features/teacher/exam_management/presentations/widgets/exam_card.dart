@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
+import 'package:school_management_system/features/teacher/exam_management/presentations/widgets/score_management_widget.dart';
 import '../../data/models/exam_model.dart';
 
 class TeacherExamCard extends StatefulWidget {
@@ -219,40 +220,99 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                 Row(
                   children: [
                     // Delete Button
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (ctx) => AlertDialog(
-                            title: const Text('حذف امتحان'),
-                            content: const Text(
-                              'آیا مطمئن هستید؟',
-                              textDirection: TextDirection.rtl,
+                    isUpcoming
+                        ? IconButton(
+                            icon: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.red,
                             ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(ctx),
-                                child: const Text('انصراف'),
-                              ),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.pop(ctx);
-                                  // Add delete logic here
-                                },
-                                child: const Text(
-                                  'حذف',
-                                  style: TextStyle(color: Colors.red),
+                            onPressed: () {
+                              showDialog(
+                                context: context,
+                                builder: (ctx) => AlertDialog(
+                                  title: const Text('حذف امتحان'),
+                                  content: const Text(
+                                    'آیا مطمئن هستید؟',
+                                    textDirection: TextDirection.rtl,
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(ctx),
+                                      child: const Text('انصراف'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () {
+                                        Navigator.pop(ctx);
+                                        // Add delete logic here
+                                      },
+                                      child: const Text(
+                                        'حذف',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                            iconSize: 20,
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          )
+                        :
+                          // ElevatedButton.icon(
+                          //   onPressed: () {
+                          //     Navigator.push(
+                          //       context,
+                          //       MaterialPageRoute(
+                          //         builder: (_) => ExamScoreManagementPage(
+                          //           examId: widget.exam.id,
+                          //           examTitle: widget.exam.title,
+                          //           possibleScore: widget.exam.possibleScore,
+                          //         ),
+                          //       ),
+                          //     );
+                          //   },
+                          //   icon: const Icon(Icons.grading_rounded),
+                          //   label: const Text('مدیریت نمرات'),
+                          // ),
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                showExamScoreManagementDialog(
+                                  context,
+                                  examId: widget.exam.id,
+                                  examTitle: widget.exam.title,
+                                  possibleScore: widget.exam.possibleScore,
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.grey.shade50,
+                                foregroundColor: AppColor.darkText,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 10,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  side: BorderSide(color: Colors.grey.shade300),
                                 ),
                               ),
-                            ],
+                              child: const Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(Icons.score, size: 16),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'مدیریت نمرات',
+                                    style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
                           ),
-                        );
-                      },
-                      iconSize: 20,
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
-                    ),
                     const SizedBox(width: 8),
                     // Details Button
                     Expanded(

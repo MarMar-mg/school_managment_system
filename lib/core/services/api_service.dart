@@ -746,28 +746,103 @@ class ApiService {
   }
 
   // ================================= GET EXAMS SUBMISSION =============================
+  // Add these methods to your ApiService class in lib/core/services/api_service.dart
+
+// Get exam submissions (students who answered)
   static Future<List<dynamic>> getExamSubmissions(int examId) async {
-    final response = await http.get(
-      Uri.parse('$baseUrl/exams/$examId/submissions'),
-    );
-    if (response.statusCode == 200) {
-      return json.decode(response.body) as List<dynamic>;
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId/submissions');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Submissions Status: ${response.statusCode}');
+      print('Submissions Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('خطا در دریافت رسالت‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching submissions: $e');
+      throw Exception('خطا: $e');
     }
-    throw Exception('Failed to load submissions');
   }
 
-  static Future<void> updateSubmissionScore(
-      int examId,
+// Get exam statistics (pass percentage, average score, etc.)
+  static Future<Map<String, dynamic>> getExamStats(int examId) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId/stats');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Stats Status: ${response.statusCode}');
+      print('Stats Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در دریافت آمار: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching stats: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+// Update a single student's exam score
+  static Future<Map<String, dynamic>> updateSubmissionScore(
       int submissionId,
       double score,
       ) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/exams/$examId/submissions/$submissionId/score'),
-      headers: _headers,
-      body: json.encode({'score': score}),
-    );
-    if (response.statusCode != 200) {
-      throw Exception('Failed to update score');
+    final url = Uri.parse('$baseUrl/teacher/exams/submissions/$submissionId/score');
+
+    try {
+      final response = await http.put(
+        url,
+        headers: _headers,
+        body: json.encode({'score': score}),
+      ).timeout(_timeout);
+
+      print('Update Score Status: ${response.statusCode}');
+      print('Update Score Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در به‌روزرسانی نمره: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating score: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+// Update multiple students' scores at once
+  static Future<Map<String, dynamic>> batchUpdateScores(
+      int examId,
+      List<Map<String, dynamic>> scores,
+      ) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId/scores/batch');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: json.encode(scores),
+      ).timeout(_timeout);
+
+      print('Batch Update Status: ${response.statusCode}');
+      print('Batch Update Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در به‌روزرسانی نمرات: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error batch updating scores: $e');
+      throw Exception('خطا: $e');
     }
   }
 

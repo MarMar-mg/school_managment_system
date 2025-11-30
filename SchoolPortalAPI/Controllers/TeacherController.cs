@@ -444,148 +444,208 @@ namespace SchoolPortalAPI.Controllers
                 .Include(e => e.Course)
                 .Include(e => e.Class)
                 .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
-                .Select(e => new
-                {
-                    id = e.Examid,
-                    title = e.Title,
-                    description = e.Description,
-                    endDateStr = e.Enddate,
-                    startTimeStr = e.Starttime,
-                    duration = e.Duration ?? 90,
-                    subject = e.Course != null ? e.Course.Name : "نامشخص",
-                    date = e.Startdate,
-                    classId = e.Classid,
-                    possibleScore = e.PossibleScore ?? 100,
-                    location = e.Class != null ? e.Class.Name : "نامشخص",
-                    classTime = e.Starttime,
-                    // Count students with submissions
-                    submittedCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid && est.Score != null),
-                    // Count students who scored more than half
-                    passCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid && est.Score >= (e.PossibleScore ?? 100) * 0.5),
-                    // Total count of submissions (not class size)
-                    totalSubmitted = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid)
-                })
                 .ToListAsync();
 
             var nowUtc = DateTime.UtcNow;
+            var result = new List<object>();
 
-            var exams = examData.Select(ed => {
-                var isFuture = false;
+            foreach (var e in examData)
+            {
+                // Get class capacity (already has capacity field in Class model)
+                int capacity = e.Class?.Capacity ?? 0;
 
-                if (!string.IsNullOrEmpty(ed.endDateStr))
+                // Get submission counts
+                int submitted = await _context.ExamStuTeaches.CountAsync(est => est.Examid == e.Examid);
+                int passCount = await _context.ExamStuTeaches.CountAsync(est =>
+                    est.Examid == e.Examid &&
+                    est.Score >= (e.PossibleScore ?? 100) * 0.5);
+                int gradedCount = await _context.ExamStuTeaches.CountAsync(est =>
+                    est.Examid == e.Examid &&
+                    est.Score != null);
+
+                // Check if exam is future or completed
+                bool isFuture = false;
+                if (!string.IsNullOrEmpty(e.Enddate) && !string.IsNullOrEmpty(e.Starttime))
                 {
-                    var dateParts = ed.endDateStr.Split('-');
+                    string[] dateParts = e.Enddate.Split('-');
                     if (dateParts.Length == 3 &&
                         int.TryParse(dateParts[0], out int jyear) &&
                         int.TryParse(dateParts[1], out int jmonth) &&
                         int.TryParse(dateParts[2], out int jday))
                     {
+                        string[] timeParts = e.Starttime.Split(':');
                         int startHour = 0, startMinute = 0;
-                        if (!string.IsNullOrEmpty(ed.startTimeStr))
+                        if (timeParts.Length >= 2)
                         {
-                            var timeParts = ed.startTimeStr.Split(':');
-                            if (timeParts.Length >= 2)
-                            {
-                                int.TryParse(timeParts[0], out startHour);
-                                int.TryParse(timeParts[1], out startMinute);
-                            }
+                            int.TryParse(timeParts[0], out startHour);
+                            int.TryParse(timeParts[1], out startMinute);
                         }
 
                         DateTime examStartDateTime = JalaliToGregorian(jyear, jmonth, jday);
                         examStartDateTime = examStartDateTime.AddHours(startHour).AddMinutes(startMinute);
-                        DateTime examEndDateTime = examStartDateTime.AddMinutes(ed.duration);
+                        DateTime examEndDateTime = examStartDateTime.AddMinutes(e.Duration ?? 90);
 
                         isFuture = nowUtc < examEndDateTime;
                     }
                 }
 
-                // Calculate pass percentage: (students who scored > half) / (total submitted) * 100
-                double passPercentage = ed.totalSubmitted > 0
-                    ? Math.Round(ed.passCount * 100.0 / ed.totalSubmitted, 1)
-                    : 0;
+                double? passPercentage = null;
+                if (submitted > 0)
+                    passPercentage = Math.Round(passCount * 100.0 / submitted, 1);
 
-                return new
+                result.Add(new
                 {
-                    id = ed.id,
-                    title = ed.title,
-                    description = ed.description,
+                    id = e.Examid,
+                    title = e.Title,
+                    description = e.Description,
                     status = isFuture ? "upcoming" : "completed",
-                    subject = ed.subject,
-                    date = ed.date,
-                    classTime = ed.classTime,
-                    capacity = ed.totalSubmitted,  // Number of students who submitted answers
-                    duration = ed.duration,
-                    possibleScore = ed.possibleScore,
-                    location = ed.location,
+                    subject = e.Course != null ? e.Course.Name : "نامشخص",
+                    date = e.Startdate,
+                    classId = e.Classid,
+                    capacity = capacity,
+                    submitted = submitted,
+                    graded = gradedCount,
+                    possibleScore = e.PossibleScore,
+                    location = e.Class?.Name ?? "نامشخص",
                     passPercentage = passPercentage,
-                    filledCapacity = ed.submittedCount + "/" + ed.totalSubmitted
-                };
-            }).ToList();
+                    filledCapacity = $"{submitted}/{capacity}"
+                });
+            }
 
-            return Ok(exams);
+            return Ok(result);
         }
 
+        // Get submissions for an exam
         [HttpGet("exams/{examId}/submissions")]
         public async Task<IActionResult> GetExamSubmissions(long examId)
         {
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Examid == examId);
+            if (exam == null)
+                return NotFound("Exam not found");
+
             var submissions = await _context.ExamStuTeaches
-                .Include(est => est.Stu)
+                .Include(est => est.Student)
                 .Where(est => est.Examid == examId)
                 .Select(est => new
                 {
-                    id = est.Estid,
+                    submissionId = est.Estid,
                     examId = est.Examid,
-                    studentId = est.Stuid,
-                    studentName = est.Stu.Name ?? "نامشخص",
-                    submittedAt = est.Submitteddate,
+                    studentId = est.Studentid,
+                    studentName = est.Student != null ? est.Student.Name : "نامشخص",
                     score = est.Score,
-                    answerFile = est.Answerfile
+                    submittedAt = est.Date ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    answerFile = est.Filename ?? ""
                 })
-                .OrderByDescending(x => x.submittedAt)
                 .ToListAsync();
 
             return Ok(submissions);
         }
 
-        [HttpPost("exams/{examId}/submissions/{submissionId}/score")]
-        public async Task<IActionResult> UpdateSubmissionScore(long examId, long submissionId, [FromBody] UpdateScoreRequest request)
+        // Update student exam score
+        [HttpPut("exams/submissions/{submissionId}/score")]
+        public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
         {
-            try
-            {
-                var submission = await _context.ExamStuTeaches
-                    .FirstOrDefaultAsync(est => est.Estid == submissionId && est.Examid == examId);
+            if (request.Score < 0)
+                return BadRequest("Score cannot be negative");
 
-                if (submission == null)
-                    return NotFound(new { message = "Submission not found" });
+            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
 
-                if (request.Score < 0)
-                    return BadRequest(new { message = "Score cannot be negative" });
+            if (submission == null)
+                return NotFound("Submission not found");
 
-                submission.Score = request.Score;
-                submission.Gradeddate = DateTime.UtcNow;
+            submission.Score = (int)request.Score;
 
-                await _context.SaveChangesAsync();
+            _context.ExamStuTeaches.Update(submission);
+            await _context.SaveChangesAsync();
 
-                return Ok(new
+            return Ok(new {
+                message = "Score updated successfully",
+                submission = new
                 {
-                    message = "Score updated successfully",
-                    submission = new
-                    {
-                        id = submission.Estid,
-                        score = submission.Score,
-                        gradedAt = submission.Gradeddate
-                    }
-                });
-            }
-            catch (Exception ex)
+                    submissionId = submission.Estid,
+                    studentId = submission.Studentid,
+                    score = submission.Score
+                }
+            });
+        }
+
+        // Add/Update multiple student scores
+        [HttpPost("exams/{examId}/scores/batch")]
+        public async Task<IActionResult> BatchUpdateScores(long examId, [FromBody] List<BatchScoreUpdate> scores)
+        {
+            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Examid == examId);
+            if (exam == null)
+                return NotFound("Exam not found");
+
+            foreach (var scoreUpdate in scores)
             {
-                return StatusCode(500, new { message = "Error updating score: " + ex.Message });
+                if (scoreUpdate.Score < 0 || scoreUpdate.Score > exam.PossibleScore)
+                    return BadRequest($"Score must be between 0 and {exam.PossibleScore}");
+
+                var submission = await _context.ExamStuTeaches
+                    .FirstOrDefaultAsync(est => est.Estid == scoreUpdate.SubmissionId);
+
+                if (submission != null)
+                {
+                    submission.Score = (int)scoreUpdate.Score;
+                    _context.ExamStuTeaches.Update(submission);
+                }
             }
+
+            await _context.SaveChangesAsync();
+            return Ok(new { message = "Scores updated successfully" });
+        }
+
+        // Get exam statistics
+        [HttpGet("exams/{examId}/stats")]
+        public async Task<IActionResult> GetExamStats(long examId)
+        {
+            var exam = await _context.Exams
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Examid == examId);
+
+            if (exam == null)
+                return NotFound("Exam not found");
+
+            var submissions = await _context.ExamStuTeaches
+                .Where(est => est.Examid == examId)
+                .ToListAsync();
+
+            var gradedSubmissions = submissions.Where(s => s.Score.HasValue).ToList();
+
+            double avgScore = gradedSubmissions.Count > 0
+                ? gradedSubmissions.Average(s => (double)s.Score.Value)
+                : 0;
+
+            double passPercentage = submissions.Count > 0
+                ? (gradedSubmissions.Count(s => s.Score >= (exam.PossibleScore * 0.5)) * 100.0 / submissions.Count)
+                : 0;
+
+            return Ok(new
+            {
+                examId = exam.Examid,
+                title = exam.Title,
+                subject = exam.Course?.Name ?? "نامشخص",
+                possibleScore = exam.PossibleScore,
+                totalSubmissions = submissions.Count,
+                gradedSubmissions = gradedSubmissions.Count,
+                pendingSubmissions = submissions.Count - gradedSubmissions.Count,
+                averageScore = Math.Round(avgScore, 2),
+                passPercentage = Math.Round(passPercentage, 1),
+                maxScore = gradedSubmissions.Count > 0 ? gradedSubmissions.Max(s => s.Score) : null,
+                minScore = gradedSubmissions.Count > 0 ? gradedSubmissions.Min(s => s.Score) : null
+            });
         }
 
         public class UpdateScoreRequest
         {
-            public double Score { get; set; }
+            public decimal Score { get; set; }
+        }
+
+        public class BatchScoreUpdate
+        {
+            public long SubmissionId { get; set; }
+            public decimal Score { get; set; }
         }
 
         private DateTime JalaliToGregorian(int jy, int jm, int jd)
