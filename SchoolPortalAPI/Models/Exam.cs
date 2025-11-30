@@ -12,10 +12,14 @@ namespace SchoolPortalAPI.Models
 
         public string? Title { get; set; }
         public string? Description { get; set; }
-        public string? Enddate { get; set; }
+        public string? Enddate { get; set; }  // Consider using DateTime? for better handling
         public string? Startdate { get; set; }
         public string? Starttime { get; set; }
         public string? Endtime { get; set; }
+
+        public int? Capacity { get; set; }
+        public int? Duration { get; set; }      // (in minutes)
+        public int? PossibleScore { get; set; } // (max score)
 
         public long? Courseid { get; set; }
         public long? Classid { get; set; }

@@ -3,7 +3,7 @@ import 'package:school_management_system/applications/colors.dart';
 import '../../data/models/exam_model.dart';
 
 class UpcomingExamCard extends StatefulWidget {
-  final ExamModel exam;
+  final ExamModelT exam;
 
   const UpcomingExamCard({
     super.key,

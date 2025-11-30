@@ -428,5 +428,85 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(submissions);
         }
+
+        // ──────────────────────────────────────────────────────────────
+        // 13. Get Exams
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exams/{teacherId}")]
+        public async Task<IActionResult> GetTeacherExams(long teacherId)
+        {
+            var today = DateTime.Now;
+
+            var teacherIdd = await _context.Teachers
+                 .Where(t => t.Userid == teacherId)
+                 .Select(t => t.Teacherid)
+                 .FirstOrDefaultAsync();
+
+            var examData = await _context.Exams
+                .Include(e => e.Course)
+                .Include(e => e.Class)
+                .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
+                .Select(e => new
+                {
+                    id = e.Examid,
+                    title = e.Title,
+                    description = e.Description,
+                    endDateStr = e.Enddate,  // Fetch string to parse later
+                    subject = e.Course != null ? e.Course.Name : "نامشخص",
+                    date = e.Startdate,
+                    students = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid),
+                    classTime = e.Starttime,
+                    capacity = e.Capacity ?? 100,
+                    duration = e.Duration ?? 90,
+                    possibleScore = e.PossibleScore ?? 100,
+                    location = e.Class != null ? e.Class.Name : "نامشخص",
+                    passCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid && est.Score >= (e.PossibleScore ?? 100) * 0.5),
+                    totalCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid),
+                    filledCapacity = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid) + "/" + (e.Capacity ?? 100)
+                })
+                .ToListAsync();
+
+            var exams = examData.Select(ed => new
+            {
+                id = ed.id,
+                title = ed.title,
+                description = ed.description,
+                status = (DateTime.TryParse(ed.endDateStr, out var endDate) && endDate > today ? "upcoming" : "completed"),
+                subject = ed.subject,
+                date = ed.date,
+                students = ed.students,
+                classTime = ed.classTime,
+                capacity = ed.capacity,
+                duration = ed.duration,
+                possibleScore = ed.possibleScore,
+                location = ed.location,
+                passPercentage = ed.totalCount > 0 ? Math.Round(ed.passCount * 100.0 / ed.totalCount, 0) : (double?)null,
+                filledCapacity = ed.filledCapacity
+            }).ToList();
+
+            return Ok(exams);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 14. Create Exams
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost]
+        public async Task<IActionResult> CreateExam([FromBody] Exam newExam)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            _context.Exams.Add(newExam);
+            await _context.SaveChangesAsync();
+            return CreatedAtAction(nameof(GetExam), new { id = newExam.Examid }, newExam);
+        }
+
+        // Fix GetExam
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetExam(long id)
+        {
+            var exam = await _context.Exams.FindAsync(id);
+            if (exam == null) return NotFound();
+            return Ok(exam);
+        }
     }
 }

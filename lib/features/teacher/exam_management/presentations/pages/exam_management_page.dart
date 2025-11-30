@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
+import '../../../../../core/services/api_service.dart';
 import '../../../../dashboard/presentation/widgets/section_header_widget.dart';
 import '../../data/models/exam_model.dart';
 import '../widgets/completed_exam_card.dart';
@@ -28,7 +29,25 @@ class _ExamManagementPageState extends State<ExamManagementPage>
   late AnimationController _controller;
   late List<Animation<double>> _cardAnimations;
 
-  List<ExamModel> exams = []; // Will be fetched from API
+  List<ExamModelT> exams = [];
+  Future<void> _fetchExams() async {
+    try {
+      final fetchedExams = await ApiService.getTeacherExams(widget.userId);
+      setState(() {
+        exams = fetchedExams;
+      });
+    } catch (e) {
+      // Handle error, e.g., show snackbar
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا در بارگیری امتحانات: $e')));
+      // Fallback to hardcoded if needed, but remove for production
+      setState(() {
+        exams = [
+          // Your existing hardcoded data as fallback
+        ];
+      });
+    }
+    _startAnimations();
+  }
 
   @override
   void initState() {
@@ -38,56 +57,6 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       duration: const Duration(milliseconds: 1400),
     );
     _fetchExams();
-  }
-
-  Future<void> _fetchExams() async {
-    // TODO: Integrate with actual API endpoint for teacher's exams
-    // For now, using hardcoded as placeholder
-    setState(() {
-      exams = [
-        ExamModel(
-          id: 1,
-          title: 'آزمون میانترم - ریاضی 2',
-          status: 'upcoming',
-          subject: 'ریاضی - بخش الف',
-          date: '20 آبان 1403',
-          students: 32,
-          classTime: '9:00 صبح',
-          capacity: 100,
-          duration: 90,
-          location: 'کلاس 203',
-          possibleScore: 100,
-        ),
-        ExamModel(
-          id: 2,
-          title: 'آزمون فصل 2 - ریاضی 3',
-          status: 'upcoming',
-          subject: 'ریاضی - بخش ب',
-          date: '20 آبان 1403',
-          students: 28,
-          classTime: '11:00 صبح',
-          capacity: 50,
-          duration: 60,
-          location: 'کلاس 201',
-          possibleScore: 100,
-        ),
-        ExamModel(
-          id: 3,
-          title: 'آزمون فصل 1 - ریاضی 2',
-          status: 'completed',
-          subject: 'ریاضی - بخش الف',
-          date: '15 آبان 1403',
-          students: 32,
-          classTime: '9:00 صبح',
-          capacity: 100,
-          duration: 90,
-          passPercentage: 100,
-          filledCapacity: '32/32',
-          possibleScore: 100,
-        ),
-      ];
-    });
-    _startAnimations();
   }
 
   void _startAnimations() {
@@ -204,29 +173,26 @@ class _ExamManagementPageState extends State<ExamManagementPage>
                     Expanded(
                       child: ElevatedButton(
                         onPressed: () async {
-                          if (titleController.text.isNotEmpty &&
-                              subjectController.text.isNotEmpty) {
-                            // TODO: Call API to add exam
-                            // For now, add locally
-                            final newExam = ExamModel(
-                              id: exams.length + 1,
+                          try {
+                            final examData = ExamModelT(
+                              id: 0, // Will be set by backend
                               title: titleController.text,
                               status: 'upcoming',
                               subject: subjectController.text,
                               date: dateController.text,
                               students: 0,
                               classTime: timeController.text,
-                              capacity:
-                                  int.tryParse(capacityController.text) ?? 100,
-                              duration:
-                                  int.tryParse(durationController.text) ?? 90,
-                              possibleScore: 100,
-                            );
-                            setState(() {
-                              exams.add(newExam);
-                              _startAnimations();
-                            });
+                              capacity: int.tryParse(capacityController.text) ?? 0,
+                              duration: int.tryParse(durationController.text) ?? 0,
+                              possibleScore: 20, // Hardcode or add field
+                            ).toJson();
+
+                            await ApiService.createExam(widget.userId, examData);
                             Navigator.pop(context);
+                            _fetchExams(); // Refresh list
+                            // Show success snackbar
+                          } catch (e) {
+                            // Show error
                           }
                         },
                         style: ElevatedButton.styleFrom(

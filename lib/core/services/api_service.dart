@@ -8,6 +8,7 @@ import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
+import '../../features/teacher/exam_management/data/models/exam_model.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -697,6 +698,47 @@ class ApiService {
         return json.decode(response.body) as List<dynamic>;
       } else {
         throw Exception('خطا در دریافت رسالت‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ================================= GET EXAMS FOR TEACHER =============================
+  static Future<List<ExamModelT>> getTeacherExams(int teacherId) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$teacherId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Teacher Exams Status: ${response.statusCode}');
+      print('Teacher Exams Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data.map((e) => ExamModelT.fromJson(e)).toList();
+      } else {
+        throw Exception('خطا در دریافت امتحانات: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching teacher exams: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ================================= CREATE EXAMS =============================
+  static Future<void> createExam(int teacherId, Map<String, dynamic> examData) async {
+    final url = Uri.parse('$baseUrl/teacher/exam'); // Or '$baseUrl/teacher/exams/$teacherId' if adding to TeacherController
+
+    try {
+      final response = await http.post(
+        url,
+        headers: _headers,
+        body: json.encode(examData),
+      ).timeout(_timeout);
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('خطا در ایجاد امتحان: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('خطا: $e');
