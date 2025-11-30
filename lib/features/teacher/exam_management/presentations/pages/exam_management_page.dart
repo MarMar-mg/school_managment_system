@@ -3,10 +3,12 @@ import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
 import '../../../../../commons/shamsi_date_picker_dialog.dart';
+import '../../../../../commons/widgets/section_divider.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../data/models/exam_model.dart';
 import '../../../../../commons/responsive_container.dart';
 import '../widgets/exam_section.dart';
+import '../widgets/header_section.dart';
 import '../widgets/stat_card.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 
@@ -282,52 +284,15 @@ class _ExamManagementPageState extends State<ExamManagementPage>
           children: [
             const SizedBox(height: 16),
 
-            // Header with Add Button
             _buildAnimatedWidget(
-              index: cardIndex++,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'مدیریت امتحانات',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColor.darkText,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: _showAddExamDialog,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [AppColor.purple, Colors.deepPurple],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.add, color: Colors.white, size: 20),
-                          SizedBox(width: 4),
-                          Text(
-                            'جدید',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 12,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
+              index: 0,
+              child: HeaderSection(
+                onAdd: _showAddExamDialog
               ),
             ),
+
+            const SizedBox(height: 24),
+            _buildAnimatedWidget(index: 1, child: const SectionDivider()),
             const SizedBox(height: 24),
 
             // Stats Cards
