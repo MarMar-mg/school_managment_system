@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
 import '../../../../../core/services/api_service.dart';
-import '../../../../dashboard/presentation/widgets/section_header_widget.dart';
 import '../../data/models/exam_model.dart';
-import '../widgets/completed_exam_card.dart';
+import '../../../../../commons/responsive_container.dart';
+import '../widgets/exam_section.dart';
 import '../widgets/stat_card.dart';
-import '../widgets/upcoming_exam_card.dart';
 
 class ExamManagementPage extends StatefulWidget {
   final Role role;
@@ -29,25 +29,16 @@ class _ExamManagementPageState extends State<ExamManagementPage>
   late AnimationController _controller;
   late List<Animation<double>> _cardAnimations;
 
-  List<ExamModelT> exams = [];
-  Future<void> _fetchExams() async {
-    try {
-      final fetchedExams = await ApiService.getTeacherExams(widget.userId);
-      setState(() {
-        exams = fetchedExams;
-      });
-    } catch (e) {
-      // Handle error, e.g., show snackbar
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا در بارگیری امتحانات: $e')));
-      // Fallback to hardcoded if needed, but remove for production
-      setState(() {
-        exams = [
-          // Your existing hardcoded data as fallback
-        ];
-      });
-    }
-    _startAnimations();
-  }
+  List<ExamModelT> _upcomingExams = [];
+  List<ExamModelT> _completedExams = [];
+
+  bool _isLoading = true;
+  String _error = '';
+
+  final Map<String, bool> _expanded = {
+    'upcoming': false,
+    'completed': false,
+  };
 
   @override
   void initState() {
@@ -56,26 +47,54 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       vsync: this,
       duration: const Duration(milliseconds: 1400),
     );
+    _cardAnimations = [];
     _fetchExams();
-  }
-
-  void _startAnimations() {
-    _cardAnimations = List.generate(
-      exams.length + 2,
-      (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(0.1 + i * 0.08, 1.0, curve: Curves.easeOutCubic),
-        ),
-      ),
-    );
-    _controller.forward();
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<void> _fetchExams() async {
+    try {
+      setState(() => _isLoading = true);
+      final exams = await ApiService.getTeacherExams(widget.userId);
+
+      setState(() {
+        _upcomingExams = exams.where((e) => e.status == 'upcoming').toList();
+        _completedExams = exams.where((e) => e.status == 'completed').toList();
+        _isLoading = false;
+        _error = '';
+        _expanded.updateAll((_, __) => false);
+      });
+
+      _initializeAnimations();
+    } catch (e) {
+      setState(() {
+        _error = e.toString();
+        _isLoading = false;
+      });
+    }
+  }
+
+  void _initializeAnimations() {
+    final totalCount = _upcomingExams.length + _completedExams.length;
+    _cardAnimations = List.generate(
+      totalCount + 2, // +2 for header and stats
+          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(0.06 + i * 0.04, 1.0, curve: Curves.easeOutCubic),
+        ),
+      ),
+    );
+    _controller.forward(from: 0.0);
+  }
+
+  void _toggle(String key) {
+    setState(() => _expanded[key] = !_expanded[key]!);
   }
 
   void _showAddExamDialog() {
@@ -105,6 +124,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
                     fontWeight: FontWeight.bold,
                     color: AppColor.darkText,
                   ),
+                  textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 24),
                 _buildTextField(
@@ -175,7 +195,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
                         onPressed: () async {
                           try {
                             final examData = ExamModelT(
-                              id: 0, // Will be set by backend
+                              id: 0,
                               title: titleController.text,
                               status: 'upcoming',
                               subject: subjectController.text,
@@ -184,15 +204,16 @@ class _ExamManagementPageState extends State<ExamManagementPage>
                               classTime: timeController.text,
                               capacity: int.tryParse(capacityController.text) ?? 0,
                               duration: int.tryParse(durationController.text) ?? 0,
-                              possibleScore: 20, // Hardcode or add field
+                              possibleScore: 20,
                             ).toJson();
 
                             await ApiService.createExam(widget.userId, examData);
                             Navigator.pop(context);
-                            _fetchExams(); // Refresh list
-                            // Show success snackbar
+                            _fetchExams();
                           } catch (e) {
-                            // Show error
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('خطا: $e')),
+                            );
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -232,14 +253,17 @@ class _ExamManagementPageState extends State<ExamManagementPage>
             fontWeight: FontWeight.w600,
             color: AppColor.lightGray,
           ),
+          textDirection: TextDirection.rtl,
         ),
         const SizedBox(height: 8),
         TextField(
           controller: controller,
           keyboardType: isNumber ? TextInputType.number : TextInputType.text,
           textAlign: TextAlign.right,
+          textDirection: TextDirection.rtl,
           decoration: InputDecoration(
             hintText: hint,
+            hintTextDirection: TextDirection.rtl,
             filled: true,
             fillColor: AppColor.backgroundColor,
             border: OutlineInputBorder(
@@ -260,179 +284,228 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     );
   }
 
+  Widget _buildAnimatedWidget({required int index, required Widget child}) {
+    if (_cardAnimations.isEmpty || index >= _cardAnimations.length) {
+      return child;
+    }
+
+    return AnimatedBuilder(
+      animation: _cardAnimations[index],
+      builder: (context, _) {
+        final value = _cardAnimations[index].value;
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 50 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final upcomingExams = exams.where((e) => e.status == 'upcoming').toList();
-    final completedExams = exams.where((e) => e.status == 'completed').toList();
-
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
-      body: Directionality(
-        textDirection: TextDirection.rtl,
-        child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _fetchExams,
-            color: AppColor.purple,
-            child: SingleChildScrollView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header (use a separate widget if needed, but simple here)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: const [
-                          Text(
-                            'مدیریت امتحانات',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColor.darkText,
-                            ),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            'ایجاد و مدیریت امتحان‌های کلاسی',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColor.lightGray,
-                            ),
-                          ),
-                        ],
-                      ),
-                      GestureDetector(
-                        onTap: _showAddExamDialog,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [AppColor.purple, Colors.deepPurple],
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            children: [
-                              Icon(Icons.add, color: Colors.white),
-                              SizedBox(width: 4),
-                              Text(
-                                'امتحان جدید',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
+      body: RefreshIndicator(
+        onRefresh: _fetchExams,
+        color: AppColor.purple,
+        child: _isLoading
+            ? _buildShimmer()
+            : _error.isNotEmpty
+            ? _buildError()
+            : _buildSuccess(),
+      ),
+    );
+  }
 
-                  // Stats Cards (updated to match image)
-                  _buildAnimatedStatsCards(),
-                  const SizedBox(height: 32),
-
-                  // Upcoming Exams
-                  if (upcomingExams.isNotEmpty) ...[
-                    SectionHeader(title: 'امتحانات پیش رو', onSeeAll: () {}),
-                    const SizedBox(height: 16),
-                    ...upcomingExams.map(
-                      (exam) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: UpcomingExamCard(exam: exam),
-                      ),
-                    ),
-                    const SizedBox(height: 32),
-                  ],
-
-                  // Completed Exams
-                  if (completedExams.isNotEmpty) ...[
-                    SectionHeader(
-                      title: 'امتحانات برگزار شده',
-                      onSeeAll: () {},
-                    ),
-                    const SizedBox(height: 16),
-                    ...completedExams.map(
-                      (exam) => Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: CompletedExamCard(exam: exam),
-                      ),
-                    ),
-                  ],
-
-                  if (exams.isEmpty)
-                    Center(
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 48),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.assignment_outlined,
-                              size: 80,
-                              color: AppColor.lightGray,
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'امتحانی وجود ندارد',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: AppColor.lightGray,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+  Widget _buildShimmer() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+            Shimmer.fromColors(
+              baseColor: Colors.grey[100]!,
+              highlightColor: Colors.grey[300]!,
+              child: Container(height: 100, color: Colors.white),
             ),
-          ),
+            const SizedBox(height: 24),
+            ...List.generate(3, (_) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Shimmer.fromColors(
+                  baseColor: Colors.grey[100]!,
+                  highlightColor: Colors.grey[300]!,
+                  child: Container(height: 180, color: Colors.white),
+                ),
+              );
+            }),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildAnimatedStatsCards() {
-    return AnimatedBuilder(
-      animation: _cardAnimations.isNotEmpty
-          ? _cardAnimations[0]
-          : AlwaysStoppedAnimation(1.0),
-      builder: (context, child) {
-        final value = _cardAnimations.isNotEmpty
-            ? _cardAnimations[0].value
-            : 1.0;
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 80 * (1 - value)),
-            child: child,
-          ),
-        );
-      },
-      child: Row(
+  Widget _buildError() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(width: 12),
-          Expanded(
-            child: StatCard(
-              value: '0',
-              label: 'سوالات',
-              color: AppColor.purple,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: StatCard(
-              value: '2',
-              label: 'امتحانات باقی مانده',
-              color: AppColor.purple,
-            ),
+          Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+          const SizedBox(height: 16),
+          const Text('خطا در بارگذاری امتحانات'),
+          const SizedBox(height: 8),
+          Text(_error, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _fetchExams,
+            icon: const Icon(Icons.refresh),
+            label: const Text('تلاش مجدد'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSuccess() {
+    if (_upcomingExams.isEmpty && _completedExams.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.assignment_outlined, size: 80, color: AppColor.lightGray),
+            const SizedBox(height: 16),
+            const Text('امتحانی وجود ندارد', style: TextStyle(fontSize: 16, color: AppColor.lightGray)),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _showAddExamDialog,
+              icon: const Icon(Icons.add),
+              label: const Text('افزودن امتحان'),
+              style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
+            ),
+          ],
+        ),
+      );
+    }
+
+    int cardIndex = 0;
+
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.all(16),
+      child: ResponsiveContainer(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            const SizedBox(height: 16),
+
+            // Header with Add Button
+            _buildAnimatedWidget(
+              index: cardIndex++,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'مدیریت امتحانات',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppColor.darkText,
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _showAddExamDialog,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [AppColor.purple, Colors.deepPurple],
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(Icons.add, color: Colors.white, size: 20),
+                          SizedBox(width: 4),
+                          Text(
+                            'جدید',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Stats Cards
+            _buildAnimatedWidget(
+              index: cardIndex++,
+              child: Row(
+                children: [
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatCard(
+                      value: '${_upcomingExams.length}',
+                      label: 'امتحانات پیش رو',
+                      color: Colors.orange,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: StatCard(
+                      value: '${_completedExams.length}',
+                      label: 'امتحانات برگزار شده',
+                      color: Colors.green,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Upcoming Exams Section
+            ExamTeacherSection(
+              title: 'پیش رو',
+              color: Colors.orange,
+              items: _upcomingExams,
+              startIndex: cardIndex,
+              sectionKey: 'upcoming',
+              isExpanded: _expanded['upcoming']!,
+              onToggle: () => _toggle('upcoming'),
+              animations: _cardAnimations,
+            ),
+            const SizedBox(height: 24),
+
+            // Completed Exams Section
+            ExamTeacherSection(
+              title: 'برگزار شده',
+              color: Colors.green,
+              items: _completedExams,
+              startIndex: cardIndex + _upcomingExams.length,
+              sectionKey: 'completed',
+              isExpanded: _expanded['completed']!,
+              onToggle: () => _toggle('completed'),
+              animations: _cardAnimations,
+            ),
+            const SizedBox(height: 100),
+          ],
+        ),
       ),
     );
   }

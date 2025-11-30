@@ -435,8 +435,6 @@ namespace SchoolPortalAPI.Controllers
         [HttpGet("exams/{teacherId}")]
         public async Task<IActionResult> GetTeacherExams(long teacherId)
         {
-            var today = DateTime.Now;
-
             var teacherIdd = await _context.Teachers
                  .Where(t => t.Userid == teacherId)
                  .Select(t => t.Teacherid)
@@ -451,40 +449,165 @@ namespace SchoolPortalAPI.Controllers
                     id = e.Examid,
                     title = e.Title,
                     description = e.Description,
-                    endDateStr = e.Enddate,  // Fetch string to parse later
+                    endDateStr = e.Enddate,
+                    startTimeStr = e.Starttime,
+                    duration = e.Duration ?? 90,
                     subject = e.Course != null ? e.Course.Name : "نامشخص",
                     date = e.Startdate,
-                    students = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid),
-                    classTime = e.Starttime,
-                    capacity = e.Capacity ?? 100,
-                    duration = e.Duration ?? 90,
+                    classId = e.Classid,
                     possibleScore = e.PossibleScore ?? 100,
                     location = e.Class != null ? e.Class.Name : "نامشخص",
+                    classTime = e.Starttime,
+                    // Count students with submissions
+                    submittedCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid && est.Score != null),
+                    // Count students who scored more than half
                     passCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid && est.Score >= (e.PossibleScore ?? 100) * 0.5),
-                    totalCount = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid),
-                    filledCapacity = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid) + "/" + (e.Capacity ?? 100)
+                    // Total count of submissions (not class size)
+                    totalSubmitted = _context.ExamStuTeaches.Count(est => est.Examid == e.Examid)
                 })
                 .ToListAsync();
 
-            var exams = examData.Select(ed => new
-            {
-                id = ed.id,
-                title = ed.title,
-                description = ed.description,
-                status = (DateTime.TryParse(ed.endDateStr, out var endDate) && endDate > today ? "upcoming" : "completed"),
-                subject = ed.subject,
-                date = ed.date,
-                students = ed.students,
-                classTime = ed.classTime,
-                capacity = ed.capacity,
-                duration = ed.duration,
-                possibleScore = ed.possibleScore,
-                location = ed.location,
-                passPercentage = ed.totalCount > 0 ? Math.Round(ed.passCount * 100.0 / ed.totalCount, 0) : (double?)null,
-                filledCapacity = ed.filledCapacity
+            var nowUtc = DateTime.UtcNow;
+
+            var exams = examData.Select(ed => {
+                var isFuture = false;
+
+                if (!string.IsNullOrEmpty(ed.endDateStr))
+                {
+                    var dateParts = ed.endDateStr.Split('-');
+                    if (dateParts.Length == 3 &&
+                        int.TryParse(dateParts[0], out int jyear) &&
+                        int.TryParse(dateParts[1], out int jmonth) &&
+                        int.TryParse(dateParts[2], out int jday))
+                    {
+                        int startHour = 0, startMinute = 0;
+                        if (!string.IsNullOrEmpty(ed.startTimeStr))
+                        {
+                            var timeParts = ed.startTimeStr.Split(':');
+                            if (timeParts.Length >= 2)
+                            {
+                                int.TryParse(timeParts[0], out startHour);
+                                int.TryParse(timeParts[1], out startMinute);
+                            }
+                        }
+
+                        DateTime examStartDateTime = JalaliToGregorian(jyear, jmonth, jday);
+                        examStartDateTime = examStartDateTime.AddHours(startHour).AddMinutes(startMinute);
+                        DateTime examEndDateTime = examStartDateTime.AddMinutes(ed.duration);
+
+                        isFuture = nowUtc < examEndDateTime;
+                    }
+                }
+
+                // Calculate pass percentage: (students who scored > half) / (total submitted) * 100
+                double passPercentage = ed.totalSubmitted > 0
+                    ? Math.Round(ed.passCount * 100.0 / ed.totalSubmitted, 1)
+                    : 0;
+
+                return new
+                {
+                    id = ed.id,
+                    title = ed.title,
+                    description = ed.description,
+                    status = isFuture ? "upcoming" : "completed",
+                    subject = ed.subject,
+                    date = ed.date,
+                    classTime = ed.classTime,
+                    capacity = ed.totalSubmitted,  // Number of students who submitted answers
+                    duration = ed.duration,
+                    possibleScore = ed.possibleScore,
+                    location = ed.location,
+                    passPercentage = passPercentage,
+                    filledCapacity = ed.submittedCount + "/" + ed.totalSubmitted
+                };
             }).ToList();
 
             return Ok(exams);
+        }
+
+        [HttpGet("exams/{examId}/submissions")]
+        public async Task<IActionResult> GetExamSubmissions(long examId)
+        {
+            var submissions = await _context.ExamStuTeaches
+                .Include(est => est.Stu)
+                .Where(est => est.Examid == examId)
+                .Select(est => new
+                {
+                    id = est.Estid,
+                    examId = est.Examid,
+                    studentId = est.Stuid,
+                    studentName = est.Stu.Name ?? "نامشخص",
+                    submittedAt = est.Submitteddate,
+                    score = est.Score,
+                    answerFile = est.Answerfile
+                })
+                .OrderByDescending(x => x.submittedAt)
+                .ToListAsync();
+
+            return Ok(submissions);
+        }
+
+        [HttpPost("exams/{examId}/submissions/{submissionId}/score")]
+        public async Task<IActionResult> UpdateSubmissionScore(long examId, long submissionId, [FromBody] UpdateScoreRequest request)
+        {
+            try
+            {
+                var submission = await _context.ExamStuTeaches
+                    .FirstOrDefaultAsync(est => est.Estid == submissionId && est.Examid == examId);
+
+                if (submission == null)
+                    return NotFound(new { message = "Submission not found" });
+
+                if (request.Score < 0)
+                    return BadRequest(new { message = "Score cannot be negative" });
+
+                submission.Score = request.Score;
+                submission.Gradeddate = DateTime.UtcNow;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = "Score updated successfully",
+                    submission = new
+                    {
+                        id = submission.Estid,
+                        score = submission.Score,
+                        gradedAt = submission.Gradeddate
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "Error updating score: " + ex.Message });
+            }
+        }
+
+        public class UpdateScoreRequest
+        {
+            public double Score { get; set; }
+        }
+
+        private DateTime JalaliToGregorian(int jy, int jm, int jd)
+        {
+            int dayOfYear = 0;
+
+            if (jm <= 6)
+                dayOfYear = (jm - 1) * 31 + jd;
+            else if (jm <= 11)
+                dayOfYear = 6 * 31 + (jm - 7) * 30 + jd;
+            else
+                dayOfYear = 6 * 31 + 5 * 30 + jd;
+
+            int totalDays = (jy - 1) * 365;
+            totalDays += (jy - 1) / 33 * 8;
+            totalDays += ((jy - 1) % 33) / 4;
+            totalDays += dayOfYear;
+
+            DateTime jalaliEpoch = new DateTime(622, 3, 22);
+            DateTime gregorianDate = jalaliEpoch.AddDays(totalDays - 1);
+
+            return gregorianDate;
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -508,5 +631,55 @@ namespace SchoolPortalAPI.Controllers
             if (exam == null) return NotFound();
             return Ok(exam);
         }
+
+//        // Convert Gregorian to Jalali (Persian) calendar
+//        private (int Year, int Month, int Day) ConvertGregorianToJalali(DateTime gregorianDate)
+//        {
+//            int gy = gregorianDate.Year;
+//            int gm = gregorianDate.Month;
+//            int gd = gregorianDate.Day;
+//
+//            int[] g_d_n_array = new[] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };
+//
+//            int g_d_n = 365 * gy + ((gy + 3) / 4) - ((gy + 99) / 100) + ((gy + 399) / 400) + gd + g_d_n_array[gm - 1];
+//
+//            int j_d_n = g_d_n - 79;
+//
+//            int j_np = j_d_n / 12053;
+//            j_d_n = j_d_n % 12053;
+//
+//            int jy = 979 + 33 * j_np + 4 * (j_d_n / 1461);
+//
+//            j_d_n %= 1461;
+//
+//            if (j_d_n >= 366)
+//            {
+//                jy += (j_d_n - 1) / 365;
+//                j_d_n = (j_d_n - 1) % 365;
+//            }
+//
+//            int jm = j_d_n < 186 ? 1 + (j_d_n / 31) : 7 + ((j_d_n - 186) / 30);
+//            int jd = 1 + (j_d_n < 186 ? (j_d_n % 31) : ((j_d_n - 186) % 30));
+//
+//            return (jy, jm, jd);
+//        }
+//
+//        // Convert Jalali to Gregorian calendar
+//        private DateTime ConvertJalaliToGregorian(int jy, int jm, int jd)
+//        {
+//            jy += 1474;
+//            if (jm > 7)
+//                jy += 1;
+//
+//            int days = 365 * jy + ((jy / 33) * 8) + ((jy % 33 + 3) / 4) + 78 + jd;
+//
+//            if (jm < 7)
+//                days += (jm - 1) * 31;
+//            else
+//                days += (jm - 7) * 30 + 186;
+//
+//            DateTime gregorianDate = new DateTime(400, 1, 1).AddDays(days);
+//            return gregorianDate;
+//        }
     }
 }

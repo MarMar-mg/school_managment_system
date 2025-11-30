@@ -745,6 +745,32 @@ class ApiService {
     }
   }
 
+  // ================================= GET EXAMS SUBMISSION =============================
+  static Future<List<dynamic>> getExamSubmissions(int examId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/exams/$examId/submissions'),
+    );
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as List<dynamic>;
+    }
+    throw Exception('Failed to load submissions');
+  }
+
+  static Future<void> updateSubmissionScore(
+      int examId,
+      int submissionId,
+      double score,
+      ) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/exams/$examId/submissions/$submissionId/score'),
+      headers: _headers,
+      body: json.encode({'score': score}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update score');
+    }
+  }
+
   ///////////////////////////////////////////
 
   // تبدیل DateTime میلادی به رشته شمسی (14030825)
