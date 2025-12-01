@@ -10,7 +10,8 @@ class ExamTeacherSection extends StatelessWidget {
   final String sectionKey;
   final bool isExpanded;
   final VoidCallback onToggle;
-  final Function(dynamic) onDelete;
+  final Function(ExamModelT) onEdit;
+  final Function(ExamModelT) onDelete;
   final List<Animation<double>> animations;
 
   const ExamTeacherSection({
@@ -23,6 +24,7 @@ class ExamTeacherSection extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     required this.animations,
+    required this.onEdit,
     required this.onDelete,
   });
 
@@ -76,7 +78,9 @@ class ExamTeacherSection extends StatelessWidget {
                 animation: globalIndex < animations.length
                     ? animations[globalIndex]
                     : AlwaysStoppedAnimation(1.0),
-                onDelete: () => onDelete(2),
+                onEdit: () => onEdit(item),
+                onDelete: () => onDelete(item),
+                isActive: sectionKey == 'upcoming',
               ),
             );
           }),
@@ -131,13 +135,17 @@ class ExamTeacherSection extends StatelessWidget {
 class AnimatedExamTeacherCard extends StatelessWidget {
   final ExamModelT exam;
   final Animation<double> animation;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isActive;
 
   const AnimatedExamTeacherCard({
     super.key,
     required this.exam,
     required this.animation,
+    required this.onEdit,
     required this.onDelete,
+    required this.isActive,
   });
 
   @override
@@ -154,7 +162,12 @@ class AnimatedExamTeacherCard extends StatelessWidget {
           ),
         );
       },
-      child: TeacherExamCard(exam: exam, onDelete: onDelete),
+      child: TeacherExamCard(
+        exam: exam,
+        onEdit: onEdit,
+        onDelete: onDelete,
+        isActive: isActive,
+      ),
     );
   }
 }

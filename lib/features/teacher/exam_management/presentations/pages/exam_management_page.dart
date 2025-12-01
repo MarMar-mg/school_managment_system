@@ -2,16 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
-import '../../../../../commons/shamsi_date_picker_dialog.dart';
 import '../../../../../commons/widgets/section_divider.dart';
 import '../../../../../core/services/api_service.dart';
-import '../../../assignment_management/presentations/widgets/delete_dialog.dart';
 import '../../data/models/exam_model.dart';
 import '../../../../../commons/responsive_container.dart';
+import '../widgets/add_edit_dialog.dart';
 import '../widgets/exam_section.dart';
 import '../widgets/header_section.dart';
 import '../widgets/stat_card.dart';
-import 'package:shamsi_date/shamsi_date.dart';
 
 class ExamManagementPage extends StatefulWidget {
   final Role role;
@@ -36,6 +34,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
 
   List<ExamModelT> _upcomingExams = [];
   List<ExamModelT> _completedExams = [];
+  List<Map<String, dynamic>> _courses = [];
 
   bool _isLoading = true;
   String _error = '';
@@ -45,7 +44,6 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     'completed': false,
   };
 
-
   @override
   void initState() {
     super.initState();
@@ -54,7 +52,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       duration: const Duration(milliseconds: 1400),
     );
     _cardAnimations = [];
-    _fetchExams();
+    _fetchData();
   }
 
   @override
@@ -63,14 +61,20 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     super.dispose();
   }
 
-  Future<void> _fetchExams() async {
+  Future<void> _fetchData() async {
     try {
       setState(() => _isLoading = true);
+
+      // Fetch exams
       final exams = await ApiService.getTeacherExams(widget.userId);
+
+      // Fetch courses
+      final courses = await ApiService.getCourses(Role.teacher, widget.userId);
 
       setState(() {
         _upcomingExams = exams.where((e) => e.status == 'upcoming').toList();
         _completedExams = exams.where((e) => e.status == 'completed').toList();
+        _courses = courses;
         _isLoading = false;
         _error = '';
         _expanded.updateAll((_, __) => false);
@@ -85,23 +89,10 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     }
   }
 
-  Future<void> _deleteExam(int examID) async {
-    try {
-      await ApiService.deleteTeacherExam(examID, widget.userId);
-      _fetchExams();
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا در حذف: $e')),
-        );
-      }
-    }
-  }
-
   void _initializeAnimations() {
     final totalCount = _upcomingExams.length + _completedExams.length;
     _cardAnimations = List.generate(
-      totalCount + 2, // +2 for header and stats
+      totalCount + 2,
           (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
@@ -116,65 +107,39 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     setState(() => _expanded[key] = !_expanded[key]!);
   }
 
-  void _showAddExamDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => _AddExamDialogContent(
-        userId: widget.userId,
-        onSuccess: () {
-          Navigator.pop(context);
-          _fetchExams();
-        },
-      ),
+  void _showAddExamDialog({dynamic exam, bool isAdd = true}) {
+    showAddEditExamDialog(
+      context,
+      exam: exam,
+      userId: widget.userId,
+      onSuccess: _fetchData,
+      isAdd: isAdd,
+      courses: _courses,
     );
   }
 
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    bool isNumber = false,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-            color: AppColor.lightGray,
+  Future<void> _deleteExam(int examId) async {
+    try {
+      await ApiService.deleteTeacherExam(examId, widget.userId);
+      _fetchData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('امتحان حذف شد'),
+            backgroundColor: Colors.green,
           ),
-          textDirection: TextDirection.rtl,
-        ),
-        const SizedBox(height: 8),
-        TextField(
-          controller: controller,
-          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-          textAlign: TextAlign.right,
-          textDirection: TextDirection.rtl,
-          decoration: InputDecoration(
-            hintText: hint,
-            hintTextDirection: TextDirection.rtl,
-            filled: true,
-            fillColor: AppColor.backgroundColor,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: BorderSide.none,
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColor.purple, width: 2),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 12,
-            ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا: $e'),
+            backgroundColor: Colors.red,
           ),
-        ),
-      ],
-    );
+        );
+      }
+    }
   }
 
   Widget _buildAnimatedWidget({required int index, required Widget child}) {
@@ -202,7 +167,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     return Scaffold(
       backgroundColor: AppColor.backgroundColor,
       body: RefreshIndicator(
-        onRefresh: _fetchExams,
+        onRefresh: _fetchData,
         color: AppColor.purple,
         child: _isLoading
             ? _buildShimmer()
@@ -256,7 +221,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
           Text(_error, textAlign: TextAlign.center),
           const SizedBox(height: 24),
           ElevatedButton.icon(
-            onPressed: _fetchExams,
+            onPressed: _fetchData,
             icon: const Icon(Icons.refresh),
             label: const Text('تلاش مجدد'),
             style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
@@ -274,10 +239,11 @@ class _ExamManagementPageState extends State<ExamManagementPage>
           children: [
             Icon(Icons.assignment_outlined, size: 80, color: AppColor.lightGray),
             const SizedBox(height: 16),
-            const Text('امتحانی وجود ندارد', style: TextStyle(fontSize: 16, color: AppColor.lightGray)),
+            const Text('امتحانی وجود ندارد',
+                style: TextStyle(fontSize: 16, color: AppColor.lightGray)),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: _showAddExamDialog,
+              onPressed: () => _showAddExamDialog(isAdd: true),
               icon: const Icon(Icons.add),
               label: const Text('افزودن امتحان'),
               style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
@@ -297,14 +263,12 @@ class _ExamManagementPageState extends State<ExamManagementPage>
         child: Column(
           children: [
             const SizedBox(height: 16),
-
             _buildAnimatedWidget(
               index: 0,
               child: HeaderSection(
-                onAdd: _showAddExamDialog
+                onAdd: () => _showAddExamDialog(isAdd: true),
               ),
             ),
-
             const SizedBox(height: 24),
             _buildAnimatedWidget(index: 1, child: const SectionDivider()),
             const SizedBox(height: 24),
@@ -345,7 +309,8 @@ class _ExamManagementPageState extends State<ExamManagementPage>
               isExpanded: _expanded['upcoming']!,
               onToggle: () => _toggle('upcoming'),
               animations: _cardAnimations,
-              onDelete: (data) => _deleteExam(data),
+              onEdit: (exam) => _showAddExamDialog(exam: exam, isAdd: false),
+              onDelete: (exam) => _showDeleteDialog(exam),
             ),
             const SizedBox(height: 24),
 
@@ -359,7 +324,8 @@ class _ExamManagementPageState extends State<ExamManagementPage>
               isExpanded: _expanded['completed']!,
               onToggle: () => _toggle('completed'),
               animations: _cardAnimations,
-              onDelete: (data) => _deleteExam(data['id'])
+              onEdit: (exam) => _showAddExamDialog(exam: exam, isAdd: false),
+              onDelete: (exam) => _showDeleteDialog(exam),
             ),
             const SizedBox(height: 100),
           ],
@@ -367,244 +333,37 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       ),
     );
   }
-}
 
-class _AddExamDialogContent extends StatefulWidget {
-  final int userId;
-  final VoidCallback onSuccess;
-
-  const _AddExamDialogContent({
-    required this.userId,
-    required this.onSuccess,
-  });
-
-  @override
-  State<_AddExamDialogContent> createState() => _AddExamDialogContentState();
-}
-
-class _AddExamDialogContentState extends State<_AddExamDialogContent>
-    with TickerProviderStateMixin {
-
-  final _titleController = TextEditingController();
-  final _subjectController = TextEditingController();
-  final _capacityController = TextEditingController();
-  final _durationController = TextEditingController();
-  final _dateController = TextEditingController();
-  final _timeController = TextEditingController();
-
-  Jalali? _selectedDate;
-  TimeOfDay? _selectedTime;
-
-  late AnimationController _animController;
-  late Animation<double> _scaleAnimation;
-  late Animation<Offset> _slideAnimation;
-
-  @override
-  void initState() {
-    super.initState();
-
-    _animController = AnimationController(
-      duration: const Duration(milliseconds: 450),
-      vsync: this,
-    );
-
-    _scaleAnimation = Tween(begin: 0.9, end: 1.0).animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutCubic),
-    );
-
-    _slideAnimation = Tween(begin: const Offset(0, .25), end: Offset.zero)
-        .animate(
-      CurvedAnimation(parent: _animController, curve: Curves.easeOutExpo),
-    );
-
-    _animController.forward();
-  }
-
-  @override
-  void dispose() {
-    _animController.dispose();
-    _titleController.dispose();
-    _subjectController.dispose();
-    _capacityController.dispose();
-    _durationController.dispose();
-    _dateController.dispose();
-    _timeController.dispose();
-    super.dispose();
-  }
-
-  // ------- PICKERS -------
-
-  Future<void> _pickDate() async {
-    final picked = await showDialog<Jalali>(
+  void _showDeleteDialog(ExamModelT exam) {
+    showDialog(
       context: context,
-      builder: (context) => ShamsiDatePickerDialog(
-        initialDate: Jalali.now(),
-        firstDate: Jalali(1400, 1, 1),
-        lastDate: Jalali(1410, 12, 29),
-      ),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedDate = picked;
-        _dateController.text =
-        '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-      });
-    }
-  }
-
-  Future<void> _pickTime() async {
-    final picked = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (picked != null) {
-      setState(() {
-        _selectedTime = picked;
-        _timeController.text =
-        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
-      });
-    }
-  }
-
-  // ------- SUBMIT -------
-
-  Future<void> _submit() async {
-    if (_titleController.text.isEmpty ||
-        _subjectController.text.isEmpty ||
-        _selectedDate == null ||
-        _selectedTime == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('لطفا تمام فیلدها را پر کنید')),
-      );
-      return;
-    }
-
-    try {
-      final examData = {
-        "title": _titleController.text,
-        "subject": _subjectController.text,
-        "date": _dateController.text,
-        "classTime": _timeController.text,
-        "capacity": int.tryParse(_capacityController.text) ?? 0,
-        "duration": int.tryParse(_durationController.text) ?? 0,
-        "status": "upcoming",
-        "possibleScore": 20,
-        "students": 0
-      };
-
-      await ApiService.createExam(widget.userId, examData);
-
-      widget.onSuccess();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطا: $e')),
-      );
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: _animController,
-      builder: (context, child) {
-        return Transform.scale(
-          scale: _scaleAnimation.value,
-          child: SlideTransition(position: _slideAnimation, child: child),
-        );
-      },
-      child: Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Text(
-                  'افزودن امتحان جدید',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 20),
-
-                // fields
-                _input('عنوان', 'مثال: آزمون ریاضی', _titleController),
-                const SizedBox(height: 14),
-                _input('درس', 'مثال: ریاضی', _subjectController),
-                const SizedBox(height: 14),
-
-                // date + time
-                Row(
-                  children: [
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _pickDate,
-                        child: AbsorbPointer(
-                          child: _input('تاریخ', '1403/09/12', _dateController),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: GestureDetector(
-                        onTap: _pickTime,
-                        child: AbsorbPointer(
-                          child: _input('ساعت', '09:00', _timeController),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 14),
-                _input('مدت (دقیقه)', '90', _durationController, number: true),
-                const SizedBox(height: 14),
-                _input('ظرفیت', '100', _capacityController, number: true),
-
-                const SizedBox(height: 26),
-
-                ElevatedButton(
-                  onPressed: _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.deepPurple,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
-                  child: const Text('ایجاد', style: TextStyle(color: Colors.white)),
-                ),
-              ],
+      builder: (context) => AlertDialog(
+        title: const Text('حذف امتحان'),
+        content: Text(
+          'آیا مطمئن هستید که می‌خواهید "${exam.title}" را حذف کنید؟',
+          textDirection: TextDirection.rtl,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteExam(exam.id);
+            },
+            child: Text(
+              'حذف',
+              style: TextStyle(
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _input(String label, String hint, TextEditingController controller,
-      {bool number = false}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(label,
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600)),
-        const SizedBox(height: 6),
-        TextField(
-          controller: controller,
-          textAlign: TextAlign.right,
-          keyboardType: number ? TextInputType.number : TextInputType.text,
-          decoration: InputDecoration(
-            hintText: hint,
-            filled: true,
-            fillColor: Colors.grey.shade100,
-            border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: BorderSide.none),
-            contentPadding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-          ),
-        )
-      ],
     );
   }
 }

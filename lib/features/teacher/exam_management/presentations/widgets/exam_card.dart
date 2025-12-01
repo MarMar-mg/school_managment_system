@@ -5,12 +5,16 @@ import '../../data/models/exam_model.dart';
 
 class TeacherExamCard extends StatefulWidget {
   final ExamModelT exam;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool isActive;
 
   const TeacherExamCard({
     super.key,
     required this.exam,
+    required this.onEdit,
     required this.onDelete,
+    required this.isActive,
   });
 
   @override
@@ -107,14 +111,19 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [headerColor, headerColor.withOpacity(0.8)],
+                          colors: [
+                            headerColor,
+                            headerColor.withOpacity(0.8)
+                          ],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        isUpcoming ? Icons.calendar_today : Icons.check_circle,
+                        isUpcoming
+                            ? Icons.calendar_today
+                            : Icons.check_circle,
                         color: Colors.white,
                         size: 24,
                       ),
@@ -168,7 +177,7 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                     Expanded(
                       child: _buildInfoItem(
                         'ساعت',
-                        widget.exam.classTime ?? 'نامشخص',
+                        widget.exam.classTime,
                         Icons.access_time_outlined,
                       ),
                     ),
@@ -224,131 +233,75 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                 // Action Buttons
                 Row(
                   children: [
-                    // Delete Button
-                    isUpcoming
-                        ? IconButton(
-                            icon: const Icon(
-                              Icons.delete_outline,
-                              color: Colors.red,
-                            ),
-                            onPressed: () {
-                              showDialog(
-                                context: context,
-                                builder: (ctx) => AlertDialog(
-                                  title: const Text('حذف امتحان'),
-                                  content: const Text(
-                                    'آیا مطمئن هستید؟',
-                                    textDirection: TextDirection.rtl,
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(ctx),
-                                      child: const Text('انصراف'),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pop(ctx);
-                                        print('deleted');
-                                        widget.onDelete();
-                                      },
-                                      child: const Text(
-                                        'حذف',
-                                        style: TextStyle(color: Colors.red),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            },
-                            iconSize: 20,
-                            padding: const EdgeInsets.all(8),
-                            constraints: const BoxConstraints(),
-                          )
-                        :
-                          // ElevatedButton.icon(
-                          //   onPressed: () {
-                          //     Navigator.push(
-                          //       context,
-                          //       MaterialPageRoute(
-                          //         builder: (_) => ExamScoreManagementPage(
-                          //           examId: widget.exam.id,
-                          //           examTitle: widget.exam.title,
-                          //           possibleScore: widget.exam.possibleScore,
-                          //         ),
-                          //       ),
-                          //     );
-                          //   },
-                          //   icon: const Icon(Icons.grading_rounded),
-                          //   label: const Text('مدیریت نمرات'),
-                          // ),
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                showExamScoreManagementDialog(
-                                  context,
-                                  examId: widget.exam.id,
-                                  examTitle: widget.exam.title,
-                                  possibleScore: widget.exam.possibleScore,
-                                );
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.grey.shade50,
-                                foregroundColor: AppColor.darkText,
-                                elevation: 0,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 10,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
-                                  side: BorderSide(color: Colors.grey.shade300),
-                                ),
-                              ),
-                              child: const Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(Icons.score, size: 16),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'مدیریت نمرات',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    // Delete Button (only for active/upcoming)
+                    if (widget.isActive) ...[
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        onPressed: widget.onDelete,
+                        iconSize: 20,
+                        padding: const EdgeInsets.all(8),
+                        constraints: const BoxConstraints(),
+                      ),
+                      const SizedBox(width: 8),
+                      // Edit Button
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: widget.onEdit,
+                          icon: const Icon(Icons.edit_outlined, size: 16),
+                          label: const Text('ویرایش'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.grey.shade50,
+                            foregroundColor: AppColor.darkText,
+                            elevation: 0,
+                            padding: const EdgeInsets.symmetric(vertical: 10),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: BorderSide(color: Colors.grey.shade300),
                             ),
                           ),
+                        ),
+                      ),
+                    ],
                     const SizedBox(width: 8),
-                    // Details Button
+                    // View/Score Button
                     Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          debugPrint('View details: ${widget.exam.title}');
+                      child: ElevatedButton.icon(
+                        onPressed: isUpcoming
+                            ? () => debugPrint('View details: ${widget.exam.title}')
+                            : () {
+                          showExamScoreManagementDialog(
+                            context,
+                            examId: widget.exam.id,
+                            examTitle: widget.exam.title,
+                            possibleScore: widget.exam.possibleScore,
+                          );
                         },
+                        icon: Icon(
+                          isUpcoming
+                              ? Icons.visibility_outlined
+                              : Icons.score,
+                          size: 16,
+                        ),
+                        label: Text(
+                          isUpcoming ? 'مشاهده' : 'مدیریت نمرات',
+                        ),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.grey.shade50,
-                          foregroundColor: AppColor.darkText,
+                          backgroundColor: isUpcoming
+                              ? Colors.grey.shade50
+                              : Colors.blue.shade50,
+                          foregroundColor: isUpcoming
+                              ? AppColor.darkText
+                              : Colors.blue,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(color: Colors.grey.shade300),
-                          ),
-                        ),
-                        child: const Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.visibility_outlined, size: 16),
-                            SizedBox(width: 6),
-                            Text(
-                              'مشاهده جزئیات',
-                              style: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w600,
-                              ),
+                            side: BorderSide(
+                              color: isUpcoming
+                                  ? Colors.grey.shade300
+                                  : Colors.blue.shade300,
                             ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
@@ -361,76 +314,76 @@ class _TeacherExamCardState extends State<TeacherExamCard>
       ),
     );
   }
-}
 
-Widget _buildInfoItem(String label, String value, IconData icon) {
-  return Row(
-    children: [
-      Icon(icon, size: 16, color: AppColor.purple.withOpacity(0.7)),
-      const SizedBox(width: 6),
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                fontSize: 11,
-                color: AppColor.lightGray,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColor.darkText,
-              ),
-              overflow: TextOverflow.ellipsis,
-            ),
-          ],
-        ),
-      ),
-    ],
-  );
-}
-
-Widget _buildStatCard(
-  String label,
-  String value,
-  Color bgColor,
-  Color textColor,
-) {
-  return Container(
-    padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-    decoration: BoxDecoration(
-      color: bgColor,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: textColor.withOpacity(0.2)),
-    ),
-    child: Column(
+  Widget _buildInfoItem(String label, String value, IconData icon) {
+    return Row(
       children: [
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: textColor,
+        Icon(icon, size: 16, color: AppColor.purple.withOpacity(0.7)),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 11,
+                  color: AppColor.lightGray,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColor.darkText,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 10,
-            color: AppColor.lightGray,
-            fontWeight: FontWeight.w500,
-          ),
-          textAlign: TextAlign.center,
         ),
       ],
-    ),
-  );
+    );
+  }
+
+  Widget _buildStatCard(
+      String label,
+      String value,
+      Color bgColor,
+      Color textColor,
+      ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: textColor.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: textColor,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 10,
+              color: AppColor.lightGray,
+              fontWeight: FontWeight.w500,
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }

@@ -424,9 +424,8 @@ class ApiService {
         final submittedNoGrade =
             (json['submittedNoGrade'] as List<dynamic>? ?? [])
                 .map(
-                  (e) => AssignmentItemm.fromJson({
-                    ...e as Map<String, dynamic>,
-                  }),
+                  (e) =>
+                      AssignmentItemm.fromJson({...e as Map<String, dynamic>}),
                 )
                 .toList();
 
@@ -624,7 +623,9 @@ class ApiService {
     });
 
     try {
-      final response = await http.post(url, headers: _headers, body: body).timeout(_timeout);
+      final response = await http
+          .post(url, headers: _headers, body: body)
+          .timeout(_timeout);
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         return json.decode(response.body) as Map<String, dynamic>;
@@ -658,7 +659,9 @@ class ApiService {
     });
 
     try {
-      final response = await http.put(url, headers: _headers, body: body).timeout(_timeout);
+      final response = await http
+          .put(url, headers: _headers, body: body)
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
@@ -671,11 +674,18 @@ class ApiService {
   }
 
   // ===============================DELETE ASSIGNMENT======================================
-  static Future<Map<String, dynamic>> deleteTeacherAssignment(int ExamId, int teacherId) async {
-    final url = Uri.parse('$baseUrl/teacher/exercises/$ExamId?teacherId=$teacherId');
+  static Future<Map<String, dynamic>> deleteTeacherAssignment(
+    int ExamId,
+    int teacherId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exercises/$ExamId?teacherId=$teacherId',
+    );
 
     try {
-      final response = await http.delete(url, headers: _headers).timeout(_timeout);
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(_timeout);
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
@@ -687,9 +697,14 @@ class ApiService {
     }
   }
 
- // ================================= GET SUBMISSION FOR ASSIGNMENT =============================
-  static Future<List<dynamic>> getAssignmentSubmissions(int exerciseId, int teacherId) async {
-    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId/submissions?teacherId=$teacherId');
+  // ================================= GET SUBMISSION FOR ASSIGNMENT =============================
+  static Future<List<dynamic>> getAssignmentSubmissions(
+    int exerciseId,
+    int teacherId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exercises/$exerciseId/submissions?teacherId=$teacherId',
+    );
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -726,29 +741,7 @@ class ApiService {
     }
   }
 
-  // ================================= CREATE EXAMS =============================
-  static Future<void> createExam(int teacherId, Map<String, dynamic> examData) async {
-    final url = Uri.parse('$baseUrl/teacher/exam'); // Or '$baseUrl/teacher/exams/$teacherId' if adding to TeacherController
-
-    try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: json.encode(examData),
-      ).timeout(_timeout);
-
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('خطا در ایجاد امتحان: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
-  // ================================= GET EXAMS SUBMISSION =============================
-  // Add these methods to your ApiService class in lib/core/services/api_service.dart
-
-// Get exam submissions (students who answered)
+  // ================================= GET EXAMS SUBMISSION(students who answered) =============================
   static Future<List<dynamic>> getExamSubmissions(int examId) async {
     final url = Uri.parse('$baseUrl/teacher/exams/$examId/submissions');
 
@@ -769,7 +762,7 @@ class ApiService {
     }
   }
 
-// Get exam statistics (pass percentage, average score, etc.)
+  // Get exam statistics (pass percentage, average score, etc.)
   static Future<Map<String, dynamic>> getExamStats(int examId) async {
     final url = Uri.parse('$baseUrl/teacher/exams/$examId/stats');
 
@@ -790,19 +783,19 @@ class ApiService {
     }
   }
 
-// Update a single student's exam score
+  // Update a single student's exam score
   static Future<Map<String, dynamic>> updateSubmissionScore(
-      int submissionId,
-      double score,
-      ) async {
-    final url = Uri.parse('$baseUrl/teacher/exams/submissions/$submissionId/score');
+    int submissionId,
+    double score,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exams/submissions/$submissionId/score',
+    );
 
     try {
-      final response = await http.put(
-        url,
-        headers: _headers,
-        body: json.encode({'score': score}),
-      ).timeout(_timeout);
+      final response = await http
+          .put(url, headers: _headers, body: json.encode({'score': score}))
+          .timeout(_timeout);
 
       print('Update Score Status: ${response.statusCode}');
       print('Update Score Body: ${response.body}');
@@ -818,19 +811,17 @@ class ApiService {
     }
   }
 
-// Update multiple students' scores at once
+  // Update multiple students' scores at once
   static Future<Map<String, dynamic>> batchUpdateScores(
-      int examId,
-      List<Map<String, dynamic>> scores,
-      ) async {
+    int examId,
+    List<Map<String, dynamic>> scores,
+  ) async {
     final url = Uri.parse('$baseUrl/teacher/exams/$examId/scores/batch');
 
     try {
-      final response = await http.post(
-        url,
-        headers: _headers,
-        body: json.encode(scores),
-      ).timeout(_timeout);
+      final response = await http
+          .post(url, headers: _headers, body: json.encode(scores))
+          .timeout(_timeout);
 
       print('Batch Update Status: ${response.statusCode}');
       print('Batch Update Body: ${response.body}');
@@ -846,17 +837,97 @@ class ApiService {
     }
   }
 
-  // ===============================DELETE EXAM======================================
-  static Future<Map<String, dynamic>> deleteTeacherExam(int examId, int teacherId) async {
-    final url = Uri.parse('$baseUrl/teacher/exams/$examId?teacherId=$teacherId');
+  // ========================= UPDATE EXAM ===============================
+  static Future<Map<String, dynamic>> updateTeacherExam(
+    int examId,
+    int teacherId,
+    Map<String, dynamic> examData,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exams/$examId?teacherId=$teacherId',
+    );
 
     try {
-      final response = await http.delete(url, headers: _headers).timeout(_timeout);
+      final response = await http
+          .put(url, headers: _headers, body: json.encode(examData))
+          .timeout(_timeout);
+
+      print('Update Exam Status: ${response.statusCode}');
+      print('Update Exam Body: ${response.body}');
 
       if (response.statusCode == 200) {
         return json.decode(response.body) as Map<String, dynamic>;
       } else {
-        throw Exception('خطا در حذف تمرین: ${response.statusCode}');
+        throw Exception('خطا در به‌روزرسانی امتحان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating exam: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= DELETE EXAM ===============================
+  static Future<Map<String, dynamic>> deleteTeacherExam(
+    int examId,
+    int teacherId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exams/$examId?teacherId=$teacherId',
+    );
+
+    try {
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(_timeout);
+
+      print('Delete Exam Status: ${response.statusCode}');
+      print('Delete Exam Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در حذف امتحان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting exam: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= CREATE EXAM ===============================
+  static Future<Map<String, dynamic>> createExam({
+    required int teacherId,
+    required int courseId,
+    required String title,
+    String? endDate,
+    String? endTime,
+    String? startDate,
+    String? startTime,
+    int? possibleScore,
+
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exams');
+
+    final body = json.encode({
+      'teacherid': teacherId,
+      'courseid': courseId,
+      'title': title,
+      'enddate': endDate,
+      'endtime': endTime,
+      'startdate': startDate,
+      'starttime': startTime,
+      'possibleScore': possibleScore,
+    });
+
+    try {
+      final response = await http
+          .post(url, headers: _headers, body: body)
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در اضافه کردن تمرین: ${response.statusCode}');
       }
     } catch (e) {
       throw Exception('خطا: $e');

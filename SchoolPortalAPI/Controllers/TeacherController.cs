@@ -28,6 +28,27 @@ namespace SchoolPortalAPI.Controllers
         public int? Score { get; set; }
     }
 
+    public class AddExamDto
+    {
+        public long Teacherid { get; set; }
+        public long Courseid { get; set; }
+        public string Title { get; set; } = null!;
+        public string? Enddate { get; set; }
+        public string? Endtime { get; set; }
+        public string? Startdate { get; set; }
+        public string? Starttime { get; set; }
+        public int? PossibleScore { get; set; }
+    }
+
+    public class UpdateExamDto
+    {
+        public long Teacherid { get; set; }
+        public string? Title { get; set; }
+        public string? Enddate { get; set; }
+        public string? Endtime { get; set; }
+        public int? PossibleScore { get; set; }
+    }
+
     [ApiController]
     [Route("api/teacher")]
     public class TeacherController : ControllerBase
@@ -508,7 +529,8 @@ namespace SchoolPortalAPI.Controllers
                     possibleScore = e.PossibleScore,
                     location = e.Class?.Name ?? "نامشخص",
                     passPercentage = passPercentage,
-                    filledCapacity = $"{submitted}/{capacity}"
+                    filledCapacity = $"{submitted}/{capacity}",
+                    classTime = e.Starttime
                 });
             }
 
@@ -659,16 +681,45 @@ namespace SchoolPortalAPI.Controllers
 
 
         // ──────────────────────────────────────────────────────────────
-        // 14. Create Exams
+        // 14. Add New Exams
         // ──────────────────────────────────────────────────────────────
-        [HttpPost]
-        public async Task<IActionResult> CreateExam([FromBody] Exam newExam)
+        [HttpPost("exams")]
+        public async Task<IActionResult> CreateExam([FromBody] AddExamDto model)
         {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-            _context.Exams.Add(newExam);
+            var teacherIdd = await _context.Teachers
+                            .Where(t => t.Userid == model.Teacherid)
+                            .Select(t => t.Teacherid)
+                            .FirstOrDefaultAsync();
+
+            var course = await _context.Courses
+                .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
+
+            if (course == null)
+            {
+                return BadRequest("درس یافت نشد یا متعلق به شما نیست");
+            }
+
+            var exam = new Exam
+            {
+                Title = model.Title,
+                Enddate = model.Enddate,
+                Endtime = model.Endtime,
+                Startdate = model.Startdate,
+                Starttime = model.Starttime,
+                PossibleScore = model.PossibleScore,
+                Courseid = model.Courseid,
+                Classid = course.Classid
+            };
+
+            _context.Exams.Add(exam);
             await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetExam), new { id = newExam.Examid }, newExam);
+
+            return Ok(new { id = exam.Examid, message = "تمرین با موفقیت اضافه شد" });
         }
 
         // ──────────────────────────────────────────────────────────────
