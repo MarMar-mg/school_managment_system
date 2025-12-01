@@ -172,14 +172,24 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
 
     try {
       if (widget.isAdd) {
+        // Create new exam
+        final endTime = _durationController.text.isNotEmpty
+            ? addDurationToTime(
+                _timeController.text,
+                int.tryParse(_durationController.text) ?? 0,
+              )
+            : _timeController.text;
+
         await ApiService.createExam(
           teacherId: widget.userId,
           courseId: int.tryParse(_selectedCourse ?? '0') ?? 0,
           title: _titleController.text.trim(),
-          endDate: _dateController.text,
-          endTime: addDurationToTime(_timeController.text, _durationController.text.toInt()),
+          description: _descriptionController.text.trim(),
           startDate: _dateController.text,
           startTime: _timeController.text,
+          endDate: _dateController.text,
+          endTime: endTime,
+          duration: int.tryParse(_durationController.text),
           possibleScore: int.tryParse(_scoreController.text) ?? 100,
         );
 
@@ -187,25 +197,40 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
           _showSuccess('امتحان با موفقیت ایجاد شد');
         }
       } else {
-        // Update logic - uncomment when API method is ready
-        // await ApiService.updateTeacherExam(widget.exam['id'], {
-        //   "title": _titleController.text,
-        //   "date": _dateController.text,
-        //   "classTime": _timeController.text,
-        //   "capacity": int.tryParse(_capacityController.text) ?? 0,
-        //   "duration": int.tryParse(_durationController.text) ?? 0,
-        //   "possibleScore": int.tryParse(_scoreController.text) ?? 100,
-        // });
-        // if (mounted) {
-        //   _showSuccess('امتحان با موفقیت به‌روزرسانی شد');
-        // }
+        // Update existing exam
+        final endTime = _durationController.text.isNotEmpty
+            ? addDurationToTime(
+                _timeController.text,
+                int.tryParse(_durationController.text) ?? 0,
+              )
+            : _timeController.text;
+
+        await ApiService.updateTeacherExam(
+          examId: widget.exam?['id'] ?? widget.exam['examId'],
+          teacherId: widget.userId,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          endDate: _dateController.text,
+          endTime: endTime,
+          duration: int.tryParse(_durationController.text),
+          possibleScore: int.tryParse(_scoreController.text) ?? 100,
+        );
+
+        if (mounted) {
+          _showSuccess('امتحان با موفقیت به‌روزرسانی شد');
+        }
       }
 
-      widget.onSuccess();
-      if (mounted) Navigator.pop(context);
+      // Wait a bit for the success message to be visible, then close
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        widget.onSuccess();
+        Navigator.pop(context);
+      }
     } catch (e) {
       if (mounted) {
-        _showError('خطا: ${e.toString().replaceFirst('Exception: ', '')}');
+        _showError(e.toString().replaceFirst('Exception: ', ''));
       }
     } finally {
       if (mounted) {
@@ -215,23 +240,29 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
   }
 
   String addDurationToTime(String startTime, int durationMinutes) {
-    // Parse the start time (assumes "HH:MM" format)
-    final parts = startTime.split(':');
-    if (parts.length != 2) {
-      throw ArgumentError('Invalid time format. Expected "HH:MM".');
+    try {
+      // Parse the start time (assumes "HH:MM" format)
+      final parts = startTime.split(':');
+      if (parts.length != 2) {
+        return startTime; // Return original time if invalid format
+      }
+
+      int hour = int.parse(parts[0]);
+      int minute = int.parse(parts[1]);
+
+      // Calculate total minutes and add duration
+      int totalMinutes = (hour * 60) + minute + durationMinutes;
+
+      // Compute new hour and minute (wrap around 24 hours if needed)
+      int newHour = (totalMinutes ~/ 60) % 24;
+      int newMinute = totalMinutes % 60;
+
+      // Format as "HH:MM"
+      return '${newHour.toString().padLeft(2, '0')}:${newMinute.toString().padLeft(2, '0')}';
+    } catch (e) {
+      print('Error calculating duration: $e');
+      return startTime;
     }
-    int hour = int.parse(parts[0]);
-    int minute = int.parse(parts[1]);
-
-    // Calculate total minutes and add duration
-    int totalMinutes = (hour * 60) + minute + durationMinutes;
-
-    // Compute new hour and minute (wrap around 24 hours if needed)
-    int newHour = (totalMinutes ~/ 60) % 24;
-    int newMinute = totalMinutes % 60;
-
-    // Format as "HH:MM"
-    return '${newHour.toString().padLeft(2, '0')}:${newMinute.toString().padLeft(2, '0')}';
   }
 
   void _showError(String message) {

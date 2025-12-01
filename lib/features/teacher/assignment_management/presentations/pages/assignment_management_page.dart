@@ -7,7 +7,6 @@ import '../../../../../applications/colors.dart';
 import '../../../../../commons/responsive_container.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_section.dart';
-import '../widgets/delete_dialog.dart';
 import '../widgets/header_section.dart';
 import '../../../../../commons/widgets/section_divider.dart';
 import '../widgets/stat_card.dart';
@@ -114,14 +113,59 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
     setState(() => _expanded[key] = !_expanded[key]!);
   }
 
+
+  void _showDeleteDialog(int exID) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف تمرین'),
+        content: Text(
+          'آیا مطمئن هستید که می‌خواهید تمرین را حذف کنید؟',
+          textDirection: TextDirection.rtl,
+        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('لغو'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _deleteAssignment(exID);
+            },
+            child: Text(
+              'حذف',
+              style: TextStyle(
+                color: Colors.red.shade600,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _deleteAssignment(int exID) async {
     try {
       await ApiService.deleteTeacherAssignment(exID, widget.userId);
       _fetchData();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('تمرین با موفقیت حذف شد'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('خطا در حذف: $e')),
+          SnackBar(
+            content: Text('خطا در حذف: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -328,11 +372,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
                 userId: widget.userId,
                 addData: _fetchData,
               ),
-              onDelete: (data) => showDeleteDialog(
-                context,
-                    () => _deleteAssignment(data['id']),
-                assignment: data,
-              ),
+              onDelete: (data) => _showDeleteDialog(data['id']),
             ),
             const SizedBox(height: 24),
 
@@ -354,11 +394,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
                 userId: widget.userId,
                 addData: _fetchData,
               ),
-              onDelete: (data) => showDeleteDialog(
-                context,
-                    () => _deleteAssignment(data['id']),
-                assignment: data,
-              ),
+              onDelete: (data) => _showDeleteDialog(data['id']),
             ),
             const SizedBox(height: 100),
           ],

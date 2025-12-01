@@ -38,6 +38,8 @@ namespace SchoolPortalAPI.Controllers
         public string? Startdate { get; set; }
         public string? Starttime { get; set; }
         public int? PossibleScore { get; set; }
+        public int? Duration { get; set; }
+        public string? Description { get; set; }
     }
 
     public class UpdateExamDto
@@ -47,6 +49,8 @@ namespace SchoolPortalAPI.Controllers
         public string? Enddate { get; set; }
         public string? Endtime { get; set; }
         public int? PossibleScore { get; set; }
+        public int? Duration { get; set; }
+        public string? Description { get; set; }
     }
 
     [ApiController]
@@ -450,92 +454,108 @@ namespace SchoolPortalAPI.Controllers
             return Ok(submissions);
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // 13. Get Exams
-        // ──────────────────────────────────────────────────────────────
-        [HttpGet("exams/{teacherId}")]
-        public async Task<IActionResult> GetTeacherExams(long teacherId)
-        {
-            var teacherIdd = await _context.Teachers
-                 .Where(t => t.Userid == teacherId)
-                 .Select(t => t.Teacherid)
-                 .FirstOrDefaultAsync();
+        // ───────────────// ──────────────────────────────────────────────────────────────
+                          // 13. Get Exams
+                          // ──────────────────────────────────────────────────────────────
+                          [HttpGet("exams/{teacherId}")]
+                          public async Task<IActionResult> GetTeacherExams(long teacherId)
+                          {
+                              var teacherIdd = await _context.Teachers
+                                   .Where(t => t.Userid == teacherId)
+                                   .Select(t => t.Teacherid)
+                                   .FirstOrDefaultAsync();
 
-            var examData = await _context.Exams
-                .Include(e => e.Course)
-                .Include(e => e.Class)
-                .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
-                .ToListAsync();
+                              var examData = await _context.Exams
+                                  .Include(e => e.Course)
+                                  .Include(e => e.Class)
+                                  .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
+                                  .ToListAsync();
 
-            var nowUtc = DateTime.UtcNow;
-            var result = new List<object>();
+                              var nowUtc = DateTime.UtcNow;
+                              var result = new List<object>();
 
-            foreach (var e in examData)
-            {
-                // Get class capacity
-                int capacity = e.Class?.Capacity ?? 0;
+                              var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
 
-                // Get submission counts
-                int submitted = await _context.ExamStuTeaches.CountAsync(est => est.Examid == e.Examid);
-                int passCount = await _context.ExamStuTeaches.CountAsync(est =>
-                    est.Examid == e.Examid &&
-                    est.Score >= (e.PossibleScore ?? 100) * 0.5);
-                int gradedCount = await _context.ExamStuTeaches.CountAsync(est =>
-                    est.Examid == e.Examid &&
-                    est.Score != null);
+                              foreach (var e in examData)
+                              {
+                                  // Get class capacity
+                                  int capacity = e.Class?.Capacity ?? 0;
 
-                // Check if exam is future or completed
-                bool isFuture = false;
-                if (!string.IsNullOrEmpty(e.Enddate) && !string.IsNullOrEmpty(e.Starttime))
-                {
-                    string[] dateParts = e.Enddate.Split('-');
-                    if (dateParts.Length == 3 &&
-                        int.TryParse(dateParts[0], out int jyear) &&
-                        int.TryParse(dateParts[1], out int jmonth) &&
-                        int.TryParse(dateParts[2], out int jday))
-                    {
-                        string[] timeParts = e.Starttime.Split(':');
-                        int startHour = 0, startMinute = 0;
-                        if (timeParts.Length >= 2)
-                        {
-                            int.TryParse(timeParts[0], out startHour);
-                            int.TryParse(timeParts[1], out startMinute);
-                        }
+                                  // Get submission counts
+                                  int submitted = await _context.ExamStuTeaches.CountAsync(est => est.Examid == e.Examid);
+                                  int passCount = await _context.ExamStuTeaches.CountAsync(est =>
+                                      est.Examid == e.Examid &&
+                                      est.Score >= (e.PossibleScore ?? 100) * 0.5);
+                                  int gradedCount = await _context.ExamStuTeaches.CountAsync(est =>
+                                      est.Examid == e.Examid &&
+                                      est.Score != null);
 
-                        DateTime examStartDateTime = JalaliToGregorian(jyear, jmonth, jday);
-                        examStartDateTime = examStartDateTime.AddHours(startHour).AddMinutes(startMinute);
-                        DateTime examEndDateTime = examStartDateTime.AddMinutes(e.Duration ?? 90);
+                                  // Check if exam is future or completed based on END date and time
+                                  bool isFuture = true;
 
-                        isFuture = nowUtc < examEndDateTime;
-                    }
-                }
+                                  if (!string.IsNullOrEmpty(e.Enddate) && !string.IsNullOrEmpty(e.Endtime))
+                                  {
+                                      // Parse end date (Jalali format: YYYY-MM-DD)
+                                      string[] dateParts = e.Enddate.Split('-');
+                                      if (dateParts.Length == 3 &&
+                                          int.TryParse(dateParts[0], out int jyear) &&
+                                          int.TryParse(dateParts[1], out int jmonth) &&
+                                          int.TryParse(dateParts[2], out int jday))
+                                      {
+                                          // Parse end time (HH:MM format)
+                                          string[] timeParts = e.Endtime.Split(':');
+                                          int endHour = 0, endMinute = 0;
+                                          if (timeParts.Length >= 2)
+                                          {
+                                              int.TryParse(timeParts[0], out endHour);
+                                              int.TryParse(timeParts[1], out endMinute);
+                                          }
 
-                double? passPercentage = null;
-                if (submitted > 0)
-                    passPercentage = Math.Round(passCount * 100.0 / submitted, 1);
+                                          // Convert Jalali date to Gregorian
+                                          DateTime examEndDateTime = JalaliToGregorian(jyear, jmonth, jday);
 
-                result.Add(new
-                {
-                    id = e.Examid,
-                    title = e.Title,
-                    description = e.Description,
-                    status = isFuture ? "upcoming" : "completed",
-                    subject = e.Course != null ? e.Course.Name : "نامشخص",
-                    date = e.Startdate,
-                    classId = e.Classid,
-                    capacity = capacity,
-                    submitted = submitted,
-                    graded = gradedCount,
-                    possibleScore = e.PossibleScore,
-                    location = e.Class?.Name ?? "نامشخص",
-                    passPercentage = passPercentage,
-                    filledCapacity = $"{submitted}/{capacity}",
-                    classTime = e.Starttime
-                });
-            }
+                                          // Explicitly set to the beginning of the day
+                                          examEndDateTime = examEndDateTime.Date;
 
-            return Ok(result);
-        }
+                                          // Add the end time to the date
+                                          examEndDateTime = examEndDateTime.AddHours(endHour).AddMinutes(endMinute);
+
+                                          // Convert to UTC assuming the exam time is in Iran Standard Time
+                                          DateTime examEndDateTimeUtc = TimeZoneInfo.ConvertTimeToUtc(examEndDateTime, iranTimeZone);
+
+                                          // Compare current UTC time with exam end time in UTC
+                                          // If now is AFTER exam end time, exam is completed
+                                          isFuture = nowUtc < examEndDateTimeUtc;
+                                      }
+                                  }
+
+                                  double? passPercentage = null;
+                                  if (submitted > 0)
+                                      passPercentage = Math.Round(passCount * 100.0 / submitted, 1);
+
+                                  result.Add(new
+                                  {
+                                      id = e.Examid,
+                                      title = e.Title,
+                                      description = e.Description,
+                                      status = !isFuture ? "completed" : "upcoming",
+                                      subject = e.Course != null ? e.Course.Name : "نامشخص",
+                                      date = e.Startdate,
+                                      classId = e.Classid,
+                                      capacity = capacity,
+                                      submitted = submitted,
+                                      graded = gradedCount,
+                                      possibleScore = e.PossibleScore,
+                                      location = e.Class?.Name ?? "نامشخص",
+                                      passPercentage = passPercentage,
+                                      filledCapacity = $"{submitted}/{capacity}",
+                                      classTime = e.Starttime,
+                                      duration = e.Duration
+                                  });
+                              }
+
+                              return Ok(result);
+                          }
 
         // ──────────────────────────────────────────────────────────────
         // 14. Get Exams Submissions
@@ -713,17 +733,57 @@ namespace SchoolPortalAPI.Controllers
                 Starttime = model.Starttime,
                 PossibleScore = model.PossibleScore,
                 Courseid = model.Courseid,
-                Classid = course.Classid
+                Classid = course.Classid,
+                Description = model.Description,
+                Duration = model.Duration
             };
 
             _context.Exams.Add(exam);
             await _context.SaveChangesAsync();
 
-            return Ok(new { id = exam.Examid, message = "تمرین با موفقیت اضافه شد" });
+            return Ok(new { id = exam.Examid, message = "امتحان با موفقیت اضافه شد" });
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 11. Delete Exam
+        // 15. Update Exam
+        // ──────────────────────────────────────────────────────────────
+        [HttpPut("exams/{examId}")]
+        public async Task<IActionResult> UpdateExam(long examId, [FromBody] UpdateExamDto model)
+        {
+
+            var teacherIdd = await _context.Teachers
+                   .Where(t => t.Userid == model.Teacherid)
+                   .Select(t => t.Teacherid)
+                   .FirstOrDefaultAsync();
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var exam = await _context.Exams.FindAsync(examId);
+            if (exam == null) return NotFound("امتحان یافت نشد");
+
+            var course = await _context.Courses.FindAsync(exam.Courseid);
+            if (course == null || course.Teacherid != teacherIdd)
+            {
+                return BadRequest("مجوز ویرایش ندارید");
+            }
+
+            exam.Title = model.Title ?? exam.Title;
+            exam.Description = model.Description ?? exam.Description;
+            exam.Enddate = model.Enddate ?? exam.Enddate;
+            exam.Endtime = model.Endtime ?? exam.Endtime;
+            exam.PossibleScore = model.PossibleScore ?? exam.PossibleScore;
+            exam.Duration = model.Duration ?? exam.Duration;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "امتحان به‌روزرسانی شد" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 16. Delete Exam
         // ──────────────────────────────────────────────────────────────
         [HttpDelete("exams/{ExamId}")]
         public async Task<IActionResult> DeleteExams(long ExamId, [FromQuery] long teacherId)

@@ -55,7 +55,6 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
   late TextEditingController _timeController;
 
   String? _selectedClass;
-  String? _selectedSubject;
   Jalali? _selectedDate;
   TimeOfDay? _selectedTime;
 
@@ -85,7 +84,6 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
     );
 
     _selectedClass = widget.assignment?['classId'];
-    _selectedSubject = widget.assignment?['subject'];
 
     // Enter animation
     _enterController = AnimationController(

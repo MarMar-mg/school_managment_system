@@ -837,19 +837,31 @@ class ApiService {
     }
   }
 
-  // ========================= UPDATE EXAM ===============================
-  static Future<Map<String, dynamic>> updateTeacherExam(
-    int examId,
-    int teacherId,
-    Map<String, dynamic> examData,
-  ) async {
-    final url = Uri.parse(
-      '$baseUrl/teacher/exams/$examId?teacherId=$teacherId',
-    );
+  static Future<Map<String, dynamic>> updateTeacherExam({
+    required int examId,
+    required int teacherId,
+    String? title,
+    String? endDate,
+    String? endTime,
+    int? possibleScore,
+    int? duration,
+    String? description,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId');
+
+    final body = json.encode({
+      'teacherid': teacherId,
+      'title': title,
+      'enddate': endDate,
+      'endtime': endTime,
+      'possibleScore': possibleScore,
+      'duration': duration,
+      'description': description,
+    });
 
     try {
       final response = await http
-          .put(url, headers: _headers, body: json.encode(examData))
+          .put(url, headers: _headers, body: body)
           .timeout(_timeout);
 
       print('Update Exam Status: ${response.statusCode}');
@@ -904,7 +916,8 @@ class ApiService {
     String? startDate,
     String? startTime,
     int? possibleScore,
-
+    int? duration,
+    String? description,
   }) async {
     final url = Uri.parse('$baseUrl/teacher/exams');
 
@@ -917,6 +930,8 @@ class ApiService {
       'startdate': startDate,
       'starttime': startTime,
       'possibleScore': possibleScore,
+      'duration': duration,
+      'description': description,
     });
 
     try {
