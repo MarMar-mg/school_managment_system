@@ -7,9 +7,11 @@ class ExamSection extends StatelessWidget {
   final Color color;
   final List<ExamItem> items;
   final int startIndex;
+  final int userId;
   final String sectionKey;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final VoidCallback onRefresh;
   final List<Animation<double>> animations;
 
   const ExamSection({
@@ -21,7 +23,7 @@ class ExamSection extends StatelessWidget {
     required this.sectionKey,
     required this.isExpanded,
     required this.onToggle,
-    required this.animations,
+    required this.animations, required this.onRefresh, required this.userId,
   });
 
   @override
@@ -66,7 +68,8 @@ class ExamSection extends StatelessWidget {
                   child: child,
                 ),
               ),
-              child: ExamCard(item: item),
+              child: ExamCard(item: item, userId: userId,
+                onRefresh: onRefresh,),
             );
           }),
         ],

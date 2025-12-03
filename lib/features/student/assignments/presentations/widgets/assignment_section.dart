@@ -5,12 +5,14 @@ import 'assignment_card.dart';
 /// Expandable section – works exactly like ExamSection
 class AssignmentSection extends StatelessWidget {
   final String title;
+  final int userId;
   final Color color;
   final List<AssignmentItemm> items;
   final int startIndex;
   final String sectionKey;
   final bool isExpanded;
   final VoidCallback onToggle;
+  final VoidCallback onRefresh;
   final List<Animation<double>> animations;
 
   const AssignmentSection({
@@ -23,6 +25,8 @@ class AssignmentSection extends StatelessWidget {
     required this.isExpanded,
     required this.onToggle,
     required this.animations,
+    required this.userId,
+    required this.onRefresh,
   });
 
   @override
@@ -69,10 +73,12 @@ class AssignmentSection extends StatelessWidget {
             final globalIndex = startIndex + i;
 
             return Padding(
-              padding: const EdgeInsets.only(bottom: 14, right:8, left: 8),
+              padding: const EdgeInsets.only(bottom: 14, right: 8, left: 8),
               child: AnimatedAssignmentCard(
                 item: item,
                 animation: animations[globalIndex],
+                userId: userId,
+                onRefresh: onRefresh,
               ),
             );
           }),

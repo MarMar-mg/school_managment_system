@@ -56,7 +56,7 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
   void _startAnimations(int totalCount) {
     _cardAnims = List.generate(
       totalCount,
-          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+      (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(
@@ -96,10 +96,19 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
           final scored = data['scored'] ?? [];
 
           // Separate answered into submitted and not submitted
-          final answeredSubmitted = answered.where((e) => e.submittedDate != null).toList();
-          final answeredNotSubmitted = answered.where((e) => e.submittedDate == null).toList();
+          final answeredSubmitted = answered
+              .where((e) => e.submittedDate != null)
+              .toList();
+          final answeredNotSubmitted = answered
+              .where((e) => e.submittedDate == null)
+              .toList();
 
-          final all = [...pending, ...answeredSubmitted, ...answeredNotSubmitted, ...scored];
+          final all = [
+            ...pending,
+            ...answeredSubmitted,
+            ...answeredNotSubmitted,
+            ...scored,
+          ];
 
           if (all.isEmpty) return _buildEmpty();
 
@@ -136,6 +145,10 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                         isExpanded: _expanded['pending']!,
                         onToggle: () => _toggle('pending'),
                         animations: _cardAnims,
+                        onRefresh: () async {
+                          await _refresh();
+                        },
+                        userId: widget.userId,
                       ),
                       const SizedBox(height: 24),
 
@@ -149,6 +162,10 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                         isExpanded: _expanded['answered_submitted']!,
                         onToggle: () => _toggle('answered_submitted'),
                         animations: _cardAnims,
+                        onRefresh: () async {
+                          await _refresh();
+                        },
+                        userId: widget.userId,
                       ),
                       const SizedBox(height: 24),
 
@@ -163,6 +180,10 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                           isExpanded: _expanded['answered_not_submitted']!,
                           onToggle: () => _toggle('answered_not_submitted'),
                           animations: _cardAnims,
+                          onRefresh: () async {
+                            await _refresh();
+                          },
+                          userId: widget.userId,
                         ),
                         const SizedBox(height: 24),
                       ],
@@ -172,11 +193,18 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                         title: 'نمره‌دار',
                         color: Colors.green,
                         items: scored,
-                        startIndex: pending.length + answeredSubmitted.length + answeredNotSubmitted.length,
+                        startIndex:
+                            pending.length +
+                            answeredSubmitted.length +
+                            answeredNotSubmitted.length,
                         sectionKey: 'scored',
                         isExpanded: _expanded['scored']!,
                         onToggle: () => _toggle('scored'),
                         animations: _cardAnims,
+                        onRefresh: () async {
+                          await _refresh();
+                        },
+                        userId: widget.userId,
                       ),
                       const SizedBox(height: 100),
                     ],
@@ -268,7 +296,7 @@ class _ShimmerExamPage extends StatelessWidget {
           ),
           ...List.generate(
             4,
-                (_) => Container(
+            (_) => Container(
               height: 200,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(

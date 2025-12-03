@@ -337,126 +337,126 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
-            // ──────────────────────────────────────────────────────────────
-            // Get scores for student's courses
-            // ──────────────────────────────────────────────────────────────
-            [HttpGet("my-score/{studentId}")]
-            public async Task<ActionResult<object>> GetMyScore(long studentId)
+        // ──────────────────────────────────────────────────────────────
+        // Get scores for student's courses
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("my-score/{studentId}")]
+        public async Task<ActionResult<object>> GetMyScore(long studentId)
+        {
+            try
             {
-                try
+                var studentIdd = await _context.Students
+                                            .Where(s => s.UserID == studentId)
+                                            .Select(s => s.Studentid)
+                                            .FirstOrDefaultAsync();
+
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(s => s.UserID == studentId);
+
+                if (student == null)
+                    return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                // === 1. GPA (معدل کل) ===
+                var gpaQuery = await _context.Scores
+                    .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid)
+                    .AverageAsync(s => (double?)s.ScoreValue);
+
+                var gpa = gpaQuery ?? 0.0;
+
+                var courses = await _context.Courses
+                                .Where(c => c.Classid == student.Classeid)
+                                .Select(s => s.Courseid)
+                                                        .Distinct()
+                                                        .ToListAsync();
+
+                // === 2. Collect all unique course IDs from Scores, Exercises, Exams ===
+                var courseIdsFromScores = await _context.Scores
+                    .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid && s.Courseid.HasValue)
+                    .Select(s => s.Courseid.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var courseIdsFromExercises = await _context.ExerciseStuTeaches
+                    .Where(est => est.Studentid == studentIdd)
+                    .Select(est => est.Courseid)
+                    .Distinct()
+                    .ToListAsync();
+
+                var courseIdsFromExams = await _context.ExamStuTeaches
+                    .Where(est => est.Studentid == studentIdd && est.Exam != null && est.Exam.Courseid.HasValue)
+                    .Select(est => est.Exam.Courseid.Value)
+                    .Distinct()
+                    .ToListAsync();
+
+                var allCourseIds = courses
+                    .ToList();
+
+                // Get course details
+                var courseDetails = await _context.Courses
+                    .Where(c => allCourseIds.Contains(c.Courseid))
+                    .Select(c => new { c.Courseid, Name = c.Name ?? "نامشخص" })
+                    .ToListAsync();
+
+                // === 3. Grades per course ===
+                var grades = new List<object>();
+
+                foreach (var course in courseDetails)
                 {
-                    var studentIdd = await _context.Students
-                                                .Where(s => s.UserID == studentId)
-                                                .Select(s => s.Studentid)
-                                                .FirstOrDefaultAsync();
+                    var avgScore = await _context.Scores
+                        .Where(s => s.Studentid == studentIdd && s.Courseid == course.Courseid)
+                        .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
 
-                    var student = await _context.Students
-                        .FirstOrDefaultAsync(s => s.UserID == studentId);
+                    var percent = (int)Math.Round(avgScore);
 
-                    if (student == null)
-                        return NotFound(new { message = "دانش‌آموز یافت نشد" });
+                    var avgExercises = await _context.ExerciseStuTeaches
+                        .Where(est => est.Studentid == studentIdd && est.Score != null && est.Courseid == course.Courseid)
+                        .AverageAsync(est => (double?)est.Score) ?? 0.0;
 
-                    // === 1. GPA (معدل کل) ===
-                    var gpaQuery = await _context.Scores
-                        .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid)
-                        .AverageAsync(s => (double?)s.ScoreValue);
+                    var avgExams = await _context.ExamStuTeaches
+                        .Where(est => est.Studentid == studentIdd && est.Score != null && est.Exam.Courseid == course.Courseid)
+                        .AverageAsync(est => (double?)est.Score) ?? 0.0;
 
-                    var gpa = gpaQuery ?? 0.0;
-
-                    var courses = await _context.Courses
-                                    .Where(c => c.Classid == student.Classeid)
-                                    .Select(s => s.Courseid)
-                                                            .Distinct()
-                                                            .ToListAsync();
-
-                    // === 2. Collect all unique course IDs from Scores, Exercises, Exams ===
-                    var courseIdsFromScores = await _context.Scores
-                        .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid && s.Courseid.HasValue)
-                        .Select(s => s.Courseid.Value)
-                        .Distinct()
-                        .ToListAsync();
-
-                    var courseIdsFromExercises = await _context.ExerciseStuTeaches
-                        .Where(est => est.Studentid == studentIdd)
-                        .Select(est => est.Courseid)
-                        .Distinct()
-                        .ToListAsync();
-
-                    var courseIdsFromExams = await _context.ExamStuTeaches
-                        .Where(est => est.Studentid == studentIdd && est.Exam != null && est.Exam.Courseid.HasValue)
-                        .Select(est => est.Exam.Courseid.Value)
-                        .Distinct()
-                        .ToListAsync();
-
-                    var allCourseIds = courses
-                        .ToList();
-
-                    // Get course details
-                    var courseDetails = await _context.Courses
-                        .Where(c => allCourseIds.Contains(c.Courseid))
-                        .Select(c => new { c.Courseid, Name = c.Name ?? "نامشخص" })
-                        .ToListAsync();
-
-                    // === 3. Grades per course ===
-                    var grades = new List<object>();
-
-                    foreach (var course in courseDetails)
+                    grades.Add(new
                     {
-                        var avgScore = await _context.Scores
-                            .Where(s => s.Studentid == studentIdd && s.Courseid == course.Courseid)
-                            .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
-
-                        var percent = (int)Math.Round(avgScore);
-
-                        var avgExercises = await _context.ExerciseStuTeaches
-                            .Where(est => est.Studentid == studentIdd && est.Score != null && est.Courseid == course.Courseid)
-                            .AverageAsync(est => (double?)est.Score) ?? 0.0;
-
-                        var avgExams = await _context.ExamStuTeaches
-                            .Where(est => est.Studentid == studentIdd && est.Score != null && est.Exam.Courseid == course.Courseid)
-                            .AverageAsync(est => (double?)est.Score) ?? 0.0;
-
-                        grades.Add(new
-                        {
-                            name = course.Name,
-                            percent,
-                            isTop = course.Name == "ریاضی ۳",
-                            avgExercises,
-                            avgExams
-                        });
-                    }
-
-                    grades = grades.OrderByDescending(g => ((dynamic)g).percent).ToList();
-
-                    // === 4. Stats ===
-                    var totalScores = await _context.Scores
-                        .CountAsync(s => s.Studentid == studentIdd && s.Classid == student.Classeid);
-
-                    var uniqueCourses = allCourseIds.Count;
-
-                    // هر درس = ۳ واحد (مثال)
-                    var units = uniqueCourses * 3;
-
-                    // زنگ = تعداد امتیازات (مثال)
-                    var bells = totalScores;
-
-                    var response = new
-                    {
-                        studentName = student.Name,
-                        gpa = Math.Round(gpa, 1),
-                        bells,
-                        courses = uniqueCourses,
-                        units,
-                        grades
-                    };
-
-                    return Ok(response);
+                        name = course.Name,
+                        percent,
+                        isTop = course.Name == "ریاضی ۳",
+                        avgExercises,
+                        avgExams
+                    });
                 }
-                catch (Exception ex)
+
+                grades = grades.OrderByDescending(g => ((dynamic)g).percent).ToList();
+
+                // === 4. Stats ===
+                var totalScores = await _context.Scores
+                    .CountAsync(s => s.Studentid == studentIdd && s.Classid == student.Classeid);
+
+                var uniqueCourses = allCourseIds.Count;
+
+                // هر درس = ۳ واحد (مثال)
+                var units = uniqueCourses * 3;
+
+                // زنگ = تعداد امتیازات (مثال)
+                var bells = totalScores;
+
+                var response = new
                 {
-                    return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
-                }
+                    studentName = student.Name,
+                    gpa = Math.Round(gpa, 1),
+                    bells,
+                    courses = uniqueCourses,
+                    units,
+                    grades
+                };
+
+                return Ok(response);
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
 
         // ──────────────────────────────────────────────────────────────
         // Get exams for student's class with optional date filtering
@@ -634,6 +634,151 @@ namespace SchoolPortalAPI.Controllers
                 .FirstOrDefaultAsync();
 
             return Ok(new { name = name ?? "دانش‌آموز" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Submit assignment answer
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("submit/assignment/{userId}/{assignmentId}")]
+        public async Task<IActionResult> SubmitAssignment(
+            long userId,
+            long assignmentId,
+            [FromForm] string? description,
+            [FromForm] IFormFile? file)
+        {
+            var studentId = await _context.Students
+                            .Where(s => s.UserID == userId)
+                            .Select(s => s.Studentid)
+                            .FirstOrDefaultAsync();
+            // Validate student exists
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null) return NotFound("دانش‌آموز یافت نشد");
+
+            // Get assignment (exercise)
+            var assignment = await _context.Exercises
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Exerciseid == assignmentId);
+
+            if (assignment == null) return NotFound("تکلیف یافت نشد");
+
+            if (assignment.Courseid == null || assignment.Course?.Teacherid == null)
+                return BadRequest("اطلاعات درس ناقص است");
+
+            // Check if already submitted
+            var existing = await _context.ExerciseStuTeaches
+                .FirstOrDefaultAsync(est =>
+                    est.Exerciseid == assignmentId &&
+                    est.Studentid == studentId);
+
+            if (existing != null) return BadRequest("پاسخ قبلاً ارسال شده");
+
+            // Handle file upload if provided
+            string? fileName = null;
+            if (file != null)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "assignments");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+
+            // Create new submission
+            var submission = new ExerciseStuTeach
+            {
+                Exerciseid = assignmentId,
+                Courseid = assignment.Courseid.Value,
+                Teacherid = assignment.Course.Teacherid.Value,
+                Studentid = studentId,
+                Description = description,
+                Date = DateTime.Now.ToShamsi(),
+                Filename = fileName,
+                Answerimage = fileName, // If it's image, or adjust based on type
+                Score = null // Pending grading
+            };
+
+            _context.ExerciseStuTeaches.Add(submission);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "پاسخ با موفقیت ارسال شد" });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Submit exam answer
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("submit/exam/{userId}/{examId}")]
+        public async Task<IActionResult> SubmitExam(
+            long userId,
+            long examId,
+            [FromForm] string? description,
+            [FromForm] IFormFile? file)
+        {
+            var studentId = await _context.Students
+                    .Where(s => s.UserID == userId)
+                    .Select(s => s.Studentid)
+                    .FirstOrDefaultAsync();
+            // Validate student exists
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null) return NotFound("دانش‌آموز یافت نشد");
+
+            // Get exam
+            var exam = await _context.Exams
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Examid == examId);
+
+            if (exam == null) return NotFound("امتحان یافت نشد");
+
+            if (exam.Courseid == null || exam.Course?.Teacherid == null)
+                return BadRequest("اطلاعات درس ناقص است");
+
+            // Check if already submitted
+            var existing = await _context.ExamStuTeaches
+                .FirstOrDefaultAsync(est =>
+                    est.Examid == examId &&
+                    est.Studentid == studentId);
+
+            if (existing != null) return BadRequest("پاسخ قبلاً ارسال شده");
+
+            // Handle file upload if provided
+            string? fileName = null;
+            if (file != null)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+            }
+
+            // Create new submission
+            var submission = new ExamStuTeach
+            {
+                Examid = examId,
+                Courseid = exam.Courseid.Value,
+                Teacherid = exam.Course.Teacherid.Value,
+                Studentid = studentId,
+                Description = description,
+                Date = DateTime.Now.ToShamsi(),
+                Time = DateTime.Now.ToString("HH:mm:ss"),
+                Filename = fileName,
+                Answerimage = fileName, // If it's image, or adjust
+                Score = null // Pending
+            };
+
+            _context.ExamStuTeaches.Add(submission);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "پاسخ با موفقیت ارسال شد" });
         }
     }
 }

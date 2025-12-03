@@ -3,17 +3,25 @@ import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../../shared/presentations/widgets/submit_answer_dialog.dart';
 import '../../entities/models/exam_model.dart';
 
 class ExamCard extends StatelessWidget {
   final ExamItem item;
+  final int userId;
+  final VoidCallback? onRefresh;
 
-  const ExamCard({super.key, required this.item});
+  const ExamCard({
+    super.key,
+    required this.item,
+    required this.userId,
+    this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
     final due = item.dueDate != null ? _formatJalali(item.dueDate!) : null;
-    final dueT = item.endTime ;
+    final dueT = item.endTime;
     final time = '${item.startTime} تا ${item.endTime}';
     final submittedD = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
@@ -114,7 +122,8 @@ class ExamCard extends StatelessWidget {
               ..._pendingContent(due, time),
             if (item.status == ExamStatus.answered)
               ..._answeredContent(submittedD, due, dueT),
-            if (item.status == ExamStatus.scored) ..._scoredContent(submittedT, submittedD),
+            if (item.status == ExamStatus.scored)
+              ..._scoredContent(submittedT, submittedD),
 
             const SizedBox(height: 16),
 
@@ -123,7 +132,17 @@ class ExamCard extends StatelessWidget {
               width: double.infinity,
               child: item.status == ExamStatus.pending
                   ? ElevatedButton.icon(
-                      onPressed: item.onReminderTap,
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext ctx) => SubmitAnswerDialog(
+                            type: 'exam',
+                            id: item.examId,
+                            userId: userId,
+                            onSubmitted: onRefresh,
+                          ),
+                        );
+                      },
                       icon: const Icon(Icons.attach_file, size: 18),
                       label: const Text("ارسال پاسخ"),
                       style: ElevatedButton.styleFrom(
@@ -216,7 +235,11 @@ class ExamCard extends StatelessWidget {
     ),
   ];
 
-  List<Widget> _answeredContent(String? submitted, String? due, String? dueT) => [
+  List<Widget> _answeredContent(
+    String? submitted,
+    String? due,
+    String? dueT,
+  ) => [
     Text(
       "اتمام محلت - در انتظار نمره",
       style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),

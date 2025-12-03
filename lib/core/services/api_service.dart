@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:school_management_system/applications/colors.dart';
@@ -9,6 +10,7 @@ import '../../features/student/assignments/data/models/assignment_model.dart.dar
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
+import 'package:file_picker/file_picker.dart';
 
 class ApiService {
   // Update this based on your testing environment
@@ -350,17 +352,15 @@ class ApiService {
   }
 
   // ==================== EXAMS ====================
-// ==================== EXAMS ====================
   static Future<Map<String, List<ExamItem>>> getAllExams(int studentId) async {
     final pending = <ExamItem>[];
     final answered = <ExamItem>[];
     final scored = <ExamItem>[];
 
     try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/student/exam/$studentId'),
-        headers: _headers,
-      ).timeout(_timeout);
+      final response = await http
+          .get(Uri.parse('$baseUrl/student/exam/$studentId'), headers: _headers)
+          .timeout(_timeout);
 
       if (response.statusCode != 200) {
         throw Exception('خطا: ${response.statusCode}');
@@ -435,6 +435,7 @@ class ApiService {
           onViewAnswer: () => print('View answer for ${json['title']}'),
           duration: (json['duration'] ?? 0).toString(),
           description: json['description'] ?? '',
+          examId: json['id'],
         );
 
         switch (status) {
@@ -450,7 +451,9 @@ class ApiService {
         }
       }
 
-      print('Exams loaded: ${pending.length} pending, ${answered.length} answered, ${scored.length} scored');
+      print(
+        'Exams loaded: ${pending.length} pending, ${answered.length} answered, ${scored.length} scored',
+      );
     } catch (e) {
       print('Error loading exams: $e');
       throw Exception('خطا در بارگذاری امتحانات: $e');
@@ -1000,6 +1003,114 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('خطا: $e');
+    }
+  }
+  //-----------------------------------
+// Update ApiService.dart submit methods to handle PlatformFile (path or bytes)
+
+  static Future<void> submitAssignment(
+      int userId,
+      int assignmentId,
+      String description,
+      PlatformFile platformFile, // Change from File to PlatformFile
+          {required String customFileName}
+      ) async {
+    final url = Uri.parse('$baseUrl/student/submit/assignment/$userId/$assignmentId');
+
+    try {
+      var request = http.MultipartRequest('POST', url);
+
+      if (description.isNotEmpty) {
+        request.fields['description'] = description;
+      }
+
+      http.MultipartFile multipartFile;
+      if (platformFile.bytes != null) {
+        // For web or bytes-based
+        multipartFile = http.MultipartFile.fromBytes(
+          'file',
+          platformFile.bytes!,
+          filename: customFileName,
+        );
+      } else if (platformFile.path != null) {
+        // For mobile/desktop
+        multipartFile = await http.MultipartFile.fromPath(
+          'file',
+          platformFile.path!,
+          filename: customFileName,
+        );
+      } else {
+        throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
+      }
+
+      request.files.add(multipartFile);
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Submit Assignment Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        print('Error Body: $errorBody');
+        throw Exception('خطا در ارسال تکلیف: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Submit Assignment Error: $e');
+      throw Exception('خطا در ارسال: $e');
+    }
+  }
+
+  static Future<void> submitExam(
+      int userId,
+      int examId,
+      String description,
+      PlatformFile platformFile, // Change from File to PlatformFile
+          {required String customFileName}
+      ) async {
+    final url = Uri.parse('$baseUrl/student/submit/exam/$userId/$examId');
+
+    try {
+      var request = http.MultipartRequest('POST', url);
+
+      if (description.isNotEmpty) {
+        request.fields['description'] = description;
+      }
+
+      http.MultipartFile multipartFile;
+      if (platformFile.bytes != null) {
+        multipartFile = http.MultipartFile.fromBytes(
+          'file',
+          platformFile.bytes!,
+          filename: customFileName,
+        );
+      } else if (platformFile.path != null) {
+        multipartFile = await http.MultipartFile.fromPath(
+          'file',
+          platformFile.path!,
+          filename: customFileName,
+        );
+      } else {
+        throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
+      }
+
+      request.files.add(multipartFile);
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Submit Exam Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        print('Error Body: $errorBody');
+        throw Exception('خطا در ارسال آزمون: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Submit Exam Error: $e');
+      throw Exception('خطا در ارسال: $e');
     }
   }
 

@@ -1,11 +1,13 @@
-// features/assignments/presentation/widgets/assignment_card.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../../shared/presentations/widgets/submit_answer_dialog.dart';
 import '../../data/models/assignment_model.dart.dart';
 
 /// Subtle, elegant entrance animation – feels premium, not flashy
 class AnimatedAssignmentCard extends StatelessWidget {
+  final int userId;
+  final VoidCallback? onRefresh;
   final AssignmentItemm item;
   final Animation<double> animation;
 
@@ -13,6 +15,8 @@ class AnimatedAssignmentCard extends StatelessWidget {
     super.key,
     required this.item,
     required this.animation,
+    required this.userId,
+    this.onRefresh,
   });
 
   @override
@@ -31,7 +35,7 @@ class AnimatedAssignmentCard extends StatelessWidget {
           ),
         );
       },
-      child: AssignmentCard(item: item),
+      child: AssignmentCard(item: item, userId: userId,),
     );
   }
 }
@@ -39,8 +43,15 @@ class AnimatedAssignmentCard extends StatelessWidget {
 /// Clean, modern, perfectly balanced AssignmentCard
 class AssignmentCard extends StatelessWidget {
   final AssignmentItemm item;
+  final int userId;
+  final VoidCallback? onRefresh;
 
-  const AssignmentCard({super.key, required this.item});
+  const AssignmentCard({
+    super.key,
+    required this.item,
+    required this.userId,
+    this.onRefresh,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -184,7 +195,15 @@ class AssignmentCard extends StatelessWidget {
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
-                  // Submit assignment
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) => SubmitAnswerDialog(
+                      type: 'assignment',
+                      id: item.id,
+                      userId: userId,
+                      onSubmitted: onRefresh,
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.upload_file_rounded, size: 22),
                 label: const Text(
