@@ -373,6 +373,11 @@ class ApiService {
         final examDate = json['examDate']; // "1403-09-20"
         final endTime = json['endTime']; // "14:30"
 
+        // IMPORTANT: Extract exam ID correctly
+        final examId = json['id'];
+
+        print('DEBUG: Exam ID from API: $examId, Title: ${json['title']}');
+
         // Parse exam end time to determine status
         late final ExamStatus status;
         try {
@@ -435,8 +440,10 @@ class ApiService {
           onViewAnswer: () => print('View answer for ${json['title']}'),
           duration: (json['duration'] ?? 0).toString(),
           description: json['description'] ?? '',
-          examId: json['id'],
+          examId: examId, // ENSURE THIS IS SET CORRECTLY
         );
+
+        print('DEBUG: Created ExamItem with examId=$examId, status=$status');
 
         switch (status) {
           case ExamStatus.pending:
@@ -461,6 +468,117 @@ class ApiService {
 
     return {'pending': pending, 'answered': answered, 'scored': scored};
   }
+
+  // // ==================== EXAMS ====================
+  // static Future<Map<String, List<ExamItem>>> getAllExams(int studentId) async {
+  //   final pending = <ExamItem>[];
+  //   final answered = <ExamItem>[];
+  //   final scored = <ExamItem>[];
+  //
+  //   try {
+  //     final response = await http
+  //         .get(Uri.parse('$baseUrl/student/exam/$studentId'), headers: _headers)
+  //         .timeout(_timeout);
+  //
+  //     if (response.statusCode != 200) {
+  //       throw Exception('خطا: ${response.statusCode}');
+  //     }
+  //
+  //     final List<dynamic> list = json.decode(response.body);
+  //
+  //     for (var json in list) {
+  //       final score = json['score'];
+  //       final examDate = json['examDate']; // "1403-09-20"
+  //       final endTime = json['endTime']; // "14:30"
+  //
+  //       // Parse exam end time to determine status
+  //       late final ExamStatus status;
+  //       try {
+  //         // Parse date and time: "1403-09-20" + "14:30"
+  //         final dateParts = examDate.split('-');
+  //         final timeParts = endTime.split(':');
+  //
+  //         final jalaliYear = int.parse(dateParts[0]);
+  //         final jalaliMonth = int.parse(dateParts[1]);
+  //         final jalaliDay = int.parse(dateParts[2]);
+  //
+  //         final hour = int.parse(timeParts[0]);
+  //         final minute = int.parse(timeParts[1]);
+  //
+  //         // Convert Jalali to Gregorian using shamsi_date package
+  //         final jalaliDate = Jalali(jalaliYear, jalaliMonth, jalaliDay);
+  //         final gregorianDate = jalaliDate.toGregorian();
+  //
+  //         final examEndTime = DateTime(
+  //           gregorianDate.year,
+  //           gregorianDate.month,
+  //           gregorianDate.day,
+  //           hour,
+  //           minute,
+  //         );
+  //
+  //         final now = DateTime.now();
+  //
+  //         // Determine status based on exam end time
+  //         if (now.isBefore(examEndTime)) {
+  //           // Exam time hasn't ended yet
+  //           status = ExamStatus.pending;
+  //         } else if (score == null) {
+  //           // Exam time is over but no score yet
+  //           status = ExamStatus.answered;
+  //         } else {
+  //           // Exam time is over and score exists
+  //           status = ExamStatus.scored;
+  //         }
+  //       } catch (e) {
+  //         print('Error parsing exam date/time: $e');
+  //         // Fallback: use score to determine status
+  //         status = score == null ? ExamStatus.answered : ExamStatus.scored;
+  //       }
+  //
+  //       final item = ExamItem(
+  //         title: json['title'] ?? 'بدون عنوان',
+  //         courseName: json['courseName'] ?? 'نامشخص',
+  //         dueDate: json['examDate'],
+  //         startTime: json['startTime'],
+  //         endTime: json['endTime'],
+  //         submittedDate: json['submittedDate'],
+  //         submittedTime: json['submittedTime'],
+  //         score: score,
+  //         totalScore: (json['possibleScore'] ?? 100).toString(),
+  //         status: status,
+  //         answerImage: json['answerImage'],
+  //         filename: json['filename'],
+  //         onReminderTap: () => print('Reminder set for ${json['title']}'),
+  //         onViewAnswer: () => print('View answer for ${json['title']}'),
+  //         duration: (json['duration'] ?? 0).toString(),
+  //         description: json['description'] ?? '',
+  //         examId: json['id'],
+  //       );
+  //
+  //       switch (status) {
+  //         case ExamStatus.pending:
+  //           pending.add(item);
+  //           break;
+  //         case ExamStatus.answered:
+  //           answered.add(item);
+  //           break;
+  //         case ExamStatus.scored:
+  //           scored.add(item);
+  //           break;
+  //       }
+  //     }
+  //
+  //     print(
+  //       'Exams loaded: ${pending.length} pending, ${answered.length} answered, ${scored.length} scored',
+  //     );
+  //   } catch (e) {
+  //     print('Error loading exams: $e');
+  //     throw Exception('خطا در بارگذاری امتحانات: $e');
+  //   }
+  //
+  //   return {'pending': pending, 'answered': answered, 'scored': scored};
+  // }
 
   // ==================== ASSIGNMENTS ====================
   static Future<Map<String, List<AssignmentItemm>>> getAllAssignments(
@@ -1008,13 +1126,18 @@ class ApiService {
 
   //================================= SUBMIT EXERCISES ======================
   static Future<void> submitAssignment(
-      int userId,
-      int assignmentId,
-      String description,
-      PlatformFile platformFile, // Change from File to PlatformFile
-          {required String customFileName}
-      ) async {
-    final url = Uri.parse('$baseUrl/student/submit/assignment/$userId/$assignmentId');
+    int userId,
+    int assignmentId,
+    String description,
+    PlatformFile platformFile, {
+    required String customFileName,
+    bool isUpdate = false,
+  }) async {
+    final endpoint = isUpdate
+        ? '$baseUrl/student/update/assignment/$userId/$assignmentId'
+        : '$baseUrl/student/submit/assignment/$userId/$assignmentId';
+
+    final url = Uri.parse(endpoint);
 
     try {
       var request = http.MultipartRequest('POST', url);
@@ -1053,7 +1176,9 @@ class ApiService {
       } else {
         final errorBody = await response.stream.bytesToString();
         print('Error Body: $errorBody');
-        throw Exception('خطا در ارسال تکلیف: ${response.statusCode} - $errorBody');
+        throw Exception(
+          'خطا در ارسال تکلیف: ${response.statusCode} - $errorBody',
+        );
       }
     } catch (e) {
       print('Submit Assignment Error: $e');
@@ -1066,13 +1191,17 @@ class ApiService {
       int userId,
       int examId,
       String description,
-      PlatformFile platformFile, // Change from File to PlatformFile
-          {required String customFileName}
+      PlatformFile platformFile,
+      {required String customFileName,
+        bool isUpdate = false}
       ) async {
     final url = Uri.parse('$baseUrl/student/submit/exam/$userId/$examId');
 
     try {
       var request = http.MultipartRequest('POST', url);
+
+      // Add the isUpdate flag as form field (IMPORTANT: must match backend parameter name)
+      request.fields['isUpdate'] = isUpdate.toString().toLowerCase(); // "true" or "false"
 
       if (description.isNotEmpty) {
         request.fields['description'] = description;
@@ -1097,11 +1226,18 @@ class ApiService {
 
       request.files.add(multipartFile);
 
+      print('=== SUBMIT EXAM REQUEST ===');
+      print('URL: ${request.url}');
+      print('isUpdate field: ${request.fields['isUpdate']}');
+      print('File: ${platformFile.name}');
+
       final response = await request.send().timeout(_timeout);
 
       print('Submit Exam Status: ${response.statusCode}');
 
-      if (response.statusCode == 200) {
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseBody = await response.stream.bytesToString();
+        print('Response Body: $responseBody');
         return;
       } else {
         final errorBody = await response.stream.bytesToString();

@@ -27,7 +27,7 @@ class ExamCard extends StatelessWidget {
         ? _formatJalali(item.submittedDate!)
         : 'بارگزاری نشده است';
     final submittedT = item.submittedTime != null
-        ? _formatJalali(item.submittedTime!)
+        ? item.submittedTime
         : '';
 
     return Container(
@@ -128,50 +128,95 @@ class ExamCard extends StatelessWidget {
             const SizedBox(height: 16),
 
             // Action Button
-            SizedBox(
-              width: double.infinity,
-              child: item.status == ExamStatus.pending
-                  ? ElevatedButton.icon(
-                      onPressed: () {
-                        showDialog(
-                          context: context,
-                          builder: (BuildContext ctx) => SubmitAnswerDialog(
-                            type: 'exam',
-                            id: item.examId,
-                            userId: userId,
-                            onSubmitted: onRefresh,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.attach_file, size: 18),
-                      label: const Text("ارسال پاسخ"),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColor.purple.withOpacity(0.1),
-                        foregroundColor: AppColor.purple,
-                        elevation: 0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    )
-                  : OutlinedButton.icon(
-                      onPressed: item.onViewAnswer,
-                      icon: const Icon(Icons.list_alt, size: 18),
-                      label: item.submittedDate != null
-                          ? Text(item.filename ?? "مشاهده پاسخ")
-                          : Text(item.filename ?? "بدون پاسخ"),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColor.purple,
-                        side: BorderSide(
-                          color: AppColor.purple.withOpacity(0.3),
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                    ),
-            ),
+            _buildActionButton(context),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context) {
+    // Pending: Show "ارسال پاسخ"
+    if (item.status == ExamStatus.pending) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            print('DEBUG: Opening dialog with examId=${item.examId}');
+            showDialog(
+              context: context,
+              builder: (BuildContext ctx) => SubmitAnswerDialog(
+                type: 'exam',
+                id: item.examId,
+                userId: userId,
+                onSubmitted: onRefresh,
+                isEditing: false,
+              ),
+            );
+          },
+          icon: const Icon(Icons.attach_file, size: 18),
+          label: const Text("ارسال پاسخ"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColor.purple.withOpacity(0.1),
+            foregroundColor: AppColor.purple,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Answered: Show "تغییر پاسخ"
+    if (item.status == ExamStatus.answered) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            print('DEBUG: Opening dialog with examId=${item.examId}');
+            showDialog(
+              context: context,
+              builder: (BuildContext ctx) => SubmitAnswerDialog(
+                type: 'exam',
+                id: item.examId,
+                userId: userId,
+                onSubmitted: onRefresh,
+                isEditing: true,
+              ),
+            );
+          },
+          icon: const Icon(Icons.edit_outlined, size: 18),
+          label: const Text("تغییر پاسخ"),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            foregroundColor: Colors.white,
+            elevation: 0,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      );
+    }
+
+    // Scored: Show view button
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          debugPrint('View answer for ${item.title}');
+        },
+        icon: const Icon(Icons.list_alt, size: 18),
+        label: Text(item.filename ?? "مشاهده پاسخ"),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColor.purple,
+          side: BorderSide(
+            color: AppColor.purple.withOpacity(0.3),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
         ),
       ),
     );
@@ -210,9 +255,7 @@ class ExamCard extends StatelessWidget {
             ),
           ),
         ),
-
         const SizedBox(width: 10),
-
         Expanded(
           child: Container(
             padding: const EdgeInsets.symmetric(vertical: 12),
@@ -236,10 +279,10 @@ class ExamCard extends StatelessWidget {
   ];
 
   List<Widget> _answeredContent(
-    String? submitted,
-    String? due,
-    String? dueT,
-  ) => [
+      String? submitted,
+      String? due,
+      String? dueT,
+      ) => [
     Text(
       "اتمام محلت - در انتظار نمره",
       style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
@@ -377,8 +420,7 @@ class ExamCard extends StatelessWidget {
       final m = int.parse(jalali.substring(4, 6));
       final d = int.parse(jalali.substring(6, 8));
       final date = Jalali(y, m, d);
-      return '${date.year}/${_twoDigits(date.month)}/${_twoDigits(date.day)}'; // 1403/09/01
-      // OR use full name: return date.formatter.wN; // چهارشنبه ۱ شهریور ۱۴۰۳
+      return '${date.year}/${_twoDigits(date.month)}/${_twoDigits(date.day)}';
     } catch (e) {
       return jalali;
     }

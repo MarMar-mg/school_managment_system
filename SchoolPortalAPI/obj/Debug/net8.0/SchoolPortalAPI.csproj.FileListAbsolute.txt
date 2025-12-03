@@ -352,3 +352,4 @@ F:\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net8.0\refi
 F:\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net8.0\SchoolPortalAPI.pdb
 F:\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net8.0\SchoolPortalAPI.genruntimeconfig.cache
 F:\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net8.0\ref\SchoolPortalAPI.dll
+F:\flutter_project\school_managment_system\schoolportalapi\bin\Debug\net8.0\SchoolPortalAPI.staticwebassets.runtime.json

@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../../data/models/assignment_model.dart.dart';
 import 'assignment_card.dart';
 
-/// Expandable section – works exactly like ExamSection
+/// Expandable section for assignments – exactly like ExamSection
+/// Separates assignments into Pending, Submitted, and Graded sections
 class AssignmentSection extends StatelessWidget {
   final String title;
   final int userId;
@@ -63,26 +64,44 @@ class AssignmentSection extends StatelessWidget {
           ),
         ),
 
-        const SizedBox(height: 12),
-
         // === CARDS (only when expanded) ===
-        if (isExpanded)
+        if (isExpanded) ...[
+          const SizedBox(height: 12),
           ...items.asMap().entries.map((entry) {
             final i = entry.key;
             final item = entry.value;
             final globalIndex = startIndex + i;
 
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 14, right: 8, left: 8),
-              child: AnimatedAssignmentCard(
-                item: item,
-                animation: animations[globalIndex],
-                userId: userId,
-                onRefresh: onRefresh,
+            return AnimatedBuilder(
+              animation: globalIndex < animations.length
+                  ? animations[globalIndex]
+                  : AlwaysStoppedAnimation(1.0),
+              builder: (context, child) {
+                final anim = globalIndex < animations.length
+                    ? animations[globalIndex]
+                    : const AlwaysStoppedAnimation(1.0);
+
+                return Opacity(
+                  opacity: anim.value,
+                  child: Transform.translate(
+                    offset: Offset(0, 50 * (1 - anim.value)),
+                    child: child,
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: AssignmentCard(
+                  item: item,
+                  userId: userId,
+                  onRefresh: onRefresh,
+                ),
               ),
             );
           }),
-        // Empty state
+        ],
+
+        // === EMPTY STATE ===
         if (isExpanded && items.isEmpty) _buildEmptyState(),
 
         const SizedBox(height: 8),

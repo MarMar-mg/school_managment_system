@@ -4,24 +4,17 @@ import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 
-/// Reusable dialog for submitting answers to exams or assignments.
+/// Reusable dialog for submitting/updating answers to exams or assignments.
 /// Supports file upload (PDF, ZIP, images) and description.
 ///
-/// Usage:
-/// showDialog(
-///   context: context,
-///   builder: (_) => SubmitAnswerDialog(
-///     type: 'assignment', // or 'exam'
-///     id: assignmentId, // or examId
-///     studentId: studentId,
-///     onSubmitted: () => refreshList(),
-///   ),
-/// );
+/// After submission, the button changes to "تغییر پاسخ" (Change Answer)
+/// allowing students to update their submission.
 class SubmitAnswerDialog extends StatefulWidget {
   final String type; // 'assignment' or 'exam'
   final int id; // assignmentId or examId
   final int userId;
   final VoidCallback? onSubmitted;
+  final bool isEditing; // Whether this is an edit (existing submission)
 
   const SubmitAnswerDialog({
     super.key,
@@ -29,6 +22,7 @@ class SubmitAnswerDialog extends StatefulWidget {
     required this.id,
     required this.userId,
     this.onSubmitted,
+    this.isEditing = false,
   });
 
   @override
@@ -38,10 +32,27 @@ class SubmitAnswerDialog extends StatefulWidget {
 class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
   final _formKey = GlobalKey<FormState>();
   final _descriptionController = TextEditingController();
-  final _fileNameController = TextEditingController(); // For editable file name
-  PlatformFile? _selectedPlatformFile; // Change to PlatformFile to handle web bytes
+  final _fileNameController = TextEditingController();
+  PlatformFile? _selectedPlatformFile;
   bool _isLoading = false;
+  bool _hasExistingSubmission = false;
   String? _errorMessage;
+
+  @override
+  void initState() {
+    super.initState();
+    _hasExistingSubmission = widget.isEditing;
+    _checkExistingSubmission();
+  }
+
+  Future<void> _checkExistingSubmission() async {
+    // This method checks if student has already submitted
+    // In a real app, you'd fetch this from the API
+    // For now, we'll rely on the isEditing parameter passed from parent
+    setState(() {
+      _hasExistingSubmission = widget.isEditing;
+    });
+  }
 
   @override
   void dispose() {
@@ -63,12 +74,10 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
 
       setState(() {
         _selectedPlatformFile = platformFile;
-        _fileNameController.text = originalName; // Pre-fill with original name
+        _fileNameController.text = originalName;
         _errorMessage = null;
       });
-      print('File selected: Name: $originalName, Size: ${platformFile.size}, Has path: ${platformFile.path != null}, Has bytes: ${platformFile.bytes != null}');
-    } else {
-      print('No file selected');
+      print('File selected: Name: $originalName, Size: ${platformFile.size}');
     }
   }
 
@@ -101,6 +110,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
           _descriptionController.text,
           _selectedPlatformFile!,
           customFileName: customFileName,
+          isUpdate: _hasExistingSubmission, // Pass whether this is an update
         );
       } else if (widget.type == 'exam') {
         await ApiService.submitExam(
@@ -109,6 +119,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
           _descriptionController.text,
           _selectedPlatformFile!,
           customFileName: customFileName,
+          isUpdate: _hasExistingSubmission, // Pass whether this is an update
         );
       } else {
         throw Exception('نوع نامعتبر');
@@ -117,9 +128,14 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       if (mounted) {
         Navigator.pop(context);
         widget.onSubmitted?.call();
+
+        final message = _hasExistingSubmission
+            ? 'پاسخ با موفقیت به‌روزرسانی شد'
+            : 'پاسخ با موفقیت ارسال شد';
+
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('پاسخ با موفقیت ارسال شد'),
+          SnackBar(
+            content: Text(message),
             backgroundColor: Colors.green,
           ),
         );
@@ -135,6 +151,10 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final dialogTitle = _hasExistingSubmission
+        ? 'تغییر پاسخ'
+        : (widget.type == 'assignment' ? 'ارسال پاسخ تکلیف' : 'ارسال پاسخ آزمون');
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
@@ -142,7 +162,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            widget.type == 'assignment' ? 'ارسال پاسخ تکلیف' : 'ارسال پاسخ آزمون',
+            dialogTitle,
             style: const TextStyle(fontWeight: FontWeight.bold),
           ),
           IconButton(
@@ -183,7 +203,9 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
               ElevatedButton.icon(
                 onPressed: _isLoading ? null : _pickFile,
                 icon: const Icon(Icons.attach_file),
-                label: const Text('انتخاب فایل (PDF, ZIP, تصویر)'),
+                label: Text(_hasExistingSubmission
+                    ? 'تغییر فایل (PDF, ZIP, تصویر)'
+                    : 'انتخاب فایل (PDF, ZIP, تصویر)'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColor.purple,
                   foregroundColor: Colors.white,
@@ -228,10 +250,18 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
               // Error Message
               if (_errorMessage != null)
                 Padding(
-                  padding: const EdgeInsets.only(top: 8),
-                  child: Text(
-                    _errorMessage!,
-                    style: const TextStyle(color: Colors.red),
+                  padding: const EdgeInsets.only(top: 16),
+                  child: Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.red.shade200),
+                    ),
+                    child: Text(
+                      _errorMessage!,
+                      style: TextStyle(color: Colors.red.shade700),
+                    ),
                   ),
                 ),
             ],
@@ -240,7 +270,12 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       ),
       actions: [
         if (_isLoading)
-          const Center(child: CircularProgressIndicator())
+          const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(),
+            ),
+          )
         else
           ElevatedButton(
             onPressed: _submit,
@@ -252,7 +287,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
               ),
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             ),
-            child: const Text('ارسال پاسخ'),
+            child: Text(_hasExistingSubmission ? 'تغییر پاسخ' : 'ارسال پاسخ'),
           ),
       ],
     );
