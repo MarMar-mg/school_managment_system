@@ -5,6 +5,7 @@ class ExamModelT {
   final String status; // 'upcoming' or 'completed'
   final String subject;
   final String date;
+  final String description;
   final int students;
   final String classTime;
   final int capacity;
@@ -20,6 +21,7 @@ class ExamModelT {
     required this.status,
     required this.subject,
     required this.date,
+    required this.description,
     required this.students,
     required this.classTime,
     required this.capacity,
@@ -37,6 +39,7 @@ class ExamModelT {
       status: json['status'] ?? 'upcoming',
       subject: json['subject'] ?? 'نامشخص',
       date: json['date'] ?? 'نامشخص',
+      description: json['description'] ?? 'بدون توضیحات',
       students: json['students'] ?? 0,
       classTime: json['classTime'] ?? 'نامشخص',
       capacity: json['capacity'] ?? 0,

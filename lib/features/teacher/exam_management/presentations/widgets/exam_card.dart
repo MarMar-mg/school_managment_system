@@ -111,19 +111,14 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                       height: 50,
                       decoration: BoxDecoration(
                         gradient: LinearGradient(
-                          colors: [
-                            headerColor,
-                            headerColor.withOpacity(0.8)
-                          ],
+                          colors: [headerColor, headerColor.withOpacity(0.8)],
                           begin: Alignment.topLeft,
                           end: Alignment.bottomRight,
                         ),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(
-                        isUpcoming
-                            ? Icons.calendar_today
-                            : Icons.check_circle,
+                        isUpcoming ? Icons.calendar_today : Icons.check_circle,
                         color: Colors.white,
                         size: 24,
                       ),
@@ -194,6 +189,41 @@ class _TeacherExamCardState extends State<TeacherExamCard>
 
                 const SizedBox(height: 14),
 
+                // description
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'توضیحات',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColor.lightGray,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          widget.exam.description,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColor.darkText,
+                            height: 1.5,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                const SizedBox(height: 14),
+
                 // Stats Row
                 Row(
                   children: [
@@ -236,7 +266,10 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                     // Delete Button (only for active/upcoming)
                     if (widget.isActive) ...[
                       IconButton(
-                        icon: const Icon(Icons.delete_outline, color: Colors.red),
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
                         onPressed: widget.onDelete,
                         iconSize: 20,
                         padding: const EdgeInsets.all(8),
@@ -267,24 +300,22 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                     Expanded(
                       child: ElevatedButton.icon(
                         onPressed: isUpcoming
-                            ? () => debugPrint('View details: ${widget.exam.title}')
+                            ? () => debugPrint(
+                                'View details: ${widget.exam.title}',
+                              )
                             : () {
-                          showExamScoreManagementDialog(
-                            context,
-                            examId: widget.exam.id,
-                            examTitle: widget.exam.title,
-                            possibleScore: widget.exam.possibleScore,
-                          );
-                        },
+                                showExamScoreManagementDialog(
+                                  context,
+                                  examId: widget.exam.id,
+                                  examTitle: widget.exam.title,
+                                  possibleScore: widget.exam.possibleScore,
+                                );
+                              },
                         icon: Icon(
-                          isUpcoming
-                              ? Icons.visibility_outlined
-                              : Icons.score,
+                          isUpcoming ? Icons.visibility_outlined : Icons.score,
                           size: 16,
                         ),
-                        label: Text(
-                          isUpcoming ? 'مشاهده' : 'مدیریت نمرات',
-                        ),
+                        label: Text(isUpcoming ? 'مشاهده' : 'مدیریت نمرات'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isUpcoming
                               ? Colors.grey.shade50
@@ -350,11 +381,11 @@ class _TeacherExamCardState extends State<TeacherExamCard>
   }
 
   Widget _buildStatCard(
-      String label,
-      String value,
-      Color bgColor,
-      Color textColor,
-      ) {
+    String label,
+    String value,
+    Color bgColor,
+    Color textColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(
@@ -376,7 +407,7 @@ class _TeacherExamCardState extends State<TeacherExamCard>
           Text(
             label,
             style: const TextStyle(
-              fontSize: 10,
+              fontSize: 12,
               color: AppColor.lightGray,
               fontWeight: FontWeight.w500,
             ),

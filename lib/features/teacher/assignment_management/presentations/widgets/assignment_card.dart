@@ -198,6 +198,7 @@ class _TeacherAssignmentCardState extends State<TeacherAssignmentCard>
                     const SizedBox(height: 14),
                     Container(
                       padding: const EdgeInsets.all(12),
+                      width: double.infinity,
                       decoration: BoxDecoration(
                         color: Colors.grey.shade50,
                         borderRadius: BorderRadius.circular(12),

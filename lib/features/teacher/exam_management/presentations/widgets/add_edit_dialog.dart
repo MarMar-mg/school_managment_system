@@ -344,39 +344,20 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                 // Title
                 _buildLabel('عنوان امتحان'),
                 const SizedBox(height: 8),
-                _buildTextField(_titleController, 'مثال: آزمون ریاضی میان‌ترم'),
+                _buildTextField(
+                  _titleController,
+                  1,
+                  'مثال: آزمون ریاضی میان‌ترم',
+                ),
                 const SizedBox(height: 20),
 
                 // Subject
                 _buildLabel('توضیحات'),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: _descriptionController,
-                  textDirection: TextDirection.rtl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'دستورالعمل و توضیحات تمرین را بنویسید...',
-                    hintTextDirection: TextDirection.rtl,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF7C3AED),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
+                _buildTextField(
+                  _descriptionController,
+                  3,
+                  'دستورالعمل و توضیحات تمرین را بنویسید...',
                 ),
                 const SizedBox(height: 20),
 
@@ -421,6 +402,7 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                           const SizedBox(height: 8),
                           _buildTextField(
                             _durationController,
+                            1,
                             '90',
                             isNumber: true,
                           ),
@@ -436,6 +418,7 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                           const SizedBox(height: 8),
                           _buildTextField(
                             _scoreController,
+                            1,
                             '100',
                             isNumber: true,
                           ),
@@ -544,12 +527,14 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
 
   Widget _buildTextField(
     TextEditingController controller,
+    int maxLines,
     String hint, {
     bool isNumber = false,
   }) {
     return TextField(
       controller: controller,
       enabled: !_isLoading,
+      maxLines: maxLines,
       keyboardType: isNumber ? TextInputType.number : TextInputType.text,
       textDirection: TextDirection.rtl,
       decoration: InputDecoration(

@@ -177,7 +177,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
     final examMap = {
       'id': exam.id,
       'title': exam.title,
-      'description': '',
+      'description': exam.description,
       'date': exam.date,
       'classTime': exam.classTime,
       'duration': exam.duration,
