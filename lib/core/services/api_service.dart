@@ -1005,9 +1005,8 @@ class ApiService {
       throw Exception('خطا: $e');
     }
   }
-  //-----------------------------------
-// Update ApiService.dart submit methods to handle PlatformFile (path or bytes)
 
+  //================================= SUBMIT EXERCISES ======================
   static Future<void> submitAssignment(
       int userId,
       int assignmentId,
@@ -1062,6 +1061,7 @@ class ApiService {
     }
   }
 
+  //================================= SUBMIT EXAM ==========================
   static Future<void> submitExam(
       int userId,
       int examId,
