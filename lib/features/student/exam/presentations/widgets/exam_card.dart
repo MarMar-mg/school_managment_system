@@ -13,6 +13,7 @@ class ExamCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final due = item.dueDate != null ? _formatJalali(item.dueDate!) : null;
+    final dueT = item.endTime ;
     final time = '${item.startTime} تا ${item.endTime}';
     final submittedD = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
@@ -112,7 +113,7 @@ class ExamCard extends StatelessWidget {
             if (item.status == ExamStatus.pending)
               ..._pendingContent(due, time),
             if (item.status == ExamStatus.answered)
-              ..._answeredContent(submittedD),
+              ..._answeredContent(submittedD, due, dueT),
             if (item.status == ExamStatus.scored) ..._scoredContent(submittedT, submittedD),
 
             const SizedBox(height: 16),
@@ -215,10 +216,15 @@ class ExamCard extends StatelessWidget {
     ),
   ];
 
-  List<Widget> _answeredContent(String? submitted) => [
-    const Text(
+  List<Widget> _answeredContent(String? submitted, String? due, String? dueT) => [
+    Text(
       "اتمام محلت - در انتظار نمره",
-      style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+      style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+    ),
+    const SizedBox(height: 8),
+    Text(
+      "زمان پایان: ${due!}($dueT)",
+      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
     ),
     const SizedBox(height: 8),
     Text(
