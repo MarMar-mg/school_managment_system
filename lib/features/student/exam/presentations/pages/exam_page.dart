@@ -53,12 +53,17 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
   }
 
   void _startAnimations(int totalCount) {
+    // Create animations for all items + stats row
     _cardAnims = List.generate(
       totalCount,
-      (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
-          curve: Interval(0.06 + i * 0.04, 1.0, curve: Curves.easeOutCubic),
+          curve: Interval(
+            0.06 + (i * 0.04).clamp(0.0, 0.9), // Prevent animation overlap
+            1.0,
+            curve: Curves.easeOutCubic,
+          ),
         ),
       ),
     );
@@ -71,6 +76,7 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
     setState(() {
       _examsFuture = ApiService.getAllExams(widget.userId);
       _expanded.updateAll((_, __) => false);
+      _cardAnims.clear();
     });
   }
 
@@ -85,14 +91,17 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
           if (!snapshot.hasData) return const _ShimmerExamPage();
 
           final data = snapshot.data!;
-          final pending   = data['pending']   ?? [];
-          final answered  = data['answered']  ?? [];
-          final scored    = data['scored']    ?? [];
+          final pending = data['pending'] ?? [];
+          final answered = data['answered'] ?? [];
+          final scored = data['scored'] ?? [];
           final all = [...pending, ...answered, ...scored];
 
           if (all.isEmpty) return _buildEmpty();
 
-          if (_cardAnims.length != all.length) _startAnimations(all.length);
+          // Initialize animations only once with correct count
+          if (_cardAnims.isEmpty && all.isNotEmpty) {
+            _startAnimations(all.length);
+          }
 
           return RefreshIndicator(
             onRefresh: _refresh,
@@ -101,15 +110,19 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
               physics: const AlwaysScrollableScrollPhysics(),
               child: Padding(
                 padding: const EdgeInsets.all(16.0),
-                child: ResponsiveContainer(   // ← HERE
+                child: ResponsiveContainer(
                   padding: EdgeInsets.zero,
                   child: Column(
                     children: [
                       const SizedBox(height: 16),
-                      AnimatedStatsRow(pending: pending.length, submitted: answered.length, graded: scored.length),
+                      AnimatedStatsRow(
+                        pending: pending.length,
+                        submitted: answered.length,
+                        graded: scored.length,
+                      ),
                       const SizedBox(height: 28),
 
-                      // Pending
+                      // Pending Section
                       ExamSection(
                         title: 'در انتظار',
                         color: Colors.orange,
@@ -122,7 +135,7 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 24),
 
-                      // Answered
+                      // Answered Section
                       ExamSection(
                         title: 'ارسال شده',
                         color: Colors.blue,
@@ -135,7 +148,7 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 24),
 
-                      // Scored
+                      // Scored Section
                       ExamSection(
                         title: 'نمره‌دار',
                         color: Colors.green,
@@ -158,9 +171,40 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildError(String msg) => Center(child: Text('Error: $msg'));
+  Widget _buildError(String msg) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
+          const SizedBox(height: 16),
+          const Text('خطا در بارگذاری امتحانات'),
+          const SizedBox(height: 8),
+          Text(msg, textAlign: TextAlign.center),
+          const SizedBox(height: 24),
+          ElevatedButton.icon(
+            onPressed: _refresh,
+            icon: const Icon(Icons.refresh),
+            label: const Text('تلاش مجدد'),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
+          ),
+        ],
+      ),
+    );
+  }
 
-  Widget _buildEmpty() => const Center(child: Text('هیچ امتحانی یافت نشد'));
+  Widget _buildEmpty() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.assignment_outlined, size: 80, color: AppColor.lightGray),
+          const SizedBox(height: 16),
+          const Text('هیچ امتحانی یافت نشد'),
+        ],
+      ),
+    );
+  }
 }
 
 class AnimatedStatsRow extends StatelessWidget {
@@ -205,7 +249,7 @@ class _ShimmerExamPage extends StatelessWidget {
           ),
           ...List.generate(
             3,
-            (_) => Container(
+                (_) => Container(
               height: 200,
               margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(

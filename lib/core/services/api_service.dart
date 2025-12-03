@@ -350,6 +350,7 @@ class ApiService {
   }
 
   // ==================== EXAMS ====================
+// ==================== EXAMS ====================
   static Future<Map<String, List<ExamItem>>> getAllExams(int studentId) async {
     final pending = <ExamItem>[];
     final answered = <ExamItem>[];
@@ -358,32 +359,81 @@ class ApiService {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/student/exam/$studentId'),
-      );
+        headers: _headers,
+      ).timeout(_timeout);
+
       if (response.statusCode != 200) {
         throw Exception('خطا: ${response.statusCode}');
       }
+
       final List<dynamic> list = json.decode(response.body);
 
       for (var json in list) {
         final score = json['score'];
-        final status = score == null
-            ? ExamStatus.pending
-            : (score > 0 ? ExamStatus.scored : ExamStatus.answered);
+        final examDate = json['examDate']; // "1403-09-20"
+        final endTime = json['endTime']; // "14:30"
+
+        // Parse exam end time to determine status
+        late final ExamStatus status;
+        try {
+          // Parse date and time: "1403-09-20" + "14:30"
+          final dateParts = examDate.split('-');
+          final timeParts = endTime.split(':');
+
+          final jalaliYear = int.parse(dateParts[0]);
+          final jalaliMonth = int.parse(dateParts[1]);
+          final jalaliDay = int.parse(dateParts[2]);
+
+          final hour = int.parse(timeParts[0]);
+          final minute = int.parse(timeParts[1]);
+
+          // Convert Jalali to Gregorian using shamsi_date package
+          final jalaliDate = Jalali(jalaliYear, jalaliMonth, jalaliDay);
+          final gregorianDate = jalaliDate.toGregorian();
+
+          final examEndTime = DateTime(
+            gregorianDate.year,
+            gregorianDate.month,
+            gregorianDate.day,
+            hour,
+            minute,
+          );
+
+          final now = DateTime.now();
+
+          // Determine status based on exam end time
+          if (now.isBefore(examEndTime)) {
+            // Exam time hasn't ended yet
+            status = ExamStatus.pending;
+          } else if (score == null) {
+            // Exam time is over but no score yet
+            status = ExamStatus.answered;
+          } else {
+            // Exam time is over and score exists
+            status = ExamStatus.scored;
+          }
+        } catch (e) {
+          print('Error parsing exam date/time: $e');
+          // Fallback: use score to determine status
+          status = score == null ? ExamStatus.answered : ExamStatus.scored;
+        }
 
         final item = ExamItem(
-          title: json['title'],
-          courseName: json['courseName'],
+          title: json['title'] ?? 'بدون عنوان',
+          courseName: json['courseName'] ?? 'نامشخص',
           dueDate: json['examDate'],
           startTime: json['startTime'],
           endTime: json['endTime'],
           submittedDate: json['submittedDate'],
           score: score,
-          totalScore: 100,
+          totalScore: (json['possibleScore'] ?? 100).toString(),
           status: status,
           answerImage: json['answerImage'],
           filename: json['filename'],
-          onReminderTap: () => print('Reminder set'),
-          onViewAnswer: () => print('View answer'),
+          onReminderTap: () => print('Reminder set for ${json['title']}'),
+          onViewAnswer: () => print('View answer for ${json['title']}'),
+          duration: (json['duration'] ?? 0).toString(),
+          description: json['description'] ?? '',
         );
 
         switch (status) {
@@ -398,8 +448,11 @@ class ApiService {
             break;
         }
       }
+
+      print('Exams loaded: ${pending.length} pending, ${answered.length} answered, ${scored.length} scored');
     } catch (e) {
-      throw Exception('خطا در بارگذاری');
+      print('Error loading exams: $e');
+      throw Exception('خطا در بارگذاری امتحانات: $e');
     }
 
     return {'pending': pending, 'answered': answered, 'scored': scored};

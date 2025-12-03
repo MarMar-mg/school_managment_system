@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
@@ -15,7 +16,7 @@ class ExamCard extends StatelessWidget {
     final time = '${item.startTime} تا ${item.endTime}';
     final submitted = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
-        : null;
+        : 'بارگزاری نشده است';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -90,6 +91,19 @@ class ExamCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+            // Description
+            if (item.description?.isNotEmpty == true) ...[
+              const SizedBox(height: 16),
+              Text(
+                'توضبحات: ${item.description!}',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Colors.grey[700],
+                  height: 1.6,
+                ),
+              ),
+            ],
+            const SizedBox(height: 16),
 
             // State-specific content
             if (item.status == ExamStatus.pending)
@@ -106,8 +120,8 @@ class ExamCard extends StatelessWidget {
               child: item.status == ExamStatus.pending
                   ? ElevatedButton.icon(
                       onPressed: item.onReminderTap,
-                      icon: const Icon(Icons.alarm, size: 18),
-                      label: const Text("تنظیم یادآوری"),
+                      icon: const Icon(Icons.attach_file, size: 18),
+                      label: const Text("ارسال پاسخ"),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColor.purple.withOpacity(0.1),
                         foregroundColor: AppColor.purple,
@@ -119,8 +133,8 @@ class ExamCard extends StatelessWidget {
                     )
                   : OutlinedButton.icon(
                       onPressed: item.onViewAnswer,
-                      icon: const Icon(Icons.attach_file, size: 18),
-                      label: Text(item.filename ?? "مشاهده پاسخ"),
+                      icon: const Icon(Icons.list_alt, size: 18),
+                      label: item.submittedDate != null? Text(item.filename ?? "مشاهده پاسخ"):Text(item.filename ?? "بدون پاسخ") ,
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColor.purple,
                         side: BorderSide(
@@ -147,41 +161,59 @@ class ExamCard extends StatelessWidget {
       ],
     ),
     const SizedBox(height: 16),
-    Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.blue.shade50,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Center(
-        child: Text(
-          "امتحان کل 100",
-          style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+    Row(
+      children: [
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                " زمان آزمون: ${item.duration}",
+                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
         ),
-      ),
-    ),
-    const SizedBox(height: 12),
-    const Text(
-      "در حال بررسی",
-      style: TextStyle(color: Colors.orange, fontWeight: FontWeight.w500),
+
+        const SizedBox(width: 10),
+
+        Expanded(
+          child: Container(
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              color: Colors.blue.shade50,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Center(
+              child: Text(
+                "نمره کل: ${item.totalScore}",
+                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
+      ],
     ),
   ];
 
   List<Widget> _answeredContent(String? submitted) => [
     const Text(
-      "ارسال شده - در انتظار نمره",
+      "اتمام محلت - در انتظار نمره",
       style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
     ),
     const SizedBox(height: 8),
     Text(
-      submitted ?? "نامشخص",
+      'تاریخ بارگزاری: ${submitted ?? "نامشخص"}',
       style: TextStyle(fontSize: 13, color: Colors.grey[600]),
     ),
   ];
 
   List<Widget> _scoredContent() {
-    final percent = (item.score! / item.totalScore) * 100;
+    final percent = (item.score! / item.totalScore!.toInt()) * 100;
     return [
       Row(
         children: [
@@ -251,7 +283,7 @@ class ExamCard extends StatelessWidget {
   };
 
   Color _gradeColor() {
-    final p = (item.score! / item.totalScore) * 100;
+    final p = (item.score! / item.totalScore!.toInt()) * 100;
     if (p >= 90) return Colors.green;
     if (p >= 80) return Colors.lightGreen;
     if (p >= 70) return Colors.orange;
@@ -260,7 +292,7 @@ class ExamCard extends StatelessWidget {
   }
 
   String _gradeLetter() {
-    final p = (item.score! / item.totalScore) * 100;
+    final p = (item.score! / item.totalScore!.toInt()) * 100;
     if (p >= 90) return "A";
     if (p >= 80) return "B";
     if (p >= 70) return "C";

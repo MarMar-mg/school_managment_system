@@ -260,47 +260,77 @@ namespace SchoolPortalAPI.Controllers
 
 
         // ──────────────────────────────────────────────────────────────
-        // Get exams for student's
+        // Get all exams for a student
         // ──────────────────────────────────────────────────────────────
         [HttpGet("exam/{studentId}")]
         public async Task<ActionResult<IEnumerable<object>>> GetAllExams(long studentId)
         {
-            var studentIdd = await _context.Students
-                            .Where(s => s.UserID == studentId)
-                            .Select(s => s.Studentid)
-                            .FirstOrDefaultAsync();
+            try
+            {
+                // Get the student and their classId
+                var student = await _context.Students
+                    .Where(s => s.UserID == studentId)
+                    .Select(s => new { s.Studentid, s.Classeid })
+                    .FirstOrDefaultAsync();
 
-            var exams = await _context.ExamStuTeaches
-            .Where(est => est.Studentid == studentId)
-                    .Include(est => est.Exam)
-                        .ThenInclude(e => e!.Course)
-                    .Include(est => est.Exam)
-                        .ThenInclude(e => e!.Class)
-                    .Select(est => new
+                if (student == null)
+                    return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                // Get all exams for the student's class
+                var exams = await _context.Exams
+                    .Where(e => e.Classid == student.Classeid)
+                    .Include(e => e.Course)
+                    .Include(e => e.Class)
+                    .Select(e => new
                     {
-                        id            = est.Estid,
+                        id = e.Examid,
+                        title = e.Title ?? "بدون عنوان",
+                        courseName = e.Course!.Name ?? "نامشخص",
+                        className = e.Class!.Name ?? "نامشخص",
+                        description = e.Description ?? "",
+                        examDate = e.Enddate,
+                        startDate = e.Startdate,
+                        startTime = e.Starttime,
+                        endTime = e.Endtime,
+                        possibleScore = e.PossibleScore,
+                        duration = e.Duration,
 
-                        // Use EF.Property + ?? to safely read NULLs
-                        title         = EF.Property<string>(est.Exam, nameof(Exam.Title)) ?? "بدون عنوان",
-                        courseName    = EF.Property<string>(EF.Property<object>(est.Exam, nameof(Exam.Course)), nameof(Course.Name)) ?? "نامشخص",
-                        className     = EF.Property<string>(EF.Property<object>(est.Exam, nameof(Exam.Class)), nameof(Class.Name)),
-                        description   = EF.Property<string>(est.Exam, nameof(Exam.Description)),
-                        examDate      = EF.Property<string>(est.Exam, nameof(Exam.Enddate)),
-                        startDate     = EF.Property<string>(est.Exam, nameof(Exam.Startdate)),
-                        startTime     = EF.Property<string>(est.Exam, nameof(Exam.Starttime)),
-                        endTime       = EF.Property<string>(est.Exam, nameof(Exam.Endtime)),
+                        // Get student's submission data from ExamStuTeach
+                        score = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => (int?)est.Score)
+                            .FirstOrDefault(),
 
-                        // Direct fields (safe if nullable in model)
-                        score         = est.Score,
-                        answerImage   = est.Answerimage,
-                        filename      = est.Filename,
-                        submittedDate = est.Date
+                        answerImage = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => est.Answerimage)
+                            .FirstOrDefault(),
+
+                        filename = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => est.Filename)
+                            .FirstOrDefault(),
+
+                        submittedDate = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => est.Date)
+                            .FirstOrDefault(),
+
+                        estid = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => (long?)est.Estid)
+                            .FirstOrDefault()
                     })
-                    .OrderBy(e => e.examDate ?? "")
+                    .OrderBy(e => e.examDate)
                     .ToListAsync();
 
                 return Ok(exams);
             }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در بارگذاری امتحانات", error = ex.Message });
+            }
+        }
 
             // ──────────────────────────────────────────────────────────────
             // Get scores for student's courses

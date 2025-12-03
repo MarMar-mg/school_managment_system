@@ -10,7 +10,9 @@ class ExamItem {
   final String? endTime;
   final String? submittedDate;
   final int? score;
-  final int totalScore;
+  final String? totalScore;
+  final String? duration;
+  final String? description;
   final ExamStatus status;
   final String? answerImage;
   final String? filename;
@@ -23,7 +25,9 @@ class ExamItem {
     this.dueDate,
     this.submittedDate,
     this.score,
-    this.totalScore = 100,
+    required this.totalScore,
+    required this.duration,
+    required this.description,
     required this.status,
     this.answerImage,
     this.filename,
