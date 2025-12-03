@@ -425,6 +425,7 @@ class ApiService {
           startTime: json['startTime'],
           endTime: json['endTime'],
           submittedDate: json['submittedDate'],
+          submittedTime: json['submittedTime'],
           score: score,
           totalScore: (json['possibleScore'] ?? 100).toString(),
           status: status,

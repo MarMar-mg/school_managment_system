@@ -316,6 +316,11 @@ namespace SchoolPortalAPI.Controllers
                             .Select(est => est.Date)
                             .FirstOrDefault(),
 
+                        submittedTime = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => est.Time)
+                            .FirstOrDefault(),
+
                         estid = _context.ExamStuTeaches
                             .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
                             .Select(est => (long?)est.Estid)

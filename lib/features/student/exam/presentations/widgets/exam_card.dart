@@ -14,9 +14,12 @@ class ExamCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final due = item.dueDate != null ? _formatJalali(item.dueDate!) : null;
     final time = '${item.startTime} تا ${item.endTime}';
-    final submitted = item.submittedDate != null
+    final submittedD = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
         : 'بارگزاری نشده است';
+    final submittedT = item.submittedTime != null
+        ? _formatJalali(item.submittedTime!)
+        : '';
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -109,8 +112,8 @@ class ExamCard extends StatelessWidget {
             if (item.status == ExamStatus.pending)
               ..._pendingContent(due, time),
             if (item.status == ExamStatus.answered)
-              ..._answeredContent(submitted),
-            if (item.status == ExamStatus.scored) ..._scoredContent(),
+              ..._answeredContent(submittedD),
+            if (item.status == ExamStatus.scored) ..._scoredContent(submittedT, submittedD),
 
             const SizedBox(height: 16),
 
@@ -134,7 +137,9 @@ class ExamCard extends StatelessWidget {
                   : OutlinedButton.icon(
                       onPressed: item.onViewAnswer,
                       icon: const Icon(Icons.list_alt, size: 18),
-                      label: item.submittedDate != null? Text(item.filename ?? "مشاهده پاسخ"):Text(item.filename ?? "بدون پاسخ") ,
+                      label: item.submittedDate != null
+                          ? Text(item.filename ?? "مشاهده پاسخ")
+                          : Text(item.filename ?? "بدون پاسخ"),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColor.purple,
                         side: BorderSide(
@@ -157,7 +162,11 @@ class ExamCard extends StatelessWidget {
       children: [
         _infoChip("", time ?? "نامشخص", Icons.access_time),
         const SizedBox(width: 12),
-        _infoChip("تاریخ", DateFormatManager.formatDate(due) ?? "نامشخص", Icons.calendar_today),
+        _infoChip(
+          "تاریخ",
+          DateFormatManager.formatDate(due) ?? "نامشخص",
+          Icons.calendar_today,
+        ),
       ],
     ),
     const SizedBox(height: 16),
@@ -173,7 +182,10 @@ class ExamCard extends StatelessWidget {
             child: Center(
               child: Text(
                 " زمان آزمون: ${item.duration}",
-                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -191,7 +203,10 @@ class ExamCard extends StatelessWidget {
             child: Center(
               child: Text(
                 "نمره کل: ${item.totalScore}",
-                style: TextStyle(color: Colors.blue, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                  color: Colors.blue,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
             ),
           ),
@@ -212,11 +227,42 @@ class ExamCard extends StatelessWidget {
     ),
   ];
 
-  List<Widget> _scoredContent() {
+  List<Widget> _scoredContent(String? submittedTime, String? submittedDate) {
     final percent = (item.score! / item.totalScore!.toInt()) * 100;
     return [
       Row(
         children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.grey.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.withOpacity(0.3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  submittedDate!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                ),
+                Text(
+                  submittedTime!,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
             decoration: BoxDecoration(
@@ -227,7 +273,7 @@ class ExamCard extends StatelessWidget {
             child: Text(
               "${item.score}/${item.totalScore}",
               style: TextStyle(
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: _gradeColor(),
               ),
@@ -244,10 +290,6 @@ class ExamCard extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                   color: _gradeColor(),
                 ),
-              ),
-              Text(
-                _gradeLetter(),
-                style: const TextStyle(fontSize: 14, color: Colors.grey),
               ),
             ],
           ),

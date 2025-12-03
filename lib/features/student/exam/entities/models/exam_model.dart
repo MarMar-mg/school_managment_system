@@ -9,6 +9,7 @@ class ExamItem {
   final String? startTime;
   final String? endTime;
   final String? submittedDate;
+  final String? submittedTime;
   final int? score;
   final String? totalScore;
   final String? duration;
@@ -24,6 +25,7 @@ class ExamItem {
     required this.courseName,
     this.dueDate,
     this.submittedDate,
+    this.submittedTime,
     this.score,
     required this.totalScore,
     required this.duration,

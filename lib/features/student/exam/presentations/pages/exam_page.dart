@@ -32,7 +32,8 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
 
   final Map<String, bool> _expanded = {
     'pending': false,
-    'answered': false,
+    'answered_submitted': false,
+    'answered_not_submitted': false,
     'scored': false,
   };
 
@@ -53,14 +54,13 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
   }
 
   void _startAnimations(int totalCount) {
-    // Create animations for all items + stats row
     _cardAnims = List.generate(
       totalCount,
           (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(
-            0.06 + (i * 0.04).clamp(0.0, 0.9), // Prevent animation overlap
+            0.06 + (i * 0.04).clamp(0.0, 0.9),
             1.0,
             curve: Curves.easeOutCubic,
           ),
@@ -94,11 +94,15 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
           final pending = data['pending'] ?? [];
           final answered = data['answered'] ?? [];
           final scored = data['scored'] ?? [];
-          final all = [...pending, ...answered, ...scored];
+
+          // Separate answered into submitted and not submitted
+          final answeredSubmitted = answered.where((e) => e.submittedDate != null).toList();
+          final answeredNotSubmitted = answered.where((e) => e.submittedDate == null).toList();
+
+          final all = [...pending, ...answeredSubmitted, ...answeredNotSubmitted, ...scored];
 
           if (all.isEmpty) return _buildEmpty();
 
-          // Initialize animations only once with correct count
           if (_cardAnims.isEmpty && all.isNotEmpty) {
             _startAnimations(all.length);
           }
@@ -117,7 +121,7 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                       const SizedBox(height: 16),
                       AnimatedStatsRow(
                         pending: pending.length,
-                        submitted: answered.length,
+                        submitted: answeredSubmitted.length,
                         graded: scored.length,
                       ),
                       const SizedBox(height: 28),
@@ -135,25 +139,40 @@ class _ExamPageState extends State<ExamPage> with TickerProviderStateMixin {
                       ),
                       const SizedBox(height: 24),
 
-                      // Answered Section
+                      // Answered - Submitted Section
                       ExamSection(
                         title: 'ارسال شده',
                         color: Colors.blue,
-                        items: answered,
+                        items: answeredSubmitted,
                         startIndex: pending.length,
-                        sectionKey: 'answered',
-                        isExpanded: _expanded['answered']!,
-                        onToggle: () => _toggle('answered'),
+                        sectionKey: 'answered_submitted',
+                        isExpanded: _expanded['answered_submitted']!,
+                        onToggle: () => _toggle('answered_submitted'),
                         animations: _cardAnims,
                       ),
                       const SizedBox(height: 24),
+
+                      // Answered - Not Submitted Section
+                      if (answeredNotSubmitted.isNotEmpty) ...[
+                        ExamSection(
+                          title: 'ارسال نشده',
+                          color: Colors.red,
+                          items: answeredNotSubmitted,
+                          startIndex: pending.length + answeredSubmitted.length,
+                          sectionKey: 'answered_not_submitted',
+                          isExpanded: _expanded['answered_not_submitted']!,
+                          onToggle: () => _toggle('answered_not_submitted'),
+                          animations: _cardAnims,
+                        ),
+                        const SizedBox(height: 24),
+                      ],
 
                       // Scored Section
                       ExamSection(
                         title: 'نمره‌دار',
                         color: Colors.green,
                         items: scored,
-                        startIndex: pending.length + answered.length,
+                        startIndex: pending.length + answeredSubmitted.length + answeredNotSubmitted.length,
                         sectionKey: 'scored',
                         isExpanded: _expanded['scored']!,
                         onToggle: () => _toggle('scored'),
@@ -248,7 +267,7 @@ class _ShimmerExamPage extends StatelessWidget {
             margin: const EdgeInsets.only(bottom: 28),
           ),
           ...List.generate(
-            3,
+            4,
                 (_) => Container(
               height: 200,
               margin: const EdgeInsets.only(bottom: 24),
