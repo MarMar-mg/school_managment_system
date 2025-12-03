@@ -137,7 +137,7 @@ class ExamCard extends StatelessWidget {
 
   Widget _buildActionButton(BuildContext context) {
     // Pending: Show "ارسال پاسخ"
-    if (item.status == ExamStatus.pending) {
+    if (item.status == ExamStatus.pending && item.answerImage == null) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
@@ -169,7 +169,7 @@ class ExamCard extends StatelessWidget {
     }
 
     // Answered: Show "تغییر پاسخ"
-    if (item.status == ExamStatus.answered) {
+    if (item.status == ExamStatus.pending && item.answerImage!.isNotEmpty) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(

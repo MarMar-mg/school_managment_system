@@ -1,0 +1,41 @@
+{
+  "Files": [
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\6c7ea3b2-89e5-4362-9345-ad316b30c12b_5998917656142531916 (1).jpg",
+      "PackagePath": "staticwebassets\\uploads\\assignments\\6c7ea3b2-89e5-4362-9345-ad316b30c12b_5998917656142531916 (1).jpg"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\a5289599-ceea-4d93-81e7-dd0e57d797f3_5998917656142531916 (1).jpg",
+      "PackagePath": "staticwebassets\\uploads\\assignments\\a5289599-ceea-4d93-81e7-dd0e57d797f3_5998917656142531916 (1).jpg"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\aa298064-99c0-4550-bcbf-7de4ada60cc5_CamScanner 09-28-2024 19.58.pdf",
+      "PackagePath": "staticwebassets\\uploads\\assignments\\aa298064-99c0-4550-bcbf-7de4ada60cc5_CamScanner 09-28-2024 19.58.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg",
+      "PackagePath": "staticwebassets\\uploads\\exams\\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\dbc58bf2-7ec7-44f4-8a67-d2433a0347d7_5998917656142531916 (1).jpg",
+      "PackagePath": "staticwebassets\\uploads\\exams\\dbc58bf2-7ec7-44f4-8a67-d2433a0347d7_5998917656142531916 (1).jpg"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.SchoolPortalAPI.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.build.SchoolPortalAPI.props",
+      "PackagePath": "build\\SchoolPortalAPI.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildMultiTargeting.SchoolPortalAPI.props",
+      "PackagePath": "buildMultiTargeting\\SchoolPortalAPI.props"
+    },
+    {
+      "Id": "obj\\Debug\\net8.0\\staticwebassets\\msbuild.buildTransitive.SchoolPortalAPI.props",
+      "PackagePath": "buildTransitive\\SchoolPortalAPI.props"
+    }
+  ],
+  "ElementsToRemove": []
+}
