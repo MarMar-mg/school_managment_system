@@ -14,6 +14,8 @@ class AssignmentItemm {
   final bool isUrgent;
   final String status; // pending | submitted | graded
   final String? finalScore;
+  final String? filename;
+  final String? submittedDescription;
 
   const AssignmentItemm({
     required this.id,
@@ -26,6 +28,8 @@ class AssignmentItemm {
     required this.status,
     this.finalScore,
     this.endTime,
+    this.filename,
+    this.submittedDescription,
   });
 
   factory AssignmentItemm.fromJson(Map<String, dynamic> json) {
@@ -43,6 +47,8 @@ class AssignmentItemm {
       isUrgent: urgent,
       status: status,
       finalScore: json['finalScore'],
+      filename: json['filename'],
+      submittedDescription: json['submittedDescription'],
     );
   }
 

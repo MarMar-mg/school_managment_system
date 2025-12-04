@@ -20,6 +20,7 @@ class ExamItem {
   final String? filename;
   final VoidCallback? onReminderTap;
   final VoidCallback? onViewAnswer;
+  final String? submittedDescription;
 
   ExamItem({
     required this.title,
@@ -39,5 +40,6 @@ class ExamItem {
     this.onViewAnswer,
     this.startTime,
     this.endTime,
+    this.submittedDescription,
   });
 }

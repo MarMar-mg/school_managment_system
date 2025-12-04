@@ -168,13 +168,14 @@ class ExamCard extends StatelessWidget {
       );
     }
 
-    // Answered: Show "تغییر پاسخ"
-    if (item.status == ExamStatus.pending && item.answerImage!.isNotEmpty) {
+    // Answered/Pending with answer: Show "تغییر پاسخ"
+    if ((item.status == ExamStatus.pending || item.status == ExamStatus.answered)
+        && item.answerImage!.isNotEmpty) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
           onPressed: () {
-            print('DEBUG: Opening dialog with examId=${item.examId}');
+            print('DEBUG: Opening edit dialog with examId=${item.examId}');
             showDialog(
               context: context,
               builder: (BuildContext ctx) => SubmitAnswerDialog(
@@ -183,6 +184,8 @@ class ExamCard extends StatelessWidget {
                 userId: userId,
                 onSubmitted: onRefresh,
                 isEditing: true,
+                previousDescription: item.submittedDescription,
+                previousFileName: item.filename,
               ),
             );
           },

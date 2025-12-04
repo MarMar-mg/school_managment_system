@@ -7,14 +7,18 @@ import 'package:school_management_system/core/services/api_service.dart';
 /// Reusable dialog for submitting/updating answers to exams or assignments.
 /// Supports file upload (PDF, ZIP, images) and description.
 ///
-/// After submission, the button changes to "تغییر پاسخ" (Change Answer)
-/// allowing students to update their submission.
+/// When editing, displays the previously submitted file and description as defaults.
+/// Students can modify or replace them before updating.
 class SubmitAnswerDialog extends StatefulWidget {
   final String type; // 'assignment' or 'exam'
   final int id; // assignmentId or examId
   final int userId;
   final VoidCallback? onSubmitted;
   final bool isEditing; // Whether this is an edit (existing submission)
+
+  // Previous submission data (for editing)
+  final String? previousDescription;
+  final String? previousFileName;
 
   const SubmitAnswerDialog({
     super.key,
@@ -23,6 +27,8 @@ class SubmitAnswerDialog extends StatefulWidget {
     required this.userId,
     this.onSubmitted,
     this.isEditing = false,
+    this.previousDescription,
+    this.previousFileName,
   });
 
   @override
@@ -31,24 +37,32 @@ class SubmitAnswerDialog extends StatefulWidget {
 
 class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
   final _formKey = GlobalKey<FormState>();
-  final _descriptionController = TextEditingController();
-  final _fileNameController = TextEditingController();
+  late TextEditingController _descriptionController;
+  late TextEditingController _fileNameController;
   PlatformFile? _selectedPlatformFile;
   bool _isLoading = false;
   bool _hasExistingSubmission = false;
   String? _errorMessage;
+  bool _fileChanged = false; // Track if user selected a new file
 
   @override
   void initState() {
     super.initState();
     _hasExistingSubmission = widget.isEditing;
+
+    // Initialize with previous data if editing
+    _descriptionController = TextEditingController(
+      text: widget.isEditing ? (widget.previousDescription ?? '') : '',
+    );
+
+    _fileNameController = TextEditingController(
+      text: widget.isEditing ? (widget.previousFileName ?? '') : '',
+    );
+
     _checkExistingSubmission();
   }
 
   Future<void> _checkExistingSubmission() async {
-    // This method checks if student has already submitted
-    // In a real app, you'd fetch this from the API
-    // For now, we'll rely on the isEditing parameter passed from parent
     setState(() {
       _hasExistingSubmission = widget.isEditing;
     });
@@ -75,21 +89,40 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       setState(() {
         _selectedPlatformFile = platformFile;
         _fileNameController.text = originalName;
+        _fileChanged = true; // Mark that file has been changed
         _errorMessage = null;
       });
       print('File selected: Name: $originalName, Size: ${platformFile.size}');
     }
   }
 
+  void _clearNewFile() {
+    setState(() {
+      _selectedPlatformFile = null;
+      _fileChanged = false;
+
+      // Restore previous file name if editing
+      if (widget.isEditing && widget.previousFileName != null) {
+        _fileNameController.text = widget.previousFileName!;
+      } else {
+        _fileNameController.clear();
+      }
+    });
+  }
+
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
 
-    if (_selectedPlatformFile == null) {
-      setState(() => _errorMessage = 'لطفاً فایل پاسخ را انتخاب کنید');
-      return;
+    // If not editing or file was changed, require a new file
+    if (!widget.isEditing || _fileChanged) {
+      if (_selectedPlatformFile == null) {
+        setState(() => _errorMessage = 'لطفاً فایل پاسخ را انتخاب کنید');
+        return;
+      }
     }
 
-    if (_fileNameController.text.trim().isEmpty) {
+    // Validate file name only if file is being submitted
+    if (_selectedPlatformFile != null && _fileNameController.text.trim().isEmpty) {
       setState(() => _errorMessage = 'لطفاً نام فایل را وارد کنید');
       return;
     }
@@ -108,18 +141,18 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
           widget.userId,
           widget.id,
           _descriptionController.text,
-          _selectedPlatformFile!,
+          _selectedPlatformFile, // Can be null for updates without file change
           customFileName: customFileName,
-          isUpdate: _hasExistingSubmission, // Pass whether this is an update
+          isUpdate: _hasExistingSubmission,
         );
       } else if (widget.type == 'exam') {
         await ApiService.submitExam(
           widget.userId,
           widget.id,
           _descriptionController.text,
-          _selectedPlatformFile!,
+          _selectedPlatformFile, // Can be null for updates without file change
           customFileName: customFileName,
-          isUpdate: _hasExistingSubmission, // Pass whether this is an update
+          isUpdate: _hasExistingSubmission,
         );
       } else {
         throw Exception('نوع نامعتبر');
@@ -199,13 +232,72 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
               ),
               const SizedBox(height: 16),
 
+              // Previous File Info (when editing)
+              if (widget.isEditing && widget.previousFileName != null) ...[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.blue.shade200),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.file_present,
+                        color: Colors.blue[700],
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'فایل قبلی',
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              widget.previousFileName!,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Colors.blue[700],
+                                fontWeight: FontWeight.w500,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'درخواست تغییر فایل:',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey[700],
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+
               // File Picker Button
               ElevatedButton.icon(
                 onPressed: _isLoading ? null : _pickFile,
                 icon: const Icon(Icons.attach_file),
-                label: Text(_hasExistingSubmission
+                label: Text(_hasExistingSubmission && !_fileChanged
+                    ? 'تغییر فایل (اختیاری)'
+                    : (widget.isEditing
                     ? 'تغییر فایل (PDF, ZIP, تصویر)'
-                    : 'انتخاب فایل (PDF, ZIP, تصویر)'),
+                    : 'انتخاب فایل (PDF, ZIP, تصویر)')),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColor.purple,
                   foregroundColor: Colors.white,
@@ -218,33 +310,52 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
               ),
               const SizedBox(height: 16),
 
-              // Editable File Name Field (shown only if file selected)
-              if (_selectedPlatformFile != null)
-                TextFormField(
-                  controller: _fileNameController,
-                  decoration: InputDecoration(
-                    labelText: 'نام فایل',
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    filled: true,
-                    fillColor: Colors.grey[100],
-                    suffixIcon: IconButton(
-                      icon: const Icon(Icons.clear, color: Colors.red),
-                      onPressed: () {
-                        setState(() {
-                          _selectedPlatformFile = null;
-                          _fileNameController.clear();
-                        });
-                      },
-                    ),
+              // New File Name Field (shown only if file selected or editing with file)
+              if (_selectedPlatformFile != null || (widget.isEditing && !_fileChanged))
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.green.shade50,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.green.shade200),
                   ),
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'نام فایل الزامی است';
-                    }
-                    return null;
-                  },
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _fileChanged ? 'فایل جدید' : 'فایل فعلی',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: Colors.green[700],
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      TextFormField(
+                        controller: _fileNameController,
+                        decoration: InputDecoration(
+                          labelText: 'نام فایل',
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          filled: true,
+                          fillColor: Colors.white,
+                          suffixIcon: _fileChanged
+                              ? IconButton(
+                            icon: const Icon(Icons.clear, color: Colors.red),
+                            onPressed: _clearNewFile,
+                          )
+                              : null,
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'نام فایل الزامی است';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
                 ),
 
               // Error Message

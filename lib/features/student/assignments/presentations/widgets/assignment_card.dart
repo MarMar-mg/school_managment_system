@@ -253,7 +253,7 @@ class AssignmentCard extends StatelessWidget {
       );
     }
 
-    // Answered: deadline passed AND has answer - show "تغییر پاسخ"
+    // Submitted: deadline passed AND has answer - show "تغییر پاسخ"
     if (item.status == 'submitted') {
       return SizedBox(
         width: double.infinity,
@@ -267,6 +267,8 @@ class AssignmentCard extends StatelessWidget {
                 userId: userId,
                 onSubmitted: onRefresh,
                 isEditing: true,
+                previousDescription: item.submittedDescription,
+                previousFileName: item.filename,
               ),
             );
           },
@@ -285,7 +287,7 @@ class AssignmentCard extends StatelessWidget {
       );
     }
 
-    // Not Answered: deadline passed but NO answer - show "ارسال پاسخ"
+    // Not Submitted: deadline passed but NO answer - show "ارسال پاسخ"
     if (item.status == 'notSubmitted') {
       return SizedBox(
         width: double.infinity,

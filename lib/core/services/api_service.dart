@@ -440,6 +440,7 @@ class ApiService {
           onViewAnswer: () => print('View answer for ${json['title']}'),
           duration: (json['duration'] ?? 0).toString(),
           description: json['description'] ?? '',
+          submittedDescription: json['submittedDescription'],
           examId: examId, // ENSURE THIS IS SET CORRECTLY
         );
 
@@ -1129,7 +1130,7 @@ class ApiService {
     int userId,
     int assignmentId,
     String description,
-    PlatformFile platformFile, {
+    PlatformFile? platformFile, {
     required String customFileName,
     bool isUpdate = false,
   }) async {
@@ -1146,26 +1147,29 @@ class ApiService {
         request.fields['description'] = description;
       }
 
-      http.MultipartFile multipartFile;
-      if (platformFile.bytes != null) {
-        // For web or bytes-based
-        multipartFile = http.MultipartFile.fromBytes(
-          'file',
-          platformFile.bytes!,
-          filename: customFileName,
-        );
-      } else if (platformFile.path != null) {
-        // For mobile/desktop
-        multipartFile = await http.MultipartFile.fromPath(
-          'file',
-          platformFile.path!,
-          filename: customFileName,
-        );
-      } else {
-        throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
-      }
+      // Only add file if provided
+      if (platformFile != null) {
+        http.MultipartFile multipartFile;
+        if (platformFile.bytes != null) {
+          // For web or bytes-based
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            platformFile.bytes!,
+            filename: customFileName,
+          );
+        } else if (platformFile.path != null) {
+          // For mobile/desktop
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            platformFile.path!,
+            filename: customFileName,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
+        }
 
-      request.files.add(multipartFile);
+        request.files.add(multipartFile);
+      }
 
       final response = await request.send().timeout(_timeout);
 
@@ -1188,48 +1192,51 @@ class ApiService {
 
   //================================= SUBMIT EXAM ==========================
   static Future<void> submitExam(
-      int userId,
-      int examId,
-      String description,
-      PlatformFile platformFile,
-      {required String customFileName,
-        bool isUpdate = false}
-      ) async {
+    int userId,
+    int examId,
+    String description,
+    PlatformFile? platformFile, {
+    required String customFileName,
+    bool isUpdate = false,
+  }) async {
     final url = Uri.parse('$baseUrl/student/submit/exam/$userId/$examId');
 
     try {
       var request = http.MultipartRequest('POST', url);
 
-      // Add the isUpdate flag as form field (IMPORTANT: must match backend parameter name)
-      request.fields['isUpdate'] = isUpdate.toString().toLowerCase(); // "true" or "false"
+      // Add the isUpdate flag as form field
+      request.fields['isUpdate'] = isUpdate.toString().toLowerCase();
 
       if (description.isNotEmpty) {
         request.fields['description'] = description;
       }
 
-      http.MultipartFile multipartFile;
-      if (platformFile.bytes != null) {
-        multipartFile = http.MultipartFile.fromBytes(
-          'file',
-          platformFile.bytes!,
-          filename: customFileName,
-        );
-      } else if (platformFile.path != null) {
-        multipartFile = await http.MultipartFile.fromPath(
-          'file',
-          platformFile.path!,
-          filename: customFileName,
-        );
-      } else {
-        throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
-      }
+      // Only add file if provided
+      if (platformFile != null) {
+        http.MultipartFile multipartFile;
+        if (platformFile.bytes != null) {
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            platformFile.bytes!,
+            filename: customFileName,
+          );
+        } else if (platformFile.path != null) {
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            platformFile.path!,
+            filename: customFileName,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
+        }
 
-      request.files.add(multipartFile);
+        request.files.add(multipartFile);
+      }
 
       print('=== SUBMIT EXAM REQUEST ===');
       print('URL: ${request.url}');
       print('isUpdate field: ${request.fields['isUpdate']}');
-      print('File: ${platformFile.name}');
+      print('File: ${platformFile?.name ?? "NO FILE"}');
 
       final response = await request.send().timeout(_timeout);
 
@@ -1242,7 +1249,9 @@ class ApiService {
       } else {
         final errorBody = await response.stream.bytesToString();
         print('Error Body: $errorBody');
-        throw Exception('خطا در ارسال آزمون: ${response.statusCode} - $errorBody');
+        throw Exception(
+          'خطا در ارسال آزمون: ${response.statusCode} - $errorBody',
+        );
       }
     } catch (e) {
       print('Submit Exam Error: $e');

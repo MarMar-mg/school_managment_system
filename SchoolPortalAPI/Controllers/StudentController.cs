@@ -227,7 +227,8 @@ namespace SchoolPortalAPI.Controllers
                    status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : (!isPastDue ? "pending" : "notSubmitted")),
                    finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
                    answerImage = answer?.Answerimage,
-                   filename = answer?.Filename
+                   filename = answer?.Filename,
+                   submittedDescription = answer?.Description
                };
 
                // دسته‌بندی هوشمند
@@ -319,6 +320,11 @@ namespace SchoolPortalAPI.Controllers
                         submittedTime = _context.ExamStuTeaches
                             .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
                             .Select(est => est.Time)
+                            .FirstOrDefault(),
+
+                        submittedDescription = _context.ExamStuTeaches
+                            .Where(est => est.Examid == e.Examid && est.Studentid == studentId)
+                            .Select(est => est.Description)
                             .FirstOrDefault(),
 
                         estid = _context.ExamStuTeaches
