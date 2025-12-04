@@ -41,7 +41,7 @@ class ScoreCard extends StatelessWidget {
               // Percent + Subject
               Expanded(
                 child: Text(
-                  percent == 0? subject: '$subject ($percent%) ',
+                  percent == -1? '$subject --': '$subject ($percent%) ',
                   style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -68,7 +68,7 @@ class ScoreCard extends StatelessWidget {
           const SizedBox(height: 12),
 
           // === Badge Row ===
-          Row(
+          percent != -1? Row(
             children: [
               // Letter Grade Badge
               Container(
@@ -97,7 +97,7 @@ class ScoreCard extends StatelessWidget {
 
               const Spacer(),
             ],
-          ),
+          ): const SizedBox(),
 
           const SizedBox(height: 20),
 
@@ -116,13 +116,15 @@ class ScoreCard extends StatelessWidget {
       children: [
         // Percent
         SizedBox(
-          width: 50,
-          child: Text(
-            s.percent == 0? '': '${s.percent}%',
-            style: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-              color: AppColor.darkText,
+          width: 40,
+          child: Center(
+            child: Text(
+              s.percent == -1? '--': '${s.percent}%',
+              style: const TextStyle(
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: AppColor.darkText,
+              ),
             ),
           ),
         ),
@@ -139,7 +141,7 @@ class ScoreCard extends StatelessWidget {
             ),
             child: FractionallySizedBox(
               alignment: Alignment.centerLeft,
-              widthFactor: s.percent / 100,
+              widthFactor: s.percent == -1? 0: s.percent / 100,
               child: Container(
                 decoration: BoxDecoration(
                   color: Colors.black,

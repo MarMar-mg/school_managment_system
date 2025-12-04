@@ -366,9 +366,9 @@ namespace SchoolPortalAPI.Controllers
                 // === 1. GPA (معدل کل) ===
                 var gpaQuery = await _context.Scores
                     .Where(s => s.Studentid == studentIdd && s.Classid == student.Classeid)
-                    .AverageAsync(s => (double?)s.ScoreValue);
+                    .AverageAsync(s => (double?)s.ScoreValue) ?? -1.0;
 
-                var gpa = gpaQuery ?? 0.0;
+                var gpa = gpaQuery;
 
                 var courses = await _context.Courses
                                 .Where(c => c.Classid == student.Classeid)
@@ -411,17 +411,17 @@ namespace SchoolPortalAPI.Controllers
                 {
                     var avgScore = await _context.Scores
                         .Where(s => s.Studentid == studentIdd && s.Courseid == course.Courseid)
-                        .AverageAsync(s => (double?)s.ScoreValue) ?? 0.0;
+                        .AverageAsync(s => (double?)s.ScoreValue) ?? -1.0;
 
                     var percent = (int)Math.Round(avgScore);
 
                     var avgExercises = await _context.ExerciseStuTeaches
-                        .Where(est => est.Studentid == studentIdd && est.Score != null && est.Courseid == course.Courseid)
-                        .AverageAsync(est => (double?)est.Score) ?? 0.0;
+                        .Where(est => est.Studentid == studentIdd && est.Courseid == course.Courseid)
+                        .AverageAsync(est => (double?)est.Score) ?? -1.0;
 
                     var avgExams = await _context.ExamStuTeaches
-                        .Where(est => est.Studentid == studentIdd && est.Score != null && est.Exam.Courseid == course.Courseid)
-                        .AverageAsync(est => (double?)est.Score) ?? 0.0;
+                        .Where(est => est.Studentid == studentIdd && est.Exam.Courseid == course.Courseid)
+                        .AverageAsync(est => (double?)est.Score) ?? -1.0;
 
                     grades.Add(new
                     {
@@ -450,7 +450,7 @@ namespace SchoolPortalAPI.Controllers
                 var response = new
                 {
                     studentName = student.Name,
-                    gpa = Math.Round(gpa, 1),
+                    gpa = gpa == -1.0 ? -1 : Math.Round(gpa, 1),
                     bells,
                     courses = uniqueCourses,
                     units,
