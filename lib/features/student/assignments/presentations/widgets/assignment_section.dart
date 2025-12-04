@@ -12,6 +12,7 @@ class AssignmentSection extends StatelessWidget {
   final int startIndex;
   final String sectionKey;
   final bool isExpanded;
+  final bool isDone;
   final VoidCallback onToggle;
   final VoidCallback onRefresh;
   final List<Animation<double>> animations;
@@ -28,6 +29,7 @@ class AssignmentSection extends StatelessWidget {
     required this.animations,
     required this.userId,
     required this.onRefresh,
+    required this.isDone,
   });
 
   @override
@@ -95,6 +97,7 @@ class AssignmentSection extends StatelessWidget {
                   item: item,
                   userId: userId,
                   onRefresh: onRefresh,
+                  isDone: isDone,
                 ),
               ),
             );

@@ -79,7 +79,7 @@ class _AssignmentsPageState extends State<AssignmentsPage>
 
       // Pending: no deadline (status = 'pending')
       for (var item in pending) {
-        if (item.status == 'pending') {
+        if (item.status == 'pending' || item.status == 'submitted') {
           _pending.add(item);
         }
       }
@@ -122,13 +122,14 @@ class _AssignmentsPageState extends State<AssignmentsPage>
   }
 
   void _initializeAnimations() {
-    final totalCount = _pending.length +
+    final totalCount =
+        _pending.length +
         _answered.length +
         _notAnswered.length +
         _scored.length;
     _cardAnims = List.generate(
       totalCount + 2, // +2 for header and stats
-          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+      (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(
@@ -200,6 +201,7 @@ class _AssignmentsPageState extends State<AssignmentsPage>
                     animations: _cardAnims,
                     userId: widget.userId,
                     onRefresh: _refresh,
+                    isDone: false,
                   ),
                   const SizedBox(height: 24),
 
@@ -215,6 +217,7 @@ class _AssignmentsPageState extends State<AssignmentsPage>
                     animations: _cardAnims,
                     userId: widget.userId,
                     onRefresh: _refresh,
+                    isDone: true,
                   ),
                   const SizedBox(height: 24),
 
@@ -230,6 +233,7 @@ class _AssignmentsPageState extends State<AssignmentsPage>
                     animations: _cardAnims,
                     userId: widget.userId,
                     onRefresh: _refresh,
+                    isDone: true,
                   ),
                   const SizedBox(height: 24),
 
@@ -238,13 +242,17 @@ class _AssignmentsPageState extends State<AssignmentsPage>
                     title: 'نمره‌دار',
                     color: Colors.green,
                     items: _scored,
-                    startIndex: _pending.length + _answered.length + _notAnswered.length,
+                    startIndex:
+                        _pending.length +
+                        _answered.length +
+                        _notAnswered.length,
                     sectionKey: 'scored',
                     isExpanded: _expanded['scored']!,
                     onToggle: () => _toggle('scored'),
                     animations: _cardAnims,
                     userId: widget.userId,
                     onRefresh: _refresh,
+                    isDone: true,
                   ),
 
                   const SizedBox(height: 100),
@@ -329,11 +337,7 @@ class AnimatedStatsRow extends StatelessWidget {
           ),
         );
       },
-      child: StatsRow(
-        pending: pending,
-        submitted: submitted,
-        graded: graded,
-      ),
+      child: StatsRow(pending: pending, submitted: submitted, graded: graded),
     );
   }
 }

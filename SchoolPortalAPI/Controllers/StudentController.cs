@@ -237,7 +237,7 @@ namespace SchoolPortalAPI.Controllers
                {
                    graded.Add(item);
                }
-               else if (hasSubmitted)
+               else if (isPastDue)
                {
                    submittedNoGrade.Add(item);
                }
@@ -621,7 +621,7 @@ namespace SchoolPortalAPI.Controllers
             {
                 new { label = "آخرین نمره",       value = lastScoreMonth.ToString() ?? "ندارد", subtitle = "ماه",       icon = "event",     color = "purple" },
                 new { label = "تعداد دروس",       value = totalCourses.ToString(),   subtitle = "ثبت‌نام شده", icon = "school",    color = "green"  },
-                new { label = "میانگین نمرات",    value = average.ToString("F1"),    subtitle = "از ۲۰",      icon = "grade",     color = "blue"   },
+                new { label = "میانگین نمرات",    value = average.ToString("F1"),    subtitle = "",      icon = "grade",     color = "blue"   },
                 new { label = "آزمون‌های آینده",   value = upcomingExamsCount.ToString(), subtitle = "در پیش رو", icon = "upcoming",  color = "orange" }
             };
 

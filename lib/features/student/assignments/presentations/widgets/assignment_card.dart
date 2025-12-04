@@ -9,12 +9,14 @@ class AssignmentCard extends StatelessWidget {
   final AssignmentItemm item;
   final int userId;
   final VoidCallback? onRefresh;
+  final bool isDone;
 
   const AssignmentCard({
     super.key,
     required this.item,
     required this.userId,
     this.onRefresh,
+    required this.isDone,
   });
 
   @override
@@ -189,7 +191,7 @@ class AssignmentCard extends StatelessWidget {
             const SizedBox(height: 8),
 
             // === view Button For submitted
-            (item.status == 'submitted')
+            (item.status == 'submitted' && !isDone)
                 ? _buildShowButton(context)
                 : SizedBox(),
           ],
@@ -313,38 +315,40 @@ class AssignmentCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext ctx) => SubmitAnswerDialog(
-                      type: 'assignment',
-                      id: item.id,
-                      userId: userId,
-                      onSubmitted: onRefresh,
-                      isEditing: true,
-                      previousDescription: item.submittedDescription,
-                      previousFileName: item.filename,
+          !isDone
+              ? Expanded(
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext ctx) => SubmitAnswerDialog(
+                            type: 'assignment',
+                            id: item.id,
+                            userId: userId,
+                            onSubmitted: onRefresh,
+                            isEditing: true,
+                            previousDescription: item.submittedDescription,
+                            previousFileName: item.filename,
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      label: const Text('تغییر پاسخ'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
                     ),
-                  );
-                },
-                icon: const Icon(Icons.edit_outlined, size: 18),
-                label: const Text('تغییر پاسخ'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                ),
-              ),
-            ),
-          ),
+                )
+              : Expanded(child: _buildShowButton(context)),
         ],
       );
     }
