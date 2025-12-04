@@ -15,6 +15,9 @@ namespace SchoolPortalAPI.Models
         public string? Starttime { get; set; }
         public string? Endtime { get; set; }
 
+        public string? Filename { get; set; }
+        public string? File { get; set; }
+
         public int? Capacity { get; set; }
         public int? Duration { get; set; }      // (in minutes)
         public int? PossibleScore { get; set; } // (max score)

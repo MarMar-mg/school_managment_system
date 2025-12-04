@@ -16,6 +16,9 @@ namespace SchoolPortalAPI.Models
         public string Starttime { get; set; } = null!;
         public string Endtime { get; set; } = null!;
 
+        public string? Filename { get; set; }
+        public string? File { get; set; }
+
         public long? Courseid { get; set; }
         public long? Classid { get; set; }
         public long? Score { get; set; }
