@@ -92,11 +92,12 @@ class _AssignmentsPageState extends State<AssignmentsPage>
       }
 
       // Not Answered: deadline passed but NO answer (status = 'notSubmitted')
-      for (var item in pending) {
+      for (var item in submitted) {
         if (item.status == 'notSubmitted') {
           _notAnswered.add(item);
         }
       }
+      print(_notAnswered);
 
       // Scored: deadline passed AND answered AND graded (status = 'graded')
       for (var item in graded) {

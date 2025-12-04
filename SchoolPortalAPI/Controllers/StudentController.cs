@@ -228,7 +228,8 @@ namespace SchoolPortalAPI.Controllers
                    finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
                    answerImage = answer?.Answerimage,
                    filename = answer?.Filename,
-                   submittedDescription = answer?.Description
+                   submittedDescription = answer?.Description,
+                   estId = answer?.Exstid
                };
 
                // دسته‌بندی هوشمند

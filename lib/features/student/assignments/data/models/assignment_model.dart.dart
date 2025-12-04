@@ -5,6 +5,7 @@ import '../../../../../commons/utils/manager/date_manager.dart';
 
 class AssignmentItemm {
   final int id;
+  final int? estId;
   final String title;
   final String subject;
   final String? description;
@@ -19,6 +20,7 @@ class AssignmentItemm {
 
   const AssignmentItemm({
     required this.id,
+    this.estId,
     required this.title,
     required this.subject,
     this.description,
@@ -49,6 +51,7 @@ class AssignmentItemm {
       finalScore: json['finalScore'],
       filename: json['filename'],
       submittedDescription: json['submittedDescription'],
+      estId: json['estId'],
     );
   }
 

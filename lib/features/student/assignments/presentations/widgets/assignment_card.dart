@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../../../../core/services/api_service.dart';
 import '../../../shared/presentations/widgets/submit_answer_dialog.dart';
 import '../../data/models/assignment_model.dart.dart';
 
@@ -18,7 +19,9 @@ class AssignmentCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final due = item.dueDate != null ? DateFormatManager.formatDate(item.dueDate!) : null;
+    final due = item.dueDate != null
+        ? DateFormatManager.formatDate(item.dueDate!)
+        : null;
     final time = item.endTime ?? 'نامشخص';
 
     return Container(
@@ -182,6 +185,13 @@ class AssignmentCard extends StatelessWidget {
 
             // === Action Button ===
             _buildActionButton(context),
+
+            const SizedBox(height: 8),
+
+            // === view Button For submitted
+            (item.status == 'submitted')
+                ? _buildShowButton(context)
+                : SizedBox(),
           ],
         ),
       ),
@@ -220,139 +230,154 @@ class AssignmentCard extends StatelessWidget {
     );
   }
 
+  Widget _buildShowButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          debugPrint('View answer for ${item.title}');
+        },
+        icon: const Icon(Icons.list_alt, size: 18),
+        label: const Text("مشاهده"),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColor.purple,
+          side: BorderSide(color: AppColor.purple.withOpacity(0.3)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _buildActionButton(BuildContext context) {
     // Pending: no deadline - show "ارسال پاسخ"
     if (item.status == 'pending') {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext ctx) => SubmitAnswerDialog(
-                type: 'assignment',
-                id: item.id,
-                userId: userId,
-                onSubmitted: onRefresh,
-                isEditing: false,
+      return Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) => SubmitAnswerDialog(
+                      type: 'assignment',
+                      id: item.id,
+                      userId: userId,
+                      onSubmitted: onRefresh,
+                      isEditing: false,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.upload_file_rounded, size: 18),
+                label: const Text('ارسال پاسخ'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.orange,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
               ),
-            );
-          },
-          icon: const Icon(Icons.upload_file_rounded, size: 18),
-          label: const Text('ارسال پاسخ'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.orange,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(child: _buildShowButton(context)),
+        ],
       );
     }
 
     // Submitted: deadline passed AND has answer - show "تغییر پاسخ"
     if (item.status == 'submitted') {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext ctx) => SubmitAnswerDialog(
-                type: 'assignment',
-                id: item.id,
-                userId: userId,
-                onSubmitted: onRefresh,
-                isEditing: true,
-                previousDescription: item.submittedDescription,
-                previousFileName: item.filename,
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await _downloadFile(context, 'assignment');
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text("دانلود"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-            );
-          },
-          icon: const Icon(Icons.edit_outlined, size: 18),
-          label: const Text('تغییر پاسخ'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
             ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) => SubmitAnswerDialog(
+                      type: 'assignment',
+                      id: item.id,
+                      userId: userId,
+                      onSubmitted: onRefresh,
+                      isEditing: true,
+                      previousDescription: item.submittedDescription,
+                      previousFileName: item.filename,
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text('تغییر پاسخ'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
     // Not Submitted: deadline passed but NO answer - show "ارسال پاسخ"
     if (item.status == 'notSubmitted') {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            showDialog(
-              context: context,
-              builder: (BuildContext ctx) => SubmitAnswerDialog(
-                type: 'assignment',
-                id: item.id,
-                userId: userId,
-                onSubmitted: onRefresh,
-                isEditing: false,
-              ),
-            );
-          },
-          icon: const Icon(Icons.upload_file_rounded, size: 18),
-          label: const Text('ارسال پاسخ'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.red,
-            foregroundColor: Colors.white,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-        ),
-      );
+      return _buildShowButton(context);
     }
 
     // Graded: deadline passed AND answered AND graded - show final score
     if (item.status == 'graded' && item.finalScore != null) {
-      return Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 16),
-        decoration: BoxDecoration(
-          color: Colors.green.withOpacity(0.14),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.green.withOpacity(0.3)),
-        ),
-        child: Center(
-          child: Column(
-            children: [
-              Text(
-                'نمره نهایی',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w600,
+      return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await _downloadFile(context, 'assignment');
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text("دانلود"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                item.finalScore!,
-                style: TextStyle(
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green[700],
-                  letterSpacing: -1,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+          const SizedBox(width: 8),
+          Expanded(child: _buildShowButton(context)),
+        ],
       );
     }
 
@@ -375,5 +400,57 @@ class AssignmentCard extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  // Download file helper method
+  Future<void> _downloadFile(BuildContext context, String type) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('در حال دانلود...'),
+            ],
+          ),
+        ),
+      );
+
+      final filePath = await ApiService.downloadAndSaveFile(
+        type: type,
+        submissionId: item.estId,
+        fileName: item.filename ?? 'answer_${item.id}',
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل با موفقیت دانلود شد: $filePath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 }
