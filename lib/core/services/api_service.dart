@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:school_management_system/applications/colors.dart';
@@ -12,7 +13,7 @@ import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
-import 'dart:typed_data';
+import 'dart:html' as html;
 
 class ApiService {
   // Update this based on your testing environment
@@ -1312,7 +1313,13 @@ class ApiService {
     String fileName,
   ) async {
     try {
-      // Get downloads directory
+      // Check if running on web
+      if (kIsWeb) {
+        // For web, use html package to trigger browser download
+        return _downloadFileWeb(fileBytes, fileName);
+      }
+
+      // For mobile/desktop platforms
       final directory = await getDownloadsDirectory();
 
       if (directory == null) {
@@ -1334,6 +1341,25 @@ class ApiService {
     }
   }
 
+  /// Download file for web platform
+  static String _downloadFileWeb(Uint8List fileBytes, String fileName) {
+    try {
+      // Using dart:html for web
+      final blob = html.Blob([fileBytes]);
+      final url = html.Url.createObjectUrlFromBlob(blob);
+      final anchor = html.AnchorElement(href: url)
+        ..setAttribute('download', fileName)
+        ..click();
+      html.Url.revokeObjectUrl(url);
+
+      print('Web download triggered: $fileName');
+      return 'Downloaded: $fileName';
+    } catch (e) {
+      print('Web Download Error: $e');
+      throw Exception('خطا در دانلود فایل: $e');
+    }
+  }
+
   //================================= DOWNLOAD AND SAVE FILE ======================
   static Future<String> downloadAndSaveFile({
     required String type, // 'assignment' or 'exam'
@@ -1346,7 +1372,7 @@ class ApiService {
           ? await downloadAssignmentFile(submissionId!)
           : await downloadExamFile(submissionId!);
 
-      // Save to device
+      // Save to device (handles both web and mobile)
       final filePath = await saveFileToDevice(fileBytes, fileName);
 
       return filePath;
