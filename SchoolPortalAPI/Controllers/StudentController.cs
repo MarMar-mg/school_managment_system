@@ -707,7 +707,7 @@ namespace SchoolPortalAPI.Controllers
                 Studentid = studentId,
                 Description = description,
                 Date = DateTime.Now.ToShamsi(),
-                Filename = fileName, // ✓ SAVE FILENAME TO DB
+                Filename = file.FileName, // ✓ SAVE FILENAME TO DB
                 Answerimage = fileName, // ✓ SAVE FILENAME TO DB
                 Score = null // Pending grading
             };
@@ -793,7 +793,7 @@ namespace SchoolPortalAPI.Controllers
             // Update existing submission
             existing.Description = description ?? existing.Description;
             existing.Date = DateTime.Now.ToShamsi();
-            existing.Filename = fileName; // ✓ SAVE NEW FILENAME TO DB
+            existing.Filename = file.FileName; // ✓ SAVE NEW FILENAME TO DB
             existing.Answerimage = fileName; // ✓ SAVE NEW FILENAME TO DB
 
             _context.ExerciseStuTeaches.Update(existing);
@@ -924,7 +924,7 @@ namespace SchoolPortalAPI.Controllers
                         Description = description,
                         Date = DateTime.Now.ToShamsi(),
                         Time = DateTime.Now.ToString("HH:mm:ss"),
-                        Filename = fileName, // ✓ SAVE FILENAME TO DB
+                        Filename = file.FileName, // ✓ SAVE FILENAME TO DB
                         Answerimage = fileName, // ✓ SAVE FILENAME TO DB
                         Score = null
                     };
@@ -1024,7 +1024,7 @@ namespace SchoolPortalAPI.Controllers
             existing.Description = description ?? existing.Description;
             existing.Date = DateTime.Now.ToShamsi();
             existing.Time = DateTime.Now.ToString("HH:mm:ss");
-            existing.Filename = fileName; // ✓ SAVE FILENAME TO DB
+            existing.Filename = file.FileName; // ✓ SAVE FILENAME TO DB
             existing.Answerimage = fileName; // ✓ SAVE FILENAME TO DB
 
             _context.ExamStuTeaches.Update(existing);

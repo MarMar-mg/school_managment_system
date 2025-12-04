@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
 using SchoolPortalAPI.Models;
+using System.IO;
 
 namespace SchoolPortalAPI.Controllers
 {
@@ -258,7 +259,7 @@ namespace SchoolPortalAPI.Controllers
         // 8. Add new exercise
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exercises")]
-        public async Task<IActionResult> AddExercise([FromBody] AddExerciseDto model)
+        public async Task<IActionResult> AddExercise([FromForm] AddExerciseDto model, IFormFile? file)
         {
             if (!ModelState.IsValid)
             {
@@ -266,9 +267,9 @@ namespace SchoolPortalAPI.Controllers
             }
 
             var teacherIdd = await _context.Teachers
-                            .Where(t => t.Userid == model.Teacherid)
-                            .Select(t => t.Teacherid)
-                            .FirstOrDefaultAsync();
+                .Where(t => t.Userid == model.Teacherid)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
 
             var course = await _context.Courses
                 .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
@@ -276,6 +277,24 @@ namespace SchoolPortalAPI.Controllers
             if (course == null)
             {
                 return BadRequest("درس یافت نشد یا متعلق به شما نیست");
+            }
+
+            // Handle file upload
+            string? fileName = null;
+            if (file != null && file.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exercises");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[ADD EXERCISE] File saved: {fileName}");
             }
 
             var exercise = new Exercise
@@ -288,13 +307,15 @@ namespace SchoolPortalAPI.Controllers
                 Starttime = model.Starttime,
                 Score = model.Score,
                 Courseid = model.Courseid,
-                Classid = course.Classid
+                Classid = course.Classid,
+                Filename = file.FileName,  // ✓ SAVE FILENAME
+                File = fileName       // ✓ SAVE FILE PATH
             };
 
             _context.Exercises.Add(exercise);
             await _context.SaveChangesAsync();
 
-            return Ok(new { id = exercise.Exerciseid, message = "تمرین با موفقیت اضافه شد" });
+            return Ok(new { id = exercise.Exerciseid, message = "تمرین با موفقیت اضافه شد", filename = fileName });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -347,7 +368,8 @@ namespace SchoolPortalAPI.Controllers
                     score = e.Score?.ToString() ?? "0",
                     submissions = $"{submissions}/{totalStudents}",
                     percentage = $"{percentage}%",
-                    // color not in backend
+                    File = e.File,
+                    Filename = e.Filename
                 });
             }
 
@@ -358,13 +380,12 @@ namespace SchoolPortalAPI.Controllers
         // 10. Update exercise
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exercises/{exerciseId}")]
-        public async Task<IActionResult> UpdateExercise(long exerciseId, [FromBody] UpdateExerciseDto model)
+        public async Task<IActionResult> UpdateExercise(long exerciseId, [FromForm] UpdateExerciseDto model, IFormFile? file)
         {
-
             var teacherIdd = await _context.Teachers
-                   .Where(t => t.Userid == model.Teacherid)
-                   .Select(t => t.Teacherid)
-                   .FirstOrDefaultAsync();
+                .Where(t => t.Userid == model.Teacherid)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
 
             if (!ModelState.IsValid)
             {
@@ -380,15 +401,52 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest("مجوز ویرایش ندارید");
             }
 
+            // Handle file upload
+            string? fileName = exercise.Filename; // Keep old filename by default
+
+            if (file != null && file.Length > 0)
+            {
+                // Delete old file if exists
+                if (!string.IsNullOrEmpty(exercise.Filename))
+                {
+                    var oldFilePath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot", "uploads", "exercises",
+                        exercise.Filename);
+
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                        Console.WriteLine($"[UPDATE EXERCISE] Deleted old file: {exercise.Filename}");
+                    }
+                }
+
+                // Save new file
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exercises");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[UPDATE EXERCISE] File saved: {fileName}");
+            }
+
             exercise.Title = model.Title ?? exercise.Title;
             exercise.Description = model.Description ?? exercise.Description;
             exercise.Enddate = model.Enddate ?? exercise.Enddate;
             exercise.Endtime = model.Endtime ?? exercise.Endtime;
             exercise.Score = model.Score ?? exercise.Score;
+            exercise.Filename = file.FileName;  // ✓ UPDATE FILENAME
+            exercise.File = fileName;       // ✓ UPDATE FILE PATH
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "تمرین به‌روزرسانی شد" });
+            return Ok(new { message = "تمرین به‌روزرسانی شد", filename = fileName });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -454,108 +512,110 @@ namespace SchoolPortalAPI.Controllers
             return Ok(submissions);
         }
 
-        // ───────────────// ──────────────────────────────────────────────────────────────
-                          // 13. Get Exams
-                          // ──────────────────────────────────────────────────────────────
-                          [HttpGet("exams/{teacherId}")]
-                          public async Task<IActionResult> GetTeacherExams(long teacherId)
+        // ──────────────────────────────────────────────────────────────
+          // 13. Get Exams
+          // ──────────────────────────────────────────────────────────────
+          [HttpGet("exams/{teacherId}")]
+          public async Task<IActionResult> GetTeacherExams(long teacherId)
+          {
+              var teacherIdd = await _context.Teachers
+                   .Where(t => t.Userid == teacherId)
+                   .Select(t => t.Teacherid)
+                   .FirstOrDefaultAsync();
+
+              var examData = await _context.Exams
+                  .Include(e => e.Course)
+                  .Include(e => e.Class)
+                  .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
+                  .ToListAsync();
+
+              var nowUtc = DateTime.UtcNow;
+              var result = new List<object>();
+
+              var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
+
+              foreach (var e in examData)
+              {
+                  // Get class capacity
+                  int capacity = e.Class?.Capacity ?? 0;
+
+                  // Get submission counts
+                  int submitted = await _context.ExamStuTeaches.CountAsync(est => est.Examid == e.Examid);
+                  int passCount = await _context.ExamStuTeaches.CountAsync(est =>
+                      est.Examid == e.Examid &&
+                      est.Score >= (e.PossibleScore ?? 100) * 0.5);
+                  int gradedCount = await _context.ExamStuTeaches.CountAsync(est =>
+                      est.Examid == e.Examid &&
+                      est.Score != null);
+
+                  // Check if exam is future or completed based on END date and time
+                  bool isFuture = true;
+
+                  if (!string.IsNullOrEmpty(e.Enddate) && !string.IsNullOrEmpty(e.Endtime))
+                  {
+                      // Parse end date (Jalali format: YYYY-MM-DD)
+                      string[] dateParts = e.Enddate.Split('-');
+                      if (dateParts.Length == 3 &&
+                          int.TryParse(dateParts[0], out int jyear) &&
+                          int.TryParse(dateParts[1], out int jmonth) &&
+                          int.TryParse(dateParts[2], out int jday))
+                      {
+                          // Parse end time (HH:MM format)
+                          string[] timeParts = e.Endtime.Split(':');
+                          int endHour = 0, endMinute = 0;
+                          if (timeParts.Length >= 2)
                           {
-                              var teacherIdd = await _context.Teachers
-                                   .Where(t => t.Userid == teacherId)
-                                   .Select(t => t.Teacherid)
-                                   .FirstOrDefaultAsync();
-
-                              var examData = await _context.Exams
-                                  .Include(e => e.Course)
-                                  .Include(e => e.Class)
-                                  .Where(e => e.Course != null && e.Course.Teacherid == teacherIdd)
-                                  .ToListAsync();
-
-                              var nowUtc = DateTime.UtcNow;
-                              var result = new List<object>();
-
-                              var iranTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Iran Standard Time");
-
-                              foreach (var e in examData)
-                              {
-                                  // Get class capacity
-                                  int capacity = e.Class?.Capacity ?? 0;
-
-                                  // Get submission counts
-                                  int submitted = await _context.ExamStuTeaches.CountAsync(est => est.Examid == e.Examid);
-                                  int passCount = await _context.ExamStuTeaches.CountAsync(est =>
-                                      est.Examid == e.Examid &&
-                                      est.Score >= (e.PossibleScore ?? 100) * 0.5);
-                                  int gradedCount = await _context.ExamStuTeaches.CountAsync(est =>
-                                      est.Examid == e.Examid &&
-                                      est.Score != null);
-
-                                  // Check if exam is future or completed based on END date and time
-                                  bool isFuture = true;
-
-                                  if (!string.IsNullOrEmpty(e.Enddate) && !string.IsNullOrEmpty(e.Endtime))
-                                  {
-                                      // Parse end date (Jalali format: YYYY-MM-DD)
-                                      string[] dateParts = e.Enddate.Split('-');
-                                      if (dateParts.Length == 3 &&
-                                          int.TryParse(dateParts[0], out int jyear) &&
-                                          int.TryParse(dateParts[1], out int jmonth) &&
-                                          int.TryParse(dateParts[2], out int jday))
-                                      {
-                                          // Parse end time (HH:MM format)
-                                          string[] timeParts = e.Endtime.Split(':');
-                                          int endHour = 0, endMinute = 0;
-                                          if (timeParts.Length >= 2)
-                                          {
-                                              int.TryParse(timeParts[0], out endHour);
-                                              int.TryParse(timeParts[1], out endMinute);
-                                          }
-
-                                          // Convert Jalali date to Gregorian
-                                          DateTime examEndDateTime = JalaliToGregorian(jyear, jmonth, jday);
-
-                                          // Explicitly set to the beginning of the day
-                                          examEndDateTime = examEndDateTime.Date;
-
-                                          // Add the end time to the date
-                                          examEndDateTime = examEndDateTime.AddHours(endHour).AddMinutes(endMinute);
-
-                                          // Convert to UTC assuming the exam time is in Iran Standard Time
-                                          DateTime examEndDateTimeUtc = TimeZoneInfo.ConvertTimeToUtc(examEndDateTime, iranTimeZone);
-
-                                          // Compare current UTC time with exam end time in UTC
-                                          // If now is AFTER exam end time, exam is completed
-                                          isFuture = nowUtc < examEndDateTimeUtc;
-                                      }
-                                  }
-
-                                  double? passPercentage = null;
-                                  if (submitted > 0)
-                                      passPercentage = Math.Round(passCount * 100.0 / submitted, 1);
-
-                                  result.Add(new
-                                  {
-                                      id = e.Examid,
-                                      title = e.Title,
-                                      description = e.Description,
-                                      status = !isFuture ? "completed" : "upcoming",
-                                      subject = e.Course != null ? e.Course.Name : "نامشخص",
-                                      date = e.Startdate,
-                                      classId = e.Classid,
-                                      capacity = capacity,
-                                      submitted = submitted,
-                                      graded = gradedCount,
-                                      possibleScore = e.PossibleScore,
-                                      location = e.Class?.Name ?? "نامشخص",
-                                      passPercentage = passPercentage,
-                                      filledCapacity = $"{submitted}/{capacity}",
-                                      classTime = e.Starttime,
-                                      duration = e.Duration
-                                  });
-                              }
-
-                              return Ok(result);
+                              int.TryParse(timeParts[0], out endHour);
+                              int.TryParse(timeParts[1], out endMinute);
                           }
+
+                          // Convert Jalali date to Gregorian
+                          DateTime examEndDateTime = JalaliToGregorian(jyear, jmonth, jday);
+
+                          // Explicitly set to the beginning of the day
+                          examEndDateTime = examEndDateTime.Date;
+
+                          // Add the end time to the date
+                          examEndDateTime = examEndDateTime.AddHours(endHour).AddMinutes(endMinute);
+
+                          // Convert to UTC assuming the exam time is in Iran Standard Time
+                          DateTime examEndDateTimeUtc = TimeZoneInfo.ConvertTimeToUtc(examEndDateTime, iranTimeZone);
+
+                          // Compare current UTC time with exam end time in UTC
+                          // If now is AFTER exam end time, exam is completed
+                          isFuture = nowUtc < examEndDateTimeUtc;
+                      }
+                  }
+
+                  double? passPercentage = null;
+                  if (submitted > 0)
+                      passPercentage = Math.Round(passCount * 100.0 / submitted, 1);
+
+                  result.Add(new
+                  {
+                      id = e.Examid,
+                      title = e.Title,
+                      description = e.Description,
+                      status = !isFuture ? "completed" : "upcoming",
+                      subject = e.Course != null ? e.Course.Name : "نامشخص",
+                      date = e.Startdate,
+                      classId = e.Classid,
+                      capacity = capacity,
+                      submitted = submitted,
+                      graded = gradedCount,
+                      possibleScore = e.PossibleScore,
+                      location = e.Class?.Name ?? "نامشخص",
+                      passPercentage = passPercentage,
+                      filledCapacity = $"{submitted}/{capacity}",
+                      classTime = e.Starttime,
+                      duration = e.Duration,
+                      File = e.File,
+                      Filename = e.Filename
+                  });
+              }
+
+              return Ok(result);
+          }
 
         // ──────────────────────────────────────────────────────────────
         // 14. Get Exams Submissions
@@ -586,7 +646,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 14. Update Exams Score
+        // 15. Update Exams Score
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/submissions/{submissionId}/score")]
         public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
@@ -616,7 +676,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 14. Update Exams Score(group)
+        // 16. Update Exams Score(group)
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exams/{examId}/scores/batch")]
         public async Task<IActionResult> BatchUpdateScores(long examId, [FromBody] List<BatchScoreUpdate> scores)
@@ -645,7 +705,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 14. Get Exams Statistic
+        // 17. Get Exams Statistic
         // ──────────────────────────────────────────────────────────────
         [HttpGet("exams/{examId}/stats")]
         public async Task<IActionResult> GetExamStats(long examId)
@@ -701,10 +761,10 @@ namespace SchoolPortalAPI.Controllers
 
 
         // ──────────────────────────────────────────────────────────────
-        // 14. Add New Exams
+        // 18. Add New Exams
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exams")]
-        public async Task<IActionResult> CreateExam([FromBody] AddExamDto model)
+        public async Task<IActionResult> CreateExam([FromForm] AddExamDto model, IFormFile? file)
         {
             if (!ModelState.IsValid)
             {
@@ -712,9 +772,9 @@ namespace SchoolPortalAPI.Controllers
             }
 
             var teacherIdd = await _context.Teachers
-                            .Where(t => t.Userid == model.Teacherid)
-                            .Select(t => t.Teacherid)
-                            .FirstOrDefaultAsync();
+                .Where(t => t.Userid == model.Teacherid)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
 
             var course = await _context.Courses
                 .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
@@ -722,6 +782,24 @@ namespace SchoolPortalAPI.Controllers
             if (course == null)
             {
                 return BadRequest("درس یافت نشد یا متعلق به شما نیست");
+            }
+
+            // Handle file upload
+            string? fileName = null;
+            if (file != null && file.Length > 0)
+            {
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[CREATE EXAM] File saved: {fileName}");
             }
 
             var exam = new Exam
@@ -735,26 +813,27 @@ namespace SchoolPortalAPI.Controllers
                 Courseid = model.Courseid,
                 Classid = course.Classid,
                 Description = model.Description,
-                Duration = model.Duration
+                Duration = model.Duration,
+                Filename = file.FileName,  // ✓ SAVE FILENAME
+                File = fileName       // ✓ SAVE FILE PATH
             };
 
             _context.Exams.Add(exam);
             await _context.SaveChangesAsync();
 
-            return Ok(new { id = exam.Examid, message = "امتحان با موفقیت اضافه شد" });
+            return Ok(new { id = exam.Examid, message = "امتحان با موفقیت اضافه شد", filename = fileName });
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 15. Update Exam
+        // 19. Update Exam
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/{examId}")]
-        public async Task<IActionResult> UpdateExam(long examId, [FromBody] UpdateExamDto model)
+        public async Task<IActionResult> UpdateExam(long examId, [FromForm] UpdateExamDto model, IFormFile? file)
         {
-
             var teacherIdd = await _context.Teachers
-                   .Where(t => t.Userid == model.Teacherid)
-                   .Select(t => t.Teacherid)
-                   .FirstOrDefaultAsync();
+                .Where(t => t.Userid == model.Teacherid)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
 
             if (!ModelState.IsValid)
             {
@@ -770,20 +849,57 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest("مجوز ویرایش ندارید");
             }
 
+            // Handle file upload
+            string? fileName = exam.Filename; // Keep old filename by default
+
+            if (file != null && file.Length > 0)
+            {
+                // Delete old file if exists
+                if (!string.IsNullOrEmpty(exam.Filename))
+                {
+                    var oldFilePath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot", "uploads", "exams",
+                        exam.Filename);
+
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                        Console.WriteLine($"[UPDATE EXAM] Deleted old file: {exam.Filename}");
+                    }
+                }
+
+                // Save new file
+                var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
+                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[UPDATE EXAM] File saved: {fileName}");
+            }
+
             exam.Title = model.Title ?? exam.Title;
             exam.Description = model.Description ?? exam.Description;
             exam.Enddate = model.Enddate ?? exam.Enddate;
             exam.Endtime = model.Endtime ?? exam.Endtime;
             exam.PossibleScore = model.PossibleScore ?? exam.PossibleScore;
             exam.Duration = model.Duration ?? exam.Duration;
+            exam.Filename = file.FileName;  // ✓ UPDATE FILENAME
+            exam.File = fileName;       // ✓ UPDATE FILE PATH
 
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "امتحان به‌روزرسانی شد" });
+            return Ok(new { message = "امتحان به‌روزرسانی شد", filename = fileName });
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 16. Delete Exam
+        // 20. Delete Exam
         // ──────────────────────────────────────────────────────────────
         [HttpDelete("exams/{ExamId}")]
         public async Task<IActionResult> DeleteExams(long ExamId, [FromQuery] long teacherId)
@@ -816,7 +932,93 @@ namespace SchoolPortalAPI.Controllers
             if (exam == null) return NotFound();
             return Ok(exam);
         }
+
+        // ──────────────────────────────────────────────────────────────
+        // 21. Download Exercise File
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/exercise/{exerciseId}")]
+        public async Task<IActionResult> DownloadExerciseFile(long exerciseId)
+        {
+            try
+            {
+                var exercise = await _context.Exercises.FindAsync(exerciseId);
+                if (exercise == null || string.IsNullOrEmpty(exercise.Filename))
+                    return NotFound(new { message = "فایل یافت نشد" });
+
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "exercises",
+                    exercise.Filename);
+
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var contentType = GetContentType(filePath);
+
+                return File(fileBytes, contentType, exercise.Filename);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // 20. Download Exam File
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/exam/{examId}")]
+        public async Task<IActionResult> DownloadExamFile(long examId)
+        {
+            try
+            {
+                var exam = await _context.Exams.FindAsync(examId);
+                if (exam == null || string.IsNullOrEmpty(exam.Filename))
+                    return NotFound(new { message = "فایل یافت نشد" });
+
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "exams",
+                    exam.Filename);
+
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+                var contentType = GetContentType(filePath);
+
+                return File(fileBytes, contentType, exam.Filename);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
 //////////////////////////
+        private string GetContentType(string path)
+        {
+            var ext = System.IO.Path.GetExtension(path).ToLowerInvariant();
+            return ext switch
+            {
+                ".pdf" => "application/pdf",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".bmp" => "image/bmp",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".ppt" => "application/vnd.ms-powerpoint",
+                ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                ".txt" => "text/plain",
+                ".zip" => "application/zip",
+                ".rar" => "application/x-rar-compressed",
+                _ => "application/octet-stream"  // Generic fallback for unknown types
+            };
+        }
+        ///////////////////
         private DateTime JalaliToGregorian(int jy, int jm, int jd)
         {
             int dayOfYear = 0;

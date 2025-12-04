@@ -14,6 +14,8 @@ class ExamModelT {
   final String? location;
   final double? passPercentage;
   final String? filledCapacity;
+  final String? filename;
+  final String? file;
 
   ExamModelT({
     required this.id,
@@ -30,6 +32,8 @@ class ExamModelT {
     this.location,
     this.passPercentage,
     this.filledCapacity,
+    this.filename,
+    this.file,
   });
 
   factory ExamModelT.fromJson(Map<String, dynamic> json) {
@@ -48,17 +52,9 @@ class ExamModelT {
       location: json['location'],
       passPercentage: json['passPercentage']?.toDouble(),
       filledCapacity: json['filledCapacity'],
+      filename: json['filename'],
+      file: json['file'],
     );
-  }
-
-  // Add toJson if needed for POST (creating exams)
-  Map<String, dynamic> toJson() {
-    return {
-      'title': title,
-      'description': '', // Add if needed
-      'startdate': date, // Map accordingly
-      // etc., include courseId if selecting course
-    };
   }
 }
 

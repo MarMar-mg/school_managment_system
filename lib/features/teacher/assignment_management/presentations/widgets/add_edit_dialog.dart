@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
-import 'package:persian_datetime_picker/persian_datetime_picker.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import '../../../../../commons/shamsi_date_picker_dialog.dart';
 import '../../../../../core/services/api_service.dart';
 
 void showAddEditDialog(
-  BuildContext context, {
-  dynamic assignment,
-  required int userId,
-  required VoidCallback addData,
-  required bool isAdd,
-  required List<Map<String, dynamic>> courses,
-}) {
+    BuildContext context, {
+      dynamic assignment,
+      required int userId,
+      required VoidCallback addData,
+      required bool isAdd,
+      required List<Map<String, dynamic>> courses,
+    }) {
   showDialog(
     context: context,
     builder: (context) {
-      return _AddEditDialogContent(
+      return _AddEditAssignmentDialogContent(
         assignment: assignment,
         courses: courses,
         userId: userId,
@@ -27,14 +27,14 @@ void showAddEditDialog(
   );
 }
 
-class _AddEditDialogContent extends StatefulWidget {
+class _AddEditAssignmentDialogContent extends StatefulWidget {
   final dynamic assignment;
   final int userId;
   final bool isAdd;
   final VoidCallback addData;
   final List<Map<String, dynamic>> courses;
 
-  const _AddEditDialogContent({
+  const _AddEditAssignmentDialogContent({
     required this.assignment,
     required this.courses,
     required this.userId,
@@ -43,20 +43,27 @@ class _AddEditDialogContent extends StatefulWidget {
   });
 
   @override
-  State<_AddEditDialogContent> createState() => _AddEditDialogContentState();
+  State<_AddEditAssignmentDialogContent> createState() =>
+      _AddEditAssignmentDialogContentState();
 }
 
-class _AddEditDialogContentState extends State<_AddEditDialogContent>
+class _AddEditAssignmentDialogContentState
+    extends State<_AddEditAssignmentDialogContent>
     with TickerProviderStateMixin {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
   late TextEditingController _scoreController;
   late TextEditingController _dateController;
   late TextEditingController _timeController;
+  late TextEditingController _fileNameController;
 
-  String? _selectedClass;
+  String? _selectedCourse;
   Jalali? _selectedDate;
   TimeOfDay? _selectedTime;
+  bool _isLoading = false;
+
+  PlatformFile? _selectedFile;
+  bool _fileChanged = false;
 
   late AnimationController _enterController;
   late Animation<double> _scaleAnimation;
@@ -82,8 +89,11 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
     _timeController = TextEditingController(
       text: widget.assignment?['dueTime'] ?? '',
     );
+    _fileNameController = TextEditingController(
+      text: widget.assignment?['filename'] ?? '',
+    );
 
-    _selectedClass = widget.assignment?['classId'];
+    _selectedCourse = widget.assignment?['classId'];
 
     // Enter animation
     _enterController = AnimationController(
@@ -103,81 +113,7 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
     _enterController.forward();
   }
 
-  Future<void> _addData({
-    required int courseId,
-    required String title,
-    String? description,
-    String? endDate,
-    String? endTime,
-    int? score,
-  }) async {
-    try {
-      // setState(() => _isLoading = true);
-
-      // Call the API to add a new assignment
-      final result = await ApiService.addTeacherAssignment(
-        teacherId: widget.userId,
-        courseId: courseId,
-        title: title,
-        description: description,
-        endDate: endDate,
-        endTime: endTime,
-        startDate:
-            '${Jalali.now().formatter.yyyy}-${Jalali.now().formatter.mm}-${Jalali.now().formatter.dd}',
-        startTime:
-            '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}',
-        score: score,
-      );
-
-      // Optionally, print or log the result
-      print('Assignment added: $result');
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
-  Future<void> _editData({
-    required String title,
-    String? description,
-    String? endDate,
-    String? endTime,
-    int? score,
-  }) async {
-    try {
-      // setState(() => _isLoading = true);
-
-      // Call the API to add a new assignment
-      final result = await ApiService.updateTeacherAssignment(
-        exerciseId: widget.assignment?['id'],
-        teacherId: widget.userId,
-        title: title,
-        description: description,
-        endDate: endDate,
-        endTime: endTime,
-        score: score,
-      );
-
-      // Optionally, print or log the result
-      print('Assignment edited: $result');
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
-  @override
-  void dispose() {
-    _titleController.dispose();
-    _descriptionController.dispose();
-    _scoreController.dispose();
-    _dateController.dispose();
-    _timeController.dispose();
-    _enterController.dispose();
-    super.dispose();
-  }
-
-
   Future<void> _selectDate() async {
-    // Show custom Shamsi date picker dialog
     final picked = await showDialog<Jalali>(
       context: context,
       builder: (context) => ShamsiDatePickerDialog(
@@ -190,7 +126,6 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
     if (picked != null) {
       setState(() {
         _selectedDate = picked;
-        // Format as Shamsi date: 1403/09/20
         _dateController.text =
         '${picked.year}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
       });
@@ -206,9 +141,147 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
       setState(() {
         _selectedTime = picked;
         _timeController.text =
-            '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
+        '${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}';
       });
     }
+  }
+
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'zip', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final platformFile = result.files.single;
+      setState(() {
+        _selectedFile = platformFile;
+        _fileNameController.text = platformFile.name;
+        _fileChanged = true;
+      });
+      print('File selected: ${platformFile.name}, Size: ${platformFile.size}');
+    }
+  }
+
+  void _clearFile() {
+    setState(() {
+      _selectedFile = null;
+      _fileChanged = false;
+      _fileNameController.clear();
+    });
+  }
+
+  Future<void> _submit() async {
+    if (_titleController.text.isEmpty) {
+      _showError('لطفا عنوان تکلیف را وارد کنید');
+      return;
+    }
+    if (_dateController.text.isEmpty) {
+      _showError('لطفا تاریخ تحویل را انتخاب کنید');
+      return;
+    }
+    if (_timeController.text.isEmpty) {
+      _showError('لطفا ساعت تحویل را انتخاب کنید');
+      return;
+    }
+    if (widget.isAdd && _selectedCourse == null) {
+      _showError('لطفا درس را انتخاب کنید');
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      if (widget.isAdd) {
+        await ApiService.addTeacherAssignment(
+          teacherId: widget.userId,
+          courseId: int.tryParse(_selectedCourse ?? '0') ?? 0,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          endDate: _dateController.text,
+          endTime: _timeController.text,
+          startDate:
+          '${Jalali.now().formatter.yyyy}-${Jalali.now().formatter.mm}-${Jalali.now().formatter.dd}',
+          startTime:
+          '${TimeOfDay.now().hour.toString().padLeft(2, '0')}:${TimeOfDay.now().minute.toString().padLeft(2, '0')}',
+          score: int.tryParse(_scoreController.text),
+          file: _selectedFile,
+          fileName: _fileNameController.text.isNotEmpty
+              ? _fileNameController.text
+              : null,
+        );
+
+        if (mounted) {
+          _showSuccess('تکلیف با موفقیت ایجاد شد');
+        }
+      } else {
+        await ApiService.updateTeacherAssignment(
+          exerciseId: widget.assignment?['id'],
+          teacherId: widget.userId,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          endDate: _dateController.text,
+          endTime: _timeController.text,
+          score: int.tryParse(_scoreController.text),
+          file: _selectedFile,
+          fileName: _fileNameController.text.isNotEmpty
+              ? _fileNameController.text
+              : null,
+        );
+
+        if (mounted) {
+          _showSuccess('تکلیف با موفقیت به‌روزرسانی شد');
+        }
+      }
+
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      if (mounted) {
+        widget.addData();
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      if (mounted) {
+        _showError(e.toString().replaceFirst('Exception: ', ''));
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, textDirection: TextDirection.rtl),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  void _showSuccess(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, textDirection: TextDirection.rtl),
+        backgroundColor: Colors.green.shade600,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _scoreController.dispose();
+    _dateController.dispose();
+    _timeController.dispose();
+    _fileNameController.dispose();
+    _enterController.dispose();
+    super.dispose();
   }
 
   @override
@@ -236,9 +309,7 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      widget.assignment == null
-                          ? 'ایجاد تمرین جدید'
-                          : 'ویرایش تمرین',
+                      widget.isAdd ? 'ایجاد تکلیف جدید' : 'ویرایش تکلیف',
                       style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -247,180 +318,75 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                       textDirection: TextDirection.rtl,
                     ),
                     GestureDetector(
-                      onTap: () => Navigator.pop(context),
+                      onTap: _isLoading ? null : () => Navigator.pop(context),
                       child: Container(
                         padding: const EdgeInsets.all(4),
-                        child: const Icon(Icons.close, size: 24),
+                        child: Icon(
+                          Icons.close,
+                          size: 24,
+                          color: _isLoading ? Colors.grey : Colors.black,
+                        ),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // Class dropdown
-                widget.isAdd
-                    ? Text(
-                        'انتخاب کلاس',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey.shade700,
-                        ),
-                        textDirection: TextDirection.rtl,
-                      )
-                    : SizedBox(),
-                const SizedBox(height: 8),
-                widget.isAdd
-                    ? Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: DropdownButton<String>(
-                          value: _selectedClass,
-                          hint: const Text(
-                            'درس را انتخاب کنید',
+                // Course dropdown
+                if (widget.isAdd) ...[
+                  Text(
+                    'انتخاب درس',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey.shade700,
+                    ),
+                    textDirection: TextDirection.rtl,
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(color: Colors.grey.shade300),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: DropdownButton<String>(
+                      value: _selectedCourse,
+                      hint: const Text('درس را انتخاب کنید'),
+                      isExpanded: true,
+                      underline: const SizedBox(),
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      items: widget.courses.map((course) {
+                        return DropdownMenuItem(
+                          value: course['id'].toString(),
+                          child: Text(
+                            course['name'] ?? 'نام نامشخص',
                             textDirection: TextDirection.rtl,
                           ),
-                          isExpanded: true,
-                          underline: const SizedBox(),
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          items: widget.courses.map((course) {
-                            return DropdownMenuItem(
-                              value: course['id'].toString(),
-                              child: Text(
-                                course['name'] ?? 'نام نامشخص',
-                                textDirection: TextDirection.rtl,
-                              ),
-                            );
-                          }).toList(),
-                          onChanged: (value) {
-                            setState(() => _selectedClass = value);
-                          },
-                        ),
-                      )
-                    : SizedBox(),
-                const SizedBox(height: 20),
+                        );
+                      }).toList(),
+                      onChanged: _isLoading
+                          ? null
+                          : (value) {
+                        setState(() => _selectedCourse = value);
+                      },
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
 
                 // Title
-                Text(
-                  'عنوان تمرین',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
+                _buildLabel('عنوان تکلیف'),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: _titleController,
-                  textDirection: TextDirection.rtl,
-                  decoration: InputDecoration(
-                    hintText: 'مثال تمرین ۱ - مثلثات',
-                    hintTextDirection: TextDirection.rtl,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF7C3AED),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
+                _buildTextField(_titleController, 1, 'مثال: تکلیف ۱ - معادلات'),
                 const SizedBox(height: 20),
 
                 // Description
-                Text(
-                  'توضیحات',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
+                _buildLabel('توضیحات'),
                 const SizedBox(height: 8),
-                TextField(
-                  controller: _descriptionController,
-                  textDirection: TextDirection.rtl,
-                  maxLines: 3,
-                  decoration: InputDecoration(
-                    hintText: 'دستورالعمل و توضیحات تمرین را بنویسید...',
-                    hintTextDirection: TextDirection.rtl,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF7C3AED),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-
-                // Score
-                Text(
-                  'امتیاز',
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.grey.shade700,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
-                const SizedBox(height: 8),
-                TextField(
-                  controller: _scoreController,
-                  keyboardType: TextInputType.number,
-                  textDirection: TextDirection.rtl,
-                  decoration: InputDecoration(
-                    hintText: 'نمره(100)',
-                    hintTextDirection: TextDirection.rtl,
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide(color: Colors.grey.shade300),
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: const BorderSide(
-                        color: Color(0xFF7C3AED),
-                        width: 2,
-                      ),
-                    ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 12,
-                    ),
-                  ),
+                _buildTextField(
+                  _descriptionController,
+                  3,
+                  'دستورالعمل و توضیحات تکلیف را بنویسید...',
                 ),
                 const SizedBox(height: 20),
 
@@ -432,45 +398,9 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'تاریخ تحویل',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
-                            ),
-                            textDirection: TextDirection.rtl,
-                          ),
+                          _buildLabel('تاریخ تحویل'),
                           const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: _selectDate,
-                            child: TextField(
-                              controller: _dateController,
-                              enabled: false,
-                              textDirection: TextDirection.rtl,
-                              decoration: InputDecoration(
-                                hintText: 'تاریخ را انتخاب کنید',
-                                hintTextDirection: TextDirection.rtl,
-                                suffixIcon: const Icon(Icons.calendar_today),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
+                          _buildDatePickerField(),
                         ],
                       ),
                     ),
@@ -479,50 +409,95 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'ساعت تحویل',
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                              color: Colors.grey.shade700,
-                            ),
-                            textDirection: TextDirection.rtl,
-                          ),
+                          _buildLabel('ساعت تحویل'),
                           const SizedBox(height: 8),
-                          GestureDetector(
-                            onTap: _selectTime,
-                            child: TextField(
-                              controller: _timeController,
-                              enabled: false,
-                              textDirection: TextDirection.rtl,
-                              decoration: InputDecoration(
-                                hintText: 'ساعت را انتخاب کنید',
-                                hintTextDirection: TextDirection.rtl,
-                                suffixIcon: const Icon(Icons.access_time),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                  borderSide: BorderSide(
-                                    color: Colors.grey.shade300,
-                                  ),
-                                ),
-                                contentPadding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 12,
-                                ),
-                              ),
-                            ),
-                          ),
+                          _buildTimePickerField(),
                         ],
                       ),
                     ),
                   ],
                 ),
+                const SizedBox(height: 20),
+
+                // Score
+                _buildLabel('امتیاز'),
+                const SizedBox(height: 8),
+                _buildTextField(_scoreController, 1, '100', isNumber: true),
+                const SizedBox(height: 20),
+
+                // FILE UPLOAD SECTION
+                _buildLabel('فایل تکلیف (اختیاری)'),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _pickFile,
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(
+                    _selectedFile != null
+                        ? 'فایل دیگری انتخاب کنید'
+                        : 'انتخاب فایل (PDF, ZIP, تصویر, Word)',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF7C3AED),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Show selected file
+                if (_selectedFile != null || _fileNameController.text != '')
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'فایل انتخاب شده',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _fileNameController.text,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed: _clearFile,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 const SizedBox(height: 24),
 
                 // Buttons
@@ -531,7 +506,9 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: () => Navigator.pop(context),
+                        onPressed: _isLoading
+                            ? null
+                            : () => Navigator.pop(context),
                         style: OutlinedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 12),
                           side: BorderSide(color: Colors.grey.shade300),
@@ -562,49 +539,30 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                           ],
                         ),
                         child: ElevatedButton(
-                          onPressed: () async {
-                            setState(() {
-                              widget.isAdd
-                                  ? _addData(
-                                      courseId: _selectedClass!.toInt(),
-                                      // ID of the selected course
-                                      title: _titleController.text,
-                                      // Assignment title
-                                      description: _descriptionController.text,
-                                      // Optional
-                                      endDate: _dateController.text,
-                                      // Optional
-                                      endTime: _timeController.text,
-                                      // Optional
-                                      score: _scoreController.text
-                                          .toInt(), // Optional
-                                    )
-                                  : _editData(
-                                      title: _titleController.text,
-                                      // Assignment title
-                                      description: _descriptionController.text,
-                                      // Optional
-                                      endDate: _dateController.text,
-                                      // Optional
-                                      endTime: _timeController.text,
-                                      // Optional
-                                      score: _scoreController.text
-                                          .toInt(), // Optional
-                                    );
-                            });
-                            widget.addData();
-                            Navigator.pop(context);
-                          },
+                          onPressed: _isLoading ? null : _submit,
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF7C3AED),
+                            backgroundColor: _isLoading
+                                ? Colors.grey.shade400
+                                : const Color(0xFF7C3AED),
                             padding: const EdgeInsets.symmetric(vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: const Text(
-                            'ایجاد تمرین',
-                            style: TextStyle(
+                          child: _isLoading
+                              ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                              : Text(
+                            widget.isAdd ? 'ایجاد تکلیف' : 'ذخیره تغییرات',
+                            style: const TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.w600,
                               fontSize: 15,
@@ -616,6 +574,132 @@ class _AddEditDialogContentState extends State<_AddEditDialogContent>
                   ],
                 ),
               ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLabel(String label) {
+    return Text(
+      label,
+      style: TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.grey.shade700,
+      ),
+      textDirection: TextDirection.rtl,
+    );
+  }
+
+  Widget _buildTextField(
+      TextEditingController controller,
+      int maxLines,
+      String hint, {
+        bool isNumber = false,
+      }) {
+    return TextField(
+      controller: controller,
+      enabled: !_isLoading,
+      maxLines: maxLines,
+      keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+      textDirection: TextDirection.rtl,
+      decoration: InputDecoration(
+        hintText: hint,
+        hintTextDirection: TextDirection.rtl,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: BorderSide(color: Colors.grey.shade200),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(10),
+          borderSide: const BorderSide(
+            color: Color(0xFF7C3AED),
+            width: 2,
+          ),
+        ),
+        filled: _isLoading,
+        fillColor: _isLoading ? Colors.grey.shade100 : null,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDatePickerField() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _selectDate,
+      child: AbsorbPointer(
+        child: TextField(
+          controller: _dateController,
+          textDirection: TextDirection.rtl,
+          decoration: InputDecoration(
+            hintText: 'تاریخ را انتخاب کنید',
+            hintTextDirection: TextDirection.rtl,
+            suffixIcon: const Icon(Icons.calendar_today),
+            filled: _isLoading,
+            fillColor: _isLoading ? Colors.grey.shade100 : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTimePickerField() {
+    return GestureDetector(
+      onTap: _isLoading ? null : _selectTime,
+      child: AbsorbPointer(
+        child: TextField(
+          controller: _timeController,
+          textDirection: TextDirection.rtl,
+          decoration: InputDecoration(
+            hintText: 'ساعت را انتخاب کنید',
+            hintTextDirection: TextDirection.rtl,
+            suffixIcon: const Icon(Icons.access_time),
+            filled: _isLoading,
+            fillColor: _isLoading ? Colors.grey.shade100 : null,
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+              borderSide: BorderSide(color: Colors.grey.shade200),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 12,
             ),
           ),
         ),

@@ -776,83 +776,6 @@ class ApiService {
     }
   }
 
-  // ====================== ADD ASSIGNMENT ===============================
-  static Future<Map<String, dynamic>> addTeacherAssignment({
-    required int teacherId,
-    required int courseId,
-    required String title,
-    String? description,
-    String? endDate,
-    String? endTime,
-    String? startDate,
-    String? startTime,
-    int? score,
-  }) async {
-    final url = Uri.parse('$baseUrl/teacher/exercises');
-
-    final body = json.encode({
-      'teacherid': teacherId,
-      'courseid': courseId,
-      'title': title,
-      'description': description,
-      'enddate': endDate,
-      'endtime': endTime,
-      'startdate': startDate,
-      'starttime': startTime,
-      'score': score,
-    });
-
-    try {
-      final response = await http
-          .post(url, headers: _headers, body: body)
-          .timeout(_timeout);
-
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('خطا در اضافه کردن تمرین: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
-  // ========================= UPDATE ASSIGNMENT ================================
-  static Future<Map<String, dynamic>> updateTeacherAssignment({
-    required int exerciseId,
-    required int teacherId,
-    String? title,
-    String? description,
-    String? endDate,
-    String? endTime,
-    int? score,
-  }) async {
-    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId');
-
-    final body = json.encode({
-      'teacherid': teacherId,
-      'title': title,
-      'description': description,
-      'enddate': endDate,
-      'endtime': endTime,
-      'score': score,
-    });
-
-    try {
-      final response = await http
-          .put(url, headers: _headers, body: body)
-          .timeout(_timeout);
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('خطا در به‌روزرسانی تمرین: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('خطا: $e');
-    }
-  }
-
   // ===============================DELETE ASSIGNMENT======================================
   static Future<Map<String, dynamic>> deleteTeacherAssignment(
     int ExamId,
@@ -1017,47 +940,6 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> updateTeacherExam({
-    required int examId,
-    required int teacherId,
-    String? title,
-    String? endDate,
-    String? endTime,
-    int? possibleScore,
-    int? duration,
-    String? description,
-  }) async {
-    final url = Uri.parse('$baseUrl/teacher/exams/$examId');
-
-    final body = json.encode({
-      'teacherid': teacherId,
-      'title': title,
-      'enddate': endDate,
-      'endtime': endTime,
-      'possibleScore': possibleScore,
-      'duration': duration,
-      'description': description,
-    });
-
-    try {
-      final response = await http
-          .put(url, headers: _headers, body: body)
-          .timeout(_timeout);
-
-      print('Update Exam Status: ${response.statusCode}');
-      print('Update Exam Body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        return json.decode(response.body) as Map<String, dynamic>;
-      } else {
-        throw Exception('خطا در به‌روزرسانی امتحان: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error updating exam: $e');
-      throw Exception('خطا: $e');
-    }
-  }
-
   // ========================= DELETE EXAM ===============================
   static Future<Map<String, dynamic>> deleteTeacherExam(
     int examId,
@@ -1086,7 +968,140 @@ class ApiService {
     }
   }
 
-  // ========================= CREATE EXAM ===============================
+  // ====================== ADD ASSIGNMENT WITH FILE ===============================
+  static Future<Map<String, dynamic>> addTeacherAssignment({
+    required int teacherId,
+    required int courseId,
+    required String title,
+    String? description,
+    String? endDate,
+    String? endTime,
+    String? startDate,
+    String? startTime,
+    int? score,
+    PlatformFile? file,
+    String? fileName,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises');
+
+    try {
+      var request = http.MultipartRequest('POST', url);
+
+      // Add form fields
+      request.fields['teacherid'] = teacherId.toString();
+      request.fields['courseid'] = courseId.toString();
+      request.fields['title'] = title;
+      if (description != null) request.fields['description'] = description;
+      if (endDate != null) request.fields['enddate'] = endDate;
+      if (endTime != null) request.fields['endtime'] = endTime;
+      if (startDate != null) request.fields['startdate'] = startDate;
+      if (startTime != null) request.fields['starttime'] = startTime;
+      if (score != null) request.fields['score'] = score.toString();
+      if (fileName != null) request.fields['filename'] = fileName;
+
+      // Add file if provided
+      if (file != null) {
+        http.MultipartFile multipartFile;
+        if (file.bytes != null) {
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: fileName ?? file.name,
+          );
+        } else if (file.path != null) {
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path!,
+            filename: fileName ?? file.name,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست');
+        }
+        request.files.add(multipartFile);
+      }
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Add Assignment Status: ${response.statusCode}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody) as Map<String, dynamic>;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        throw Exception('خطا: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= UPDATE ASSIGNMENT WITH FILE ================================
+  static Future<Map<String, dynamic>> updateTeacherAssignment({
+    required int exerciseId,
+    required int teacherId,
+    String? title,
+    String? description,
+    String? endDate,
+    String? endTime,
+    int? score,
+    PlatformFile? file,
+    String? fileName,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId');
+
+    try {
+      var request = http.MultipartRequest('PUT', url);
+
+      // Add form fields
+      request.fields['teacherid'] = teacherId.toString();
+      if (title != null) request.fields['title'] = title;
+      if (description != null) request.fields['description'] = description;
+      if (endDate != null) request.fields['enddate'] = endDate;
+      if (endTime != null) request.fields['endtime'] = endTime;
+      if (score != null) request.fields['score'] = score.toString();
+      if (fileName != null) request.fields['filename'] = fileName;
+
+      // Add file if provided
+      if (file != null) {
+        http.MultipartFile multipartFile;
+        if (file.bytes != null) {
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: fileName ?? file.name,
+          );
+        } else if (file.path != null) {
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path!,
+            filename: fileName ?? file.name,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست');
+        }
+        request.files.add(multipartFile);
+      }
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Update Assignment Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody) as Map<String, dynamic>;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        throw Exception('خطا: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= CREATE EXAM WITH FILE ===============================
   static Future<Map<String, dynamic>> createExam({
     required int teacherId,
     required int courseId,
@@ -1098,33 +1113,129 @@ class ApiService {
     int? possibleScore,
     int? duration,
     String? description,
+    PlatformFile? file,
+    String? fileName,
   }) async {
     final url = Uri.parse('$baseUrl/teacher/exams');
 
-    final body = json.encode({
-      'teacherid': teacherId,
-      'courseid': courseId,
-      'title': title,
-      'enddate': endDate,
-      'endtime': endTime,
-      'startdate': startDate,
-      'starttime': startTime,
-      'possibleScore': possibleScore,
-      'duration': duration,
-      'description': description,
-    });
-
     try {
-      final response = await http
-          .post(url, headers: _headers, body: body)
-          .timeout(_timeout);
+      var request = http.MultipartRequest('POST', url);
+
+      // Add form fields
+      request.fields['teacherid'] = teacherId.toString();
+      request.fields['courseid'] = courseId.toString();
+      request.fields['title'] = title;
+      if (endDate != null) request.fields['enddate'] = endDate;
+      if (endTime != null) request.fields['endtime'] = endTime;
+      if (startDate != null) request.fields['startdate'] = startDate;
+      if (startTime != null) request.fields['starttime'] = startTime;
+      if (possibleScore != null)
+        request.fields['possibleScore'] = possibleScore.toString();
+      if (duration != null) request.fields['duration'] = duration.toString();
+      if (description != null) request.fields['description'] = description;
+      if (fileName != null) request.fields['filename'] = fileName;
+
+      // Add file if provided
+      if (file != null) {
+        http.MultipartFile multipartFile;
+        if (file.bytes != null) {
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: fileName ?? file.name,
+          );
+        } else if (file.path != null) {
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path!,
+            filename: fileName ?? file.name,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست');
+        }
+        request.files.add(multipartFile);
+      }
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Create Exam Status: ${response.statusCode}');
 
       if (response.statusCode == 200 || response.statusCode == 201) {
-        return json.decode(response.body) as Map<String, dynamic>;
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody) as Map<String, dynamic>;
       } else {
-        throw Exception('خطا در اضافه کردن تمرین: ${response.statusCode}');
+        final errorBody = await response.stream.bytesToString();
+        throw Exception('خطا: ${response.statusCode} - $errorBody');
       }
     } catch (e) {
+      print('Error: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= UPDATE EXAM WITH FILE ===============================
+  static Future<Map<String, dynamic>> updateTeacherExam({
+    required int examId,
+    required int teacherId,
+    String? title,
+    String? endDate,
+    String? endTime,
+    int? possibleScore,
+    int? duration,
+    String? description,
+    PlatformFile? file,
+    String? fileName,
+  }) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId');
+
+    try {
+      var request = http.MultipartRequest('PUT', url);
+
+      // Add form fields
+      request.fields['teacherid'] = teacherId.toString();
+      if (title != null) request.fields['title'] = title;
+      if (endDate != null) request.fields['enddate'] = endDate;
+      if (endTime != null) request.fields['endtime'] = endTime;
+      if (possibleScore != null)
+        request.fields['possibleScore'] = possibleScore.toString();
+      if (duration != null) request.fields['duration'] = duration.toString();
+      if (description != null) request.fields['description'] = description;
+      if (fileName != null) request.fields['filename'] = fileName;
+
+      // Add file if provided
+      if (file != null) {
+        http.MultipartFile multipartFile;
+        if (file.bytes != null) {
+          multipartFile = http.MultipartFile.fromBytes(
+            'file',
+            file.bytes!,
+            filename: fileName ?? file.name,
+          );
+        } else if (file.path != null) {
+          multipartFile = await http.MultipartFile.fromPath(
+            'file',
+            file.path!,
+            filename: fileName ?? file.name,
+          );
+        } else {
+          throw Exception('فایل معتبر نیست');
+        }
+        request.files.add(multipartFile);
+      }
+
+      final response = await request.send().timeout(_timeout);
+
+      print('Update Exam Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        return json.decode(responseBody) as Map<String, dynamic>;
+      } else {
+        final errorBody = await response.stream.bytesToString();
+        throw Exception('خطا: ${response.statusCode} - $errorBody');
+      }
+    } catch (e) {
+      print('Error: $e');
       throw Exception('خطا: $e');
     }
   }

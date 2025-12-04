@@ -183,6 +183,7 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       'duration': exam.duration,
       'possibleScore': exam.possibleScore,
       'courseId': exam.id,
+      'filename': exam.filename,
     };
 
     showAddEditExamDialog(

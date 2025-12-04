@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
 import '../../../../../applications/colors.dart';
 import '../../../../../commons/shamsi_date_picker_dialog.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../../../../core/services/api_service.dart';
 
 /// Show add/edit exam dialog
@@ -53,12 +53,15 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
   late TextEditingController _durationController;
   late TextEditingController _scoreController;
   late TextEditingController _dateController;
+  late TextEditingController _fileNameController;
   late TextEditingController _timeController;
 
   String? _selectedCourse;
   Jalali? _selectedDate;
   TimeOfDay? _selectedTime;
   bool _isLoading = false;
+  PlatformFile? _selectedFile;
+  bool _fileChanged = false;
 
   late AnimationController _enterController;
   late Animation<double> _scaleAnimation;
@@ -69,6 +72,11 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
     super.initState();
 
     // Initialize controllers with existing data if editing
+    _fileNameController = TextEditingController(
+      text: widget.exam?['filename'] ?? '',
+    );
+    print('_fileNameController.text');
+    print(_fileNameController.text);
     _titleController = TextEditingController(text: widget.exam?['title'] ?? '');
     _descriptionController = TextEditingController(
       text: widget.exam?['description'] ?? '',
@@ -113,6 +121,7 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
     _dateController.dispose();
     _timeController.dispose();
     _enterController.dispose();
+    _fileNameController.dispose();
     super.dispose();
   }
 
@@ -149,8 +158,34 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
     }
   }
 
+  Future<void> _pickFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['pdf', 'zip', 'jpg', 'jpeg', 'png', 'doc', 'docx'],
+      allowMultiple: false,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final platformFile = result.files.single;
+      setState(() {
+        _selectedFile = platformFile;
+        _fileNameController.text = platformFile.name;
+        _fileChanged = true;
+      });
+      print('File selected: ${platformFile.name}');
+    }
+  }
+
+  void _clearFile() {
+    setState(() {
+      _selectedFile = null;
+      _fileChanged = false;
+      _fileNameController.clear();
+    });
+  }
+
+  // Update _submit method:
   Future<void> _submit() async {
-    // Validation
     if (_titleController.text.isEmpty) {
       _showError('لطفا عنوان امتحان را وارد کنید');
       return;
@@ -172,7 +207,6 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
 
     try {
       if (widget.isAdd) {
-        // Create new exam
         final endTime = _durationController.text.isNotEmpty
             ? addDurationToTime(
                 _timeController.text,
@@ -191,13 +225,16 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
           endTime: endTime,
           duration: int.tryParse(_durationController.text),
           possibleScore: int.tryParse(_scoreController.text) ?? 100,
+          file: _selectedFile,
+          fileName: _fileNameController.text.isNotEmpty
+              ? _fileNameController.text
+              : null,
         );
 
         if (mounted) {
           _showSuccess('امتحان با موفقیت ایجاد شد');
         }
       } else {
-        // Update existing exam
         final endTime = _durationController.text.isNotEmpty
             ? addDurationToTime(
                 _timeController.text,
@@ -214,6 +251,10 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
           endTime: endTime,
           duration: int.tryParse(_durationController.text),
           possibleScore: int.tryParse(_scoreController.text) ?? 100,
+          file: _selectedFile,
+          fileName: _fileNameController.text.isNotEmpty
+              ? _fileNameController.text
+              : null,
         );
 
         if (mounted) {
@@ -221,7 +262,6 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
         }
       }
 
-      // Wait a bit for the success message to be visible, then close
       await Future.delayed(const Duration(milliseconds: 500));
 
       if (mounted) {
@@ -389,6 +429,80 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                   ],
                 ),
                 const SizedBox(height: 20),
+                // FILE UPLOAD SECTION
+                const SizedBox(height: 20),
+                _buildLabel('فایل درسنامه (اختیاری)'),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _pickFile,
+                  icon: const Icon(Icons.attach_file),
+                  label: Text(
+                    _selectedFile != null
+                        ? 'فایل دیگری انتخاب کنید'
+                        : 'انتخاب فایل (PDF, ZIP, تصویر)',
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.purple,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    minimumSize: const Size(double.infinity, 48),
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Show selected file
+                if (_selectedFile != null || _fileNameController.text != '')
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade200),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'فایل انتخاب شده',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    _fileNameController.text,
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      color: Colors.green[700],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ],
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.clear, color: Colors.red),
+                              onPressed: _clearFile,
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
 
                 // Duration and Score row
                 Row(
