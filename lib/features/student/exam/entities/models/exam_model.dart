@@ -12,6 +12,7 @@ class ExamItem {
   final String? submittedTime;
   final int? score;
   final int examId;
+  final int? estId;
   final String? totalScore;
   final String? duration;
   final String? description;
@@ -25,6 +26,7 @@ class ExamItem {
   ExamItem({
     required this.title,
     required this.examId,
+    this.estId,
     required this.courseName,
     this.dueDate,
     this.submittedDate,

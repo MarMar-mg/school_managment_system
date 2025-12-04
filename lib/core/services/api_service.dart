@@ -11,6 +11,8 @@ import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:typed_data';
 
 class ApiService {
   // Update this based on your testing environment
@@ -441,6 +443,7 @@ class ApiService {
           duration: (json['duration'] ?? 0).toString(),
           description: json['description'] ?? '',
           submittedDescription: json['submittedDescription'],
+          estId: json['estid'],
           examId: examId, // ENSURE THIS IS SET CORRECTLY
         );
 
@@ -1256,6 +1259,100 @@ class ApiService {
     } catch (e) {
       print('Submit Exam Error: $e');
       throw Exception('خطا در ارسال: $e');
+    }
+  }
+
+  //================================= DOWNLOAD ASSIGNMENT FILE ======================
+  static Future<Uint8List> downloadAssignmentFile(int submissionId) async {
+    final url = Uri.parse('$baseUrl/student/download/assignment/$submissionId');
+
+    try {
+      final response = await http.get(url).timeout(_timeout);
+
+      print('Download Assignment Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else if (response.statusCode == 404) {
+        throw Exception('فایل یافت نشد');
+      } else {
+        throw Exception('خطا در دانلود: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Download Assignment Error: $e');
+      throw Exception('خطا در دانلود فایل: $e');
+    }
+  }
+
+  //================================= DOWNLOAD EXAM FILE ======================
+  static Future<Uint8List> downloadExamFile(int submissionId) async {
+    final url = Uri.parse('$baseUrl/student/download/exam/$submissionId');
+
+    try {
+      final response = await http.get(url).timeout(_timeout);
+
+      print('Download Exam Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return response.bodyBytes;
+      } else if (response.statusCode == 404) {
+        throw Exception('فایل یافت نشد');
+      } else {
+        throw Exception('خطا در دانلود: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Download Exam Error: $e');
+      throw Exception('خطا در دانلود فایل: $e');
+    }
+  }
+
+  //================================= SAVE FILE TO DEVICE ======================
+  static Future<String> saveFileToDevice(
+    Uint8List fileBytes,
+    String fileName,
+  ) async {
+    try {
+      // Get downloads directory
+      final directory = await getDownloadsDirectory();
+
+      if (directory == null) {
+        throw Exception('دایرکتوری دانلود یافت نشد');
+      }
+
+      // Create file path
+      final filePath = '${directory.path}/$fileName';
+      final file = File(filePath);
+
+      // Write file to device
+      await file.writeAsBytes(fileBytes);
+
+      print('File saved: $filePath');
+      return filePath;
+    } catch (e) {
+      print('Save File Error: $e');
+      throw Exception('خطا در ذخیره فایل: $e');
+    }
+  }
+
+  //================================= DOWNLOAD AND SAVE FILE ======================
+  static Future<String> downloadAndSaveFile({
+    required String type, // 'assignment' or 'exam'
+    required int? submissionId,
+    required String fileName,
+  }) async {
+    try {
+      // Download file
+      final fileBytes = type == 'assignment'
+          ? await downloadAssignmentFile(submissionId!)
+          : await downloadExamFile(submissionId!);
+
+      // Save to device
+      final filePath = await saveFileToDevice(fileBytes, fileName);
+
+      return filePath;
+    } catch (e) {
+      print('Download and Save Error: $e');
+      throw Exception('خطا: $e');
     }
   }
 

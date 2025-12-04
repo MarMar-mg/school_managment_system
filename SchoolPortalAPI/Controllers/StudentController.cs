@@ -656,6 +656,7 @@ namespace SchoolPortalAPI.Controllers
                             .Where(s => s.UserID == userId)
                             .Select(s => s.Studentid)
                             .FirstOrDefaultAsync();
+
             // Validate student exists
             var student = await _context.Students.FindAsync(studentId);
             if (student == null) return NotFound("دانش‌آموز یافت نشد");
@@ -680,7 +681,7 @@ namespace SchoolPortalAPI.Controllers
 
             // Handle file upload if provided
             string? fileName = null;
-            if (file != null)
+            if (file != null && file.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "assignments");
                 if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
@@ -692,6 +693,8 @@ namespace SchoolPortalAPI.Controllers
                 {
                     await file.CopyToAsync(stream);
                 }
+
+                Console.WriteLine($"[SUBMIT ASSIGNMENT] File saved: {fileName}");
             }
 
             // Create new submission
@@ -703,15 +706,99 @@ namespace SchoolPortalAPI.Controllers
                 Studentid = studentId,
                 Description = description,
                 Date = DateTime.Now.ToShamsi(),
-                Filename = fileName,
-                Answerimage = fileName, // If it's image, or adjust based on type
+                Filename = fileName, // ✓ SAVE FILENAME TO DB
+                Answerimage = fileName, // ✓ SAVE FILENAME TO DB
                 Score = null // Pending grading
             };
 
             _context.ExerciseStuTeaches.Add(submission);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "پاسخ با موفقیت ارسال شد" });
+            return Ok(new { message = "پاسخ با موفقیت ارسال شد", filename = fileName });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Update assignment answer (replace existing submission)
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("update/assignment/{userId}/{assignmentId}")]
+        public async Task<IActionResult> UpdateAssignmentAnswer(
+            long userId,
+            long assignmentId,
+            [FromForm] string? description,
+            [FromForm] IFormFile? file)
+        {
+            var studentId = await _context.Students
+                .Where(s => s.UserID == userId)
+                .Select(s => s.Studentid)
+                .FirstOrDefaultAsync();
+
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null) return NotFound("دانش‌آموز یافت نشد");
+
+            var assignment = await _context.Exercises
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Exerciseid == assignmentId);
+
+            if (assignment == null) return NotFound("تکلیف یافت نشد");
+
+            // Find existing submission
+            var existing = await _context.ExerciseStuTeaches
+                .FirstOrDefaultAsync(est =>
+                    est.Exerciseid == assignmentId &&
+                    est.Studentid == studentId);
+
+            if (existing == null)
+                return BadRequest("پاسخ قبلی یافت نشد");
+
+            // Handle file upload
+            string? fileName = existing.Filename; // Keep old filename by default
+
+            if (file != null && file.Length > 0)
+            {
+                // Delete old file if it exists
+                if (!string.IsNullOrEmpty(existing.Filename))
+                {
+                    var oldFilePath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot", "uploads", "assignments",
+                        existing.Filename);
+
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                        Console.WriteLine($"[UPDATE ASSIGNMENT] Deleted old file: {existing.Filename}");
+                    }
+                }
+
+                // Save new file
+                var uploadsFolder = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "assignments");
+
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                fileName = $"{Guid.NewGuid()}_{file.FileName}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                Console.WriteLine($"[UPDATE ASSIGNMENT] New file saved: {fileName}");
+            }
+
+            // Update existing submission
+            existing.Description = description ?? existing.Description;
+            existing.Date = DateTime.Now.ToShamsi();
+            existing.Filename = fileName; // ✓ SAVE NEW FILENAME TO DB
+            existing.Answerimage = fileName; // ✓ SAVE NEW FILENAME TO DB
+
+            _context.ExerciseStuTeaches.Update(existing);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "پاسخ با موفقیت به‌روزرسانی شد", filename = fileName });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -758,12 +845,6 @@ namespace SchoolPortalAPI.Controllers
 
                 Console.WriteLine($"[SUBMIT EXAM] Existing submission: {(existing != null ? "FOUND" : "NOT FOUND")}");
 
-                // Logic:
-                // - If isUpdating=false and existing!=null → Reject (already submitted)
-                // - If isUpdating=true and existing==null → Reject (no previous submission)
-                // - If isUpdating=false and existing==null → Create new
-                // - If isUpdating=true and existing!=null → Update existing
-
                 if (!isUpdating && existing != null)
                     return BadRequest("پاسخ قبلاً ارسال شده");
 
@@ -771,7 +852,8 @@ namespace SchoolPortalAPI.Controllers
                     return BadRequest("پاسخ قبلی یافت نشد");
 
                 // Handle file upload
-                string? fileName = null;
+                string? fileName = existing?.Filename; // Keep old filename by default for updates
+
                 if (file != null && file.Length > 0)
                 {
                     var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
@@ -802,6 +884,8 @@ namespace SchoolPortalAPI.Controllers
                             Console.WriteLine($"[SUBMIT EXAM] Error deleting old file: {ex.Message}");
                         }
                     }
+
+                    Console.WriteLine($"[SUBMIT EXAM] File saved: {fileName}");
                 }
 
                 if (isUpdating && existing != null)
@@ -812,13 +896,8 @@ namespace SchoolPortalAPI.Controllers
                     existing.Description = description ?? existing.Description;
                     existing.Date = DateTime.Now.ToShamsi();
                     existing.Time = DateTime.Now.ToString("HH:mm:ss");
-
-                    // Only update filename if a new file was provided
-                    if (fileName != null)
-                    {
-                        existing.Filename = fileName;
-                        existing.Answerimage = fileName;
-                    }
+                    existing.Filename = fileName; // ✓ SAVE FILENAME TO DB
+                    existing.Answerimage = fileName; // ✓ SAVE FILENAME TO DB
 
                     _context.ExamStuTeaches.Update(existing);
                     await _context.SaveChangesAsync();
@@ -826,7 +905,8 @@ namespace SchoolPortalAPI.Controllers
                     return Ok(new {
                         message = "پاسخ با موفقیت به‌روزرسانی شد",
                         isUpdate = true,
-                        submissionId = existing.Estid
+                        submissionId = existing.Estid,
+                        filename = fileName
                     });
                 }
                 else
@@ -843,8 +923,8 @@ namespace SchoolPortalAPI.Controllers
                         Description = description,
                         Date = DateTime.Now.ToShamsi(),
                         Time = DateTime.Now.ToString("HH:mm:ss"),
-                        Filename = fileName,
-                        Answerimage = fileName,
+                        Filename = fileName, // ✓ SAVE FILENAME TO DB
+                        Answerimage = fileName, // ✓ SAVE FILENAME TO DB
                         Score = null
                     };
 
@@ -854,7 +934,8 @@ namespace SchoolPortalAPI.Controllers
                     return Ok(new {
                         message = "پاسخ با موفقیت ارسال شد",
                         isUpdate = false,
-                        submissionId = submission.Estid
+                        submissionId = submission.Estid,
+                        filename = fileName
                     });
                 }
             }
@@ -864,90 +945,6 @@ namespace SchoolPortalAPI.Controllers
                 Console.WriteLine($"[SUBMIT EXAM] StackTrace: {ex.StackTrace}");
                 return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
             }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // Update assignment answer (replace existing submission)
-        // ──────────────────────────────────────────────────────────────
-        [HttpPost("update/assignment/{userId}/{assignmentId}")]
-        public async Task<IActionResult> UpdateAssignmentAnswer(
-            long userId,
-            long assignmentId,
-            [FromForm] string? description,
-            [FromForm] IFormFile? file)
-        {
-            var studentId = await _context.Students
-                .Where(s => s.UserID == userId)
-                .Select(s => s.Studentid)
-                .FirstOrDefaultAsync();
-
-            var student = await _context.Students.FindAsync(studentId);
-            if (student == null) return NotFound("دانش‌آموز یافت نشد");
-
-            var assignment = await _context.Exercises
-                .Include(e => e.Course)
-                .FirstOrDefaultAsync(e => e.Exerciseid == assignmentId);
-
-            if (assignment == null) return NotFound("تکلیف یافت نشد");
-
-            // Find existing submission
-            var existing = await _context.ExerciseStuTeaches
-                .FirstOrDefaultAsync(est =>
-                    est.Exerciseid == assignmentId &&
-                    est.Studentid == studentId);
-
-            if (existing == null)
-                return BadRequest("پاسخ قبلی یافت نشد");
-
-            // Delete old file if it exists
-            if (!string.IsNullOrEmpty(existing.Filename))
-            {
-                var oldFilePath = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot", "uploads", "assignments",
-                    existing.Filename);
-
-                if (System.IO.File.Exists(oldFilePath))
-                {
-                    System.IO.File.Delete(oldFilePath);
-                }
-            }
-
-            // Handle new file upload
-            string? fileName = null;
-            if (file != null)
-            {
-                var uploadsFolder = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot", "uploads", "assignments");
-
-                if (!Directory.Exists(uploadsFolder))
-                    Directory.CreateDirectory(uploadsFolder);
-
-                fileName = $"{Guid.NewGuid()}_{file.FileName}";
-                var filePath = Path.Combine(uploadsFolder, fileName);
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await file.CopyToAsync(stream);
-                }
-            }
-            else if (string.IsNullOrEmpty(fileName))
-            {
-                // If no new file provided, keep the old filename
-                fileName = existing.Filename;
-            }
-
-            // Update existing submission
-            existing.Description = description ?? existing.Description;
-            existing.Date = DateTime.Now.ToShamsi();
-            existing.Filename = fileName;
-            existing.Answerimage = fileName;
-
-            _context.ExerciseStuTeaches.Update(existing);
-            await _context.SaveChangesAsync();
-
-            return Ok(new { message = "پاسخ با موفقیت به‌روزرسانی شد" });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -983,24 +980,27 @@ namespace SchoolPortalAPI.Controllers
             if (existing == null)
                 return BadRequest("پاسخ قبلی یافت نشد");
 
-            // Delete old file if it exists
-            if (!string.IsNullOrEmpty(existing.Filename))
-            {
-                var oldFilePath = Path.Combine(
-                    Directory.GetCurrentDirectory(),
-                    "wwwroot", "uploads", "exams",
-                    existing.Filename);
+            // Handle file upload
+            string? fileName = existing.Filename; // Keep old filename by default
 
-                if (System.IO.File.Exists(oldFilePath))
+            if (file != null && file.Length > 0)
+            {
+                // Delete old file if it exists
+                if (!string.IsNullOrEmpty(existing.Filename))
                 {
-                    System.IO.File.Delete(oldFilePath);
-                }
-            }
+                    var oldFilePath = Path.Combine(
+                        Directory.GetCurrentDirectory(),
+                        "wwwroot", "uploads", "exams",
+                        existing.Filename);
 
-            // Handle new file upload
-            string? fileName = null;
-            if (file != null)
-            {
+                    if (System.IO.File.Exists(oldFilePath))
+                    {
+                        System.IO.File.Delete(oldFilePath);
+                        Console.WriteLine($"[UPDATE EXAM] Deleted old file: {existing.Filename}");
+                    }
+                }
+
+                // Save new file
                 var uploadsFolder = Path.Combine(
                     Directory.GetCurrentDirectory(),
                     "wwwroot", "uploads", "exams");
@@ -1015,24 +1015,144 @@ namespace SchoolPortalAPI.Controllers
                 {
                     await file.CopyToAsync(stream);
                 }
-            }
-            else if (string.IsNullOrEmpty(fileName))
-            {
-                // If no new file provided, keep the old filename
-                fileName = existing.Filename;
+
+                Console.WriteLine($"[UPDATE EXAM] New file saved: {fileName}");
             }
 
             // Update existing submission
             existing.Description = description ?? existing.Description;
             existing.Date = DateTime.Now.ToShamsi();
             existing.Time = DateTime.Now.ToString("HH:mm:ss");
-            existing.Filename = fileName;
-            existing.Answerimage = fileName;
+            existing.Filename = fileName; // ✓ SAVE FILENAME TO DB
+            existing.Answerimage = fileName; // ✓ SAVE FILENAME TO DB
 
             _context.ExamStuTeaches.Update(existing);
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "پاسخ با موفقیت به‌روزرسانی شد" });
+            return Ok(new { message = "پاسخ با موفقیت به‌روزرسانی شد", filename = fileName });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Download assignment answer file
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/assignment/{submissionId}")]
+        public async Task<IActionResult> DownloadAssignmentFile(long submissionId)
+        {
+            try
+            {
+                // Get the submission
+                var submission = await _context.ExerciseStuTeaches
+                    .FirstOrDefaultAsync(est => est.Exstid == submissionId);
+
+                if (submission == null)
+                    return NotFound(new { message = "رسالت یافت نشد" });
+
+                // Verify filename exists
+                if (string.IsNullOrEmpty(submission.Filename))
+                    return NotFound(new { message = "فایلی برای این رسالت موجود نیست" });
+
+                // Build file path
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "assignments",
+                    submission.Filename);
+
+                // Check if file exists
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+
+                // Get file info
+                var fileInfo = new FileInfo(filePath);
+                var fileName = fileInfo.Name;
+
+                // Read file
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+                // Determine content type
+                var contentType = GetContentType(filePath);
+
+                // Return file
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DOWNLOAD ASSIGNMENT] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Download exam answer file
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/exam/{submissionId}")]
+        public async Task<IActionResult> DownloadExamFile(long submissionId)
+        {
+            try
+            {
+                // Get the submission
+                var submission = await _context.ExamStuTeaches
+                    .FirstOrDefaultAsync(est => est.Estid == submissionId);
+
+                if (submission == null)
+                    return NotFound(new { message = "رسالت یافت نشد" });
+
+                // Verify filename exists
+                if (string.IsNullOrEmpty(submission.Filename))
+                    return NotFound(new { message = "فایلی برای این رسالت موجود نیست" });
+
+                // Build file path
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "exams",
+                    submission.Filename);
+
+                // Check if file exists
+                if (!System.IO.File.Exists(filePath))
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+
+                // Get file info
+                var fileInfo = new FileInfo(filePath);
+                var fileName = fileInfo.Name;
+
+                // Read file
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+                // Determine content type
+                var contentType = GetContentType(filePath);
+
+                // Return file
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DOWNLOAD EXAM] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get content type based on file extension
+        // ──────────────────────────────────────────────────────────────
+        private string GetContentType(string filePath)
+        {
+            var extension = Path.GetExtension(filePath).ToLower();
+            return extension switch
+            {
+                ".pdf" => "application/pdf",
+                ".zip" => "application/zip",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                ".png" => "image/png",
+                ".gif" => "image/gif",
+                ".doc" => "application/msword",
+                ".docx" => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                ".xls" => "application/vnd.ms-excel",
+                ".xlsx" => "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                ".txt" => "text/plain",
+                ".ppt" => "application/vnd.ms-powerpoint",
+                ".pptx" => "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+                _ => "application/octet-stream"
+            };
         }
     }
 }
