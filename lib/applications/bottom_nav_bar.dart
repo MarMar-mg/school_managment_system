@@ -10,6 +10,7 @@ import '../features/student/exam/presentations/pages/exam_page.dart';
 import '../features/student/scores/presentations/pages/scores_page.dart';
 import '../features/teacher/assignment_management/presentations/pages/assignment_management_page.dart';
 import '../features/teacher/exam_management/presentations/pages/exam_management_page.dart';
+import '../features/teacher/exam_management/score_management/presentations/pages/score_management_page.dart';
 import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {
@@ -80,7 +81,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userIdi,
     ),
-    MyScorePage(studentId: widget.userIdi),
+    ScoreManagementPage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userIdi,
+    ),
     ProfilePage(
       role: widget.role,
       userName: widget.userName,
@@ -96,7 +101,9 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userId,
     ),
     // Placeholder for Students page (e.g., from TeacherController getStudents or custom)
-    const Center(child: Text('صفحه دانش‌آموزان', style: TextStyle(fontSize: 20))),
+    const Center(
+      child: Text('صفحه دانش‌آموزان', style: TextStyle(fontSize: 20)),
+    ),
     // Placeholder for News page (e.g., from ApiService getNews)
     const Center(child: Text('صفحه اخبار', style: TextStyle(fontSize: 20))),
     // Placeholder for Events page (e.g., from ApiService getEvents)
@@ -127,9 +134,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       appBar: DashboardAppBar(role: widget.role, userId: widget.userIdi),
       body: Directionality(
         textDirection: TextDirection.rtl,
-        child: Center(
-          child: targetPages[_selectedIndex],
-        ),
+        child: Center(child: targetPages[_selectedIndex]),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(
@@ -179,7 +184,10 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     icon: Icons.calendar_today_outlined,
                     text: 'رویدادها',
                   ),
-                const GButton(icon: Icons.person_outline_rounded, text: 'پروفایل'),
+                const GButton(
+                  icon: Icons.person_outline_rounded,
+                  text: 'پروفایل',
+                ),
               ],
               selectedIndex: _selectedIndex,
               onTabChange: (index) {

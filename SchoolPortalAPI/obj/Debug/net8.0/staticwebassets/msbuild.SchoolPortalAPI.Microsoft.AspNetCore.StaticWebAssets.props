@@ -80,12 +80,12 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\658022ce-2394-41d9-8e5d-982e7ba4b389_5998917656142531916 (1).jpg))</OriginalItemSpec>
     </StaticWebAsset>
-    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\79b7c773-7491-406f-881d-9c98f26636db_1-5.pdf))">
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\7d19c001-d691-4750-b2ee-bc8ff6f44b42_63613883005.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
       <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
       <BasePath>_content/SchoolPortalAPI</BasePath>
-      <RelativePath>uploads/exams/79b7c773-7491-406f-881d-9c98f26636db_1-5.pdf</RelativePath>
+      <RelativePath>uploads/exams/7d19c001-d691-4750-b2ee-bc8ff6f44b42_63613883005.pdf</RelativePath>
       <AssetKind>All</AssetKind>
       <AssetMode>All</AssetMode>
       <AssetRole>Primary</AssetRole>
@@ -94,23 +94,7 @@
       <AssetTraitValue></AssetTraitValue>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\79b7c773-7491-406f-881d-9c98f26636db_1-5.pdf))</OriginalItemSpec>
-    </StaticWebAsset>
-    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\b3f89a1f-9040-4f46-8bb9-2f9bc5b1d401_8-9-10 correct.pdf))">
-      <SourceType>Package</SourceType>
-      <SourceId>SchoolPortalAPI</SourceId>
-      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
-      <BasePath>_content/SchoolPortalAPI</BasePath>
-      <RelativePath>uploads/exams/b3f89a1f-9040-4f46-8bb9-2f9bc5b1d401_8-9-10 correct.pdf</RelativePath>
-      <AssetKind>All</AssetKind>
-      <AssetMode>All</AssetMode>
-      <AssetRole>Primary</AssetRole>
-      <RelatedAsset></RelatedAsset>
-      <AssetTraitName></AssetTraitName>
-      <AssetTraitValue></AssetTraitValue>
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\b3f89a1f-9040-4f46-8bb9-2f9bc5b1d401_8-9-10 correct.pdf))</OriginalItemSpec>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\7d19c001-d691-4750-b2ee-bc8ff6f44b42_63613883005.pdf))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg))">
       <SourceType>Package</SourceType>
@@ -127,6 +111,38 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\d9b5f589-26ad-42a4-8178-970c255672bf_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exams/d9b5f589-26ad-42a4-8178-970c255672bf_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\d9b5f589-26ad-42a4-8178-970c255672bf_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exercises\aa867ad5-9d79-41e3-84d4-08c9e509d238_8-9-10 correct.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exercises/aa867ad5-9d79-41e3-84d4-08c9e509d238_8-9-10 correct.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exercises\aa867ad5-9d79-41e3-84d4-08c9e509d238_8-9-10 correct.pdf))</OriginalItemSpec>
     </StaticWebAsset>
   </ItemGroup>
 </Project>
