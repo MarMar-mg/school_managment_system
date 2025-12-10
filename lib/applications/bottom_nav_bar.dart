@@ -10,7 +10,7 @@ import '../features/student/exam/presentations/pages/exam_page.dart';
 import '../features/student/scores/presentations/pages/scores_page.dart';
 import '../features/teacher/assignment_management/presentations/pages/assignment_management_page.dart';
 import '../features/teacher/exam_management/presentations/pages/exam_management_page.dart';
-import '../features/teacher/exam_management/score_management/presentations/pages/score_management_page.dart';
+import '../features/teacher/score_management/presentations/pages/score_management_page.dart';
 import 'our_app_bar.dart';
 
 class BottomNavBar extends StatefulWidget {

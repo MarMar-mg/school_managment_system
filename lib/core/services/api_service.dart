@@ -1493,6 +1493,50 @@ class ApiService {
     }
   }
 
+  // Add these methods to lib/core/services/api_service.dart
+
+  // ========================= GET EXAM SUBMISSIONS WITH ALL STUDENTS =============================
+  static Future<List<dynamic>> getExamStudents(int examId) async {
+    final url = Uri.parse('$baseUrl/teacher/exams/$examId/students');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Exam Students Status: ${response.statusCode}');
+      print('Exam Students Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('خطا در دریافت دانش‌آموزان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching exam students: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ========================= GET EXERCISE SUBMISSIONS WITH ALL STUDENTS =============================
+  static Future<List<dynamic>> getExerciseStudents(int exerciseId) async {
+    final url = Uri.parse('$baseUrl/teacher/exercises/$exerciseId/students');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Exercise Students Status: ${response.statusCode}');
+      print('Exercise Students Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as List<dynamic>;
+      } else {
+        throw Exception('خطا در دریافت دانش‌آموزان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching exercise students: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
   ///////////////////////////////////////////
 
   // تبدیل DateTime میلادی به رشته شمسی (14030825)

@@ -437,7 +437,7 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                   onPressed: _isLoading ? null : _pickFile,
                   icon: const Icon(Icons.attach_file),
                   label: Text(
-                    _selectedFile != null
+                    _fileNameController.text.isNotEmpty
                         ? 'فایل دیگری انتخاب کنید'
                         : 'انتخاب فایل (PDF, ZIP, تصویر)',
                   ),

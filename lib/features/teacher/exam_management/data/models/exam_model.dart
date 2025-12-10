@@ -1,6 +1,7 @@
 
 class ExamModelT {
   final int id;
+  final int courseId;
   final String title;
   final String status; // 'upcoming' or 'completed'
   final String subject;
@@ -19,6 +20,7 @@ class ExamModelT {
 
   ExamModelT({
     required this.id,
+    required this.courseId,
     required this.title,
     required this.status,
     required this.subject,
@@ -39,6 +41,7 @@ class ExamModelT {
   factory ExamModelT.fromJson(Map<String, dynamic> json) {
     return ExamModelT(
       id: json['id'],
+      courseId: json['courseId'],
       title: json['title'] ?? 'نامشخص',
       status: json['status'] ?? 'upcoming',
       subject: json['subject'] ?? 'نامشخص',

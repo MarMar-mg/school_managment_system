@@ -369,6 +369,7 @@ namespace SchoolPortalAPI.Controllers
                     submissions = $"{submissions}/{totalStudents}",
                     percentage = $"{percentage}%",
                     File = e.File,
+                    courseId = e.Courseid,
                     Filename = e.Filename
                 });
             }
@@ -600,6 +601,7 @@ namespace SchoolPortalAPI.Controllers
                       subject = e.Course != null ? e.Course.Name : "نامشخص",
                       date = e.Startdate,
                       classId = e.Classid,
+                      courseId = e.Courseid,
                       capacity = capacity,
                       submitted = submitted,
                       graded = gradedCount,
@@ -994,7 +996,111 @@ namespace SchoolPortalAPI.Controllers
                 return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
             }
         }
-//////////////////////////
+
+        // ──────────────────────────────────────────────────────────────
+        // Get all students for an exam with submission status
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exams/{examId}/students")]
+        public async Task<IActionResult> GetExamStudents(long examId)
+        {
+            var exam = await _context.Exams
+                .Include(e => e.Class)
+                .FirstOrDefaultAsync(e => e.Examid == examId);
+
+            if (exam == null)
+                return NotFound("Exam not found");
+
+            // Get all students in the exam's class
+            var allStudents = await _context.Students
+                .Where(s => s.Classeid == exam.Classid)
+                .Select(s => new { s.Studentid, s.Name, s.StuCode })
+                .ToListAsync();
+
+            // Get exam submissions
+            var submissions = await _context.ExamStuTeaches
+                .Where(est => est.Examid == examId)
+                .ToListAsync();
+
+            var result = allStudents.Select(student =>
+            {
+                var submission = submissions.FirstOrDefault(s => s.Studentid == student.Studentid);
+
+                return new
+                {
+                    studentId = student.Studentid,
+                    stuCode = student.StuCode,
+                    studentName = student.Name,
+                    score = submission?.Score,
+                    submissionId = submission?.Estid,
+                    examId = submission?.Examid,
+                    hasSubmitted = submission != null,
+                    submittedAt = submission?.Date,
+                    submittedTime = submission?.Time,
+                    answerFile = submission?.Filename ?? ""
+                };
+            }).OrderBy(s => s.studentName).ToList();
+
+            return Ok(result);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get all students for an assignment with submission status
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exercises/{exerciseId}/students")]
+        public async Task<IActionResult> GetExerciseStudents(long exerciseId)
+        {
+            var exercise = await _context.Exercises
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
+
+            if (exercise == null)
+                return NotFound("Exercise not found");
+
+            // Get the class from the course or directly from exercise
+            var classId = exercise.Classid;
+            if (classId == null && exercise.Courseid.HasValue)
+            {
+                var course = await _context.Courses.FindAsync(exercise.Courseid);
+                classId = course?.Classid;
+            }
+
+            if (classId == null)
+                return BadRequest("Class information not available");
+
+            // Get all students in the exercise's class
+            var allStudents = await _context.Students
+                .Where(s => s.Classeid == classId)
+                .Select(s => new { s.Studentid, s.Name, s.StuCode })
+                .ToListAsync();
+
+            // Get exercise submissions
+            var submissions = await _context.ExerciseStuTeaches
+                .Where(est => est.Exerciseid == exerciseId)
+                .ToListAsync();
+
+            var result = allStudents.Select(student =>
+            {
+                var submission = submissions
+                .FirstOrDefault(s => s.Studentid == student.Studentid);
+
+                return new
+                {
+                    studentId = student.Studentid,
+                    stuCode = student.StuCode,
+                    studentName = student.Name,
+                    score = submission?.Score,
+                    submissionId = submission?.Exstid,
+                    exerciseId = submission?.Exerciseid,
+                    hasSubmitted = submission != null,
+                    submittedAt = submission?.Date ?? "",
+                    submittedTime = submission?.Time ?? "",
+                    answerFile = submission?.Filename ?? ""
+                };
+            }).OrderBy(s => s.studentName).ToList();
+
+            return Ok(result);
+        }
+////////////////////////////////////////////////////////////////////////////
         private string GetContentType(string path)
         {
             var ext = System.IO.Path.GetExtension(path).ToLowerInvariant();
