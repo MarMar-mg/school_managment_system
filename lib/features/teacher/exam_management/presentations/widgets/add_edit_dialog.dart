@@ -10,8 +10,10 @@ void showAddEditExamDialog(
   BuildContext context, {
   dynamic exam,
   required int userId,
+  required int courseId,
   required VoidCallback onSuccess,
   required bool isAdd,
+  required bool isNeeded,
   required List<Map<String, dynamic>> courses,
 }) {
   showDialog(
@@ -22,6 +24,8 @@ void showAddEditExamDialog(
       userId: userId,
       onSuccess: onSuccess,
       isAdd: isAdd,
+      isNeeded: isNeeded,
+      courseId: courseId,
     ),
   );
 }
@@ -29,7 +33,9 @@ void showAddEditExamDialog(
 class _AddEditExamDialogContent extends StatefulWidget {
   final dynamic exam;
   final int userId;
+  final int courseId;
   final bool isAdd;
+  final bool isNeeded;
   final VoidCallback onSuccess;
   final List<Map<String, dynamic>> courses;
 
@@ -39,6 +45,8 @@ class _AddEditExamDialogContent extends StatefulWidget {
     required this.userId,
     required this.onSuccess,
     required this.isAdd,
+    required this.isNeeded,
+    required this.courseId,
   });
 
   @override
@@ -198,7 +206,7 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
       _showError('لطفا ساعت امتحان را انتخاب کنید');
       return;
     }
-    if (widget.isAdd && _selectedCourse == null) {
+    if (widget.isAdd && widget.isNeeded && _selectedCourse == null) {
       _showError('لطفا درس را انتخاب کنید');
       return;
     }
@@ -216,7 +224,9 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
 
         await ApiService.createExam(
           teacherId: widget.userId,
-          courseId: int.tryParse(_selectedCourse ?? '0') ?? 0,
+          courseId: widget.isNeeded
+              ? int.tryParse(_selectedCourse ?? '0') ?? 0
+              : widget.courseId,
           title: _titleController.text.trim(),
           description: _descriptionController.text.trim(),
           startDate: _dateController.text,
@@ -374,10 +384,10 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
                 const SizedBox(height: 24),
 
                 // Course dropdown (only for add)
-                if (widget.isAdd) ...[
+                if (widget.isAdd && widget.isNeeded) ...[
                   _buildLabel('انتخاب درس'),
                   const SizedBox(height: 8),
-                  _buildCourseDropdown(),
+                   _buildCourseDropdown(),
                   const SizedBox(height: 20),
                 ],
 

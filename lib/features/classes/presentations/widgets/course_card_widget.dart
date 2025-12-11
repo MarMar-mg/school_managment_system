@@ -1,14 +1,32 @@
 import 'package:flutter/material.dart';
 import '../../../../../applications/colors.dart';
+import 'item_dialog_student.dart';
+import 'item_dialog_teacher.dart';
 
 /// Premium animated course card with hover/press effects, ripple feedback,
 /// and smooth entrance animation when used in a list.
 class CourseCardWidget extends StatefulWidget {
   final Map<String, dynamic> course;
+  final bool isTeacher;
+  final int? userId;
+  final VoidCallback? onAddExam;
+  final VoidCallback? onAddAssignment;
+  final Function(dynamic)? onEditExam;
+  final Function(dynamic)? onEditAssignment;
+  final Function(dynamic)? onDeleteExam;
+  final Function(dynamic)? onDeleteAssignment;
 
   const CourseCardWidget({
     super.key,
     required this.course,
+    this.isTeacher = false,
+    this.userId,
+    this.onAddExam,
+    this.onAddAssignment,
+    this.onEditExam,
+    this.onEditAssignment,
+    this.onDeleteExam,
+    this.onDeleteAssignment,
   });
 
   @override
@@ -90,7 +108,6 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
           onTapUp: _onTapUp,
           onTapCancel: _onTapCancel,
           onTap: () {
-            // Navigate to course details
             debugPrint('Course tapped: ${widget.course['name']}');
           },
           child: _buildCardContent(color),
@@ -140,7 +157,11 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
                 ],
               ),
               const SizedBox(height: 12),
-              _buildDetailItem(Icons.schedule_outlined, widget.course['Classtime'], color),
+              _buildDetailItem(
+                Icons.schedule_outlined,
+                widget.course['Classtime'],
+                color,
+              ),
               const SizedBox(height: 16),
               _buildActionButton(color),
             ],
@@ -264,28 +285,61 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
         borderRadius: BorderRadius.circular(14),
         color: color.withOpacity(0.05),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'مشاهده تمرین‌ها و امتحانات',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: color,
-              letterSpacing: 0.3,
-            ),
-            textDirection: TextDirection.rtl,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: () => _showCourseDialog(color),
+          borderRadius: BorderRadius.circular(14),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'مشاهده تمرین‌ها و امتحانات' ,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: color,
+                  letterSpacing: 0.3,
+                ),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(width: 8),
+            ],
           ),
-          const SizedBox(width: 8),
-          Icon(
-            Icons.arrow_back_ios_rounded,
-            size: 15,
-            color: color,
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  void _showCourseDialog(Color color) {
+    if (widget.isTeacher) {
+      // Teacher: Show assignments and exams dialog
+      if (widget.userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('خطا: شناسه کاربر یافت نشد')),
+        );
+        return;
+      }
+
+      showCourseItemsDialog(
+        context,
+        course: widget.course,
+        userId: widget.userId!,
+        onAddExam: widget.onAddExam ?? () {},
+        onAddAssignment: widget.onAddAssignment ?? () {},
+        onEditExam: widget.onEditExam ?? (e) {},
+        onEditAssignment: widget.onEditAssignment ?? (a) {},
+        onDeleteExam: widget.onDeleteExam ?? (e) {},
+        onDeleteAssignment: widget.onDeleteAssignment ?? (a) {},
+        isTeacher: true, courseId: widget.course['id'],
+      );
+    } else {
+      showStudentClassesDialog(
+        context,
+        classes: [widget.course],
+        onRefresh: () {},
+      );
+    }
   }
 }
 
@@ -293,11 +347,27 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
 class AnimatedCourseCard extends StatelessWidget {
   final Map<String, dynamic> course;
   final Animation<double> animation;
+  final bool isTeacher;
+  final int? userId;
+  final VoidCallback? onAddExam;
+  final VoidCallback? onAddAssignment;
+  final Function(dynamic)? onEditExam;
+  final Function(dynamic)? onEditAssignment;
+  final Function(dynamic)? onDeleteExam;
+  final Function(dynamic)? onDeleteAssignment;
 
   const AnimatedCourseCard({
     super.key,
     required this.course,
     required this.animation,
+    this.isTeacher = false,
+    this.userId,
+    this.onAddExam,
+    this.onAddAssignment,
+    this.onEditExam,
+    this.onEditAssignment,
+    this.onDeleteExam,
+    this.onDeleteAssignment,
   });
 
   @override
@@ -317,7 +387,17 @@ class AnimatedCourseCard extends StatelessWidget {
           ),
         );
       },
-      child: CourseCardWidget(course: course),
+      child: CourseCardWidget(
+        course: course,
+        isTeacher: isTeacher,
+        userId: userId,
+        onAddExam: onAddExam,
+        onAddAssignment: onAddAssignment,
+        onEditExam: onEditExam,
+        onEditAssignment: onEditAssignment,
+        onDeleteExam: onDeleteExam,
+        onDeleteAssignment: onDeleteAssignment,
+      ),
     );
   }
 }

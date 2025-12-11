@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../../applications/colors.dart';
+import '../../../../applications/colors.dart';
 
 /// Premium animated stat card with press feedback, elevation animation,
 /// and perfect for use in animated grids/lists.

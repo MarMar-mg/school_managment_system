@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../../applications/colors.dart';
-import '../../../../../applications/role.dart';
-import '../../../../../core/services/api_service.dart';
+import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
+import '../../../../core/services/api_service.dart';
 import '../widgets/stat_card_widget.dart';
 import '../widgets/course_card_widget.dart';
 
@@ -62,12 +62,13 @@ class _CoursesPageState extends State<CoursesPage>
   void _startAnimations(int itemCount) {
     _cardAnims = List.generate(
       itemCount + 2, // +2 for stats cards
-          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
-        CurvedAnimation(
-          parent: _controller,
-          curve: Interval(0.1 + i * 0.1, 1.0, curve: Curves.easeOutCubic),
-        ),
-      ),
+          (i) =>
+          Tween<double>(begin: 0.0, end: 1.0).animate(
+            CurvedAnimation(
+              parent: _controller,
+              curve: Interval(0.1 + i * 0.1, 1.0, curve: Curves.easeOutCubic),
+            ),
+          ),
     );
     _controller.forward(from: 0.0);
   }
@@ -134,10 +135,11 @@ class _CoursesPageState extends State<CoursesPage>
               _buildShimmerTitle(),
               const SizedBox(height: 16),
               ...List.generate(4, (_) => const _ShimmerCourseCard())
-                  .map((card) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: card,
-              )),
+                  .map((card) =>
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 12),
+                    child: card,
+                  )),
             ],
           ),
         ),
@@ -218,11 +220,14 @@ class _CoursesPageState extends State<CoursesPage>
               const SizedBox(height: 16),
 
               // Courses
-              ...courses.asMap().entries.map((entry) {
+              ...courses
+                  .asMap()
+                  .entries
+                  .map((entry) {
                 final index = entry.key + 2;
                 return AnimatedCourseCard(
                   course: entry.value,
-                  animation: _cardAnims[index],
+                  animation: _cardAnims[index], userId: widget.userIdi, isTeacher: widget.role.index == 1,
                 );
               }),
             ],
@@ -380,11 +385,13 @@ class AnimatedSectionTitle extends StatelessWidget {
 class AnimatedCourseCard extends StatelessWidget {
   final Map<String, dynamic> course;
   final Animation<double> animation;
+  final int userId;
+  final bool isTeacher;
 
   const AnimatedCourseCard({
     super.key,
     required this.course,
-    required this.animation,
+    required this.animation, required this.userId, required this.isTeacher,
   });
 
   @override
@@ -404,7 +411,7 @@ class AnimatedCourseCard extends StatelessWidget {
           ),
         );
       },
-      child: CourseCardWidget(course: course),
+      child: CourseCardWidget(course: course, userId: userId, isTeacher: isTeacher,),
     );
   }
 }

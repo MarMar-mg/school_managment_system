@@ -169,6 +169,8 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       onSuccess: _fetchExams,
       isAdd: true,
       courses: _courses,
+      isNeeded: true,
+      courseId: 0,
     );
   }
 
@@ -193,6 +195,8 @@ class _ExamManagementPageState extends State<ExamManagementPage>
       onSuccess: _fetchExams,
       isAdd: false,
       courses: _courses,
+      isNeeded: true,
+      courseId: 0,
     );
   }
 

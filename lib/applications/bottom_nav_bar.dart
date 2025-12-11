@@ -5,7 +5,7 @@ import 'package:school_management_system/applications/colors.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/profile/presentations/pages/profile_page.dart';
 import '../features/student/assignments/presentations/pages/assignments_page.dart';
-import '../features/student/classes/presentations/pages/classes_page.dart';
+import '../features/classes/presentations/pages/classes_page.dart';
 import '../features/student/exam/presentations/pages/exam_page.dart';
 import '../features/student/scores/presentations/pages/scores_page.dart';
 import '../features/teacher/assignment_management/presentations/pages/assignment_management_page.dart';
