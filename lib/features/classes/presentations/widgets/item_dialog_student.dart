@@ -4,6 +4,7 @@ import 'package:school_management_system/core/services/api_service.dart';
 import 'package:school_management_system/features/student/assignments/data/models/assignment_model.dart.dart';
 import 'package:school_management_system/features/student/exam/entities/models/exam_model.dart';
 import 'package:school_management_system/commons/utils/manager/date_manager.dart';
+import '../../../student/shared/presentations/widgets/submit_answer_dialog.dart';
 
 void showStudentCourseDialog(
     BuildContext context, {
@@ -61,6 +62,88 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
     super.dispose();
   }
 
+  // Filter assignments by course name
+  List<AssignmentItemm> _filterAssignmentsByCourse(List<AssignmentItemm> items) {
+    return items
+        .where((a) => a.subject.toLowerCase() == widget.course['name'].toLowerCase())
+        .toList();
+  }
+
+  // Filter exams by course name
+  List<ExamItem> _filterExamsByCourse(List<ExamItem> items) {
+    return items
+        .where((e) => e.courseName.toLowerCase() == widget.course['name'].toLowerCase())
+        .toList();
+  }
+
+  Future<void> _handleSubmitAssignment(AssignmentItemm assignment) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => SubmitAnswerDialog(
+        type: 'assignment',
+        id: assignment.id,
+        userId: widget.userId,
+        onSubmitted: () {
+          _loadData();
+          setState(() {});
+        },
+        isEditing: false,
+      ),
+    );
+  }
+
+  Future<void> _handleEditAssignment(AssignmentItemm assignment) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => SubmitAnswerDialog(
+        type: 'assignment',
+        id: assignment.id,
+        userId: widget.userId,
+        onSubmitted: () {
+          _loadData();
+          setState(() {});
+        },
+        isEditing: true,
+        previousDescription: assignment.submittedDescription,
+        previousFileName: assignment.filename,
+      ),
+    );
+  }
+
+  Future<void> _handleSubmitExam(ExamItem exam) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => SubmitAnswerDialog(
+        type: 'exam',
+        id: exam.examId,
+        userId: widget.userId,
+        onSubmitted: () {
+          _loadData();
+          setState(() {});
+        },
+        isEditing: false,
+      ),
+    );
+  }
+
+  Future<void> _handleEditExam(ExamItem exam) async {
+    showDialog(
+      context: context,
+      builder: (BuildContext ctx) => SubmitAnswerDialog(
+        type: 'exam',
+        id: exam.examId,
+        userId: widget.userId,
+        onSubmitted: () {
+          _loadData();
+          setState(() {});
+        },
+        isEditing: true,
+        previousDescription: exam.submittedDescription,
+        previousFileName: exam.filename,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -109,15 +192,6 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
                         textDirection: TextDirection.rtl,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        'کد درس: ${widget.course['code'] ?? ''}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: Colors.white70,
-                        ),
-                        textDirection: TextDirection.rtl,
                       ),
                     ],
                   ),
@@ -206,9 +280,9 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
         }
 
         final allAssignments = snapshot.data ?? {};
-        final pending = (allAssignments['pending'] ?? []).cast<AssignmentItemm>();
-        final submitted = (allAssignments['submitted'] ?? []).cast<AssignmentItemm>();
-        final graded = (allAssignments['graded'] ?? []).cast<AssignmentItemm>();
+        final pending = _filterAssignmentsByCourse((allAssignments['pending'] ?? []).cast<AssignmentItemm>());
+        final submitted = _filterAssignmentsByCourse((allAssignments['submitted'] ?? []).cast<AssignmentItemm>());
+        final graded = _filterAssignmentsByCourse((allAssignments['graded'] ?? []).cast<AssignmentItemm>());
 
         if (pending.isEmpty && submitted.isEmpty && graded.isEmpty) {
           return Center(
@@ -414,15 +488,41 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
 
           const SizedBox(height: 12),
 
-          // Action Button
-          SizedBox(
-            width: double.infinity,
+          // Action Button based on status
+          _buildAssignmentActionButton(assignment, color),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAssignmentActionButton(AssignmentItemm assignment, Color color) {
+    if (assignment.status == 'pending') {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _handleSubmitAssignment(assignment),
+          icon: const Icon(Icons.upload_file_rounded, size: 16),
+          label: const Text('ارسال پاسخ'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color.withOpacity(0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: color.withOpacity(0.3)),
+            ),
+          ),
+        ),
+      );
+    } else if (assignment.status == 'submitted') {
+      return Row(
+        children: [
+          Expanded(
             child: ElevatedButton.icon(
-              onPressed: () {
-                debugPrint('View assignment: ${assignment.title}');
-              },
-              icon: const Icon(Icons.visibility_outlined, size: 16),
-              label: const Text('مشاهده جزئیات'),
+              onPressed: () => _handleEditAssignment(assignment),
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text('تغییر پاسخ'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color.withOpacity(0.1),
                 foregroundColor: color,
@@ -436,8 +536,29 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
             ),
           ),
         ],
-      ),
-    );
+      );
+    } else {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            debugPrint('View assignment: ${assignment.title}');
+          },
+          icon: const Icon(Icons.visibility_outlined, size: 16),
+          label: const Text('مشاهده جزئیات'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color.withOpacity(0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: color.withOpacity(0.3)),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   // ==================== EXAMS TAB ====================
@@ -465,9 +586,9 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
         }
 
         final allExams = snapshot.data ?? {};
-        final pending = allExams['pending'] ?? [];
-        final answered = allExams['answered'] ?? [];
-        final scored = allExams['scored'] ?? [];
+        final pending = _filterExamsByCourse(allExams['pending'] ?? []);
+        final answered = _filterExamsByCourse(allExams['answered'] ?? []);
+        final scored = _filterExamsByCourse(allExams['scored'] ?? []);
 
         if (pending.isEmpty && answered.isEmpty && scored.isEmpty) {
           return Center(
@@ -712,13 +833,18 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
                       ),
                     ],
                   ),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: LinearProgressIndicator(
-                      value: percentage / 100,
-                      minHeight: 8,
-                      backgroundColor: color.withOpacity(0.1),
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: LinearProgressIndicator(
+                          value: percentage / 100,
+                          minHeight: 8,
+                          backgroundColor: color.withOpacity(0.1),
+                          valueColor: AlwaysStoppedAnimation<Color>(color),
+                        ),
+                      ),
                     ),
                   ),
                 ],
@@ -727,15 +853,42 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
             const SizedBox(height: 12),
           ],
 
-          // Action Button
-          SizedBox(
-            width: double.infinity,
+          // Action Button based on status
+          _buildExamActionButton(exam, color),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildExamActionButton(ExamItem exam, Color color) {
+    if (exam.status == ExamStatus.pending && exam.answerImage == null) {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _handleSubmitExam(exam),
+          icon: const Icon(Icons.attach_file_rounded, size: 16),
+          label: const Text('ارسال پاسخ'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color.withOpacity(0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: color.withOpacity(0.3)),
+            ),
+          ),
+        ),
+      );
+    } else if ((exam.status == ExamStatus.pending || exam.status == ExamStatus.answered) &&
+        exam.answerImage != null) {
+      return Row(
+        children: [
+          Expanded(
             child: ElevatedButton.icon(
-              onPressed: () {
-                debugPrint('View exam: ${exam.title}');
-              },
-              icon: const Icon(Icons.visibility_outlined, size: 16),
-              label: const Text('مشاهده جزئیات'),
+              onPressed: () => _handleEditExam(exam),
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text('تغییر پاسخ'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: color.withOpacity(0.1),
                 foregroundColor: color,
@@ -749,8 +902,29 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
             ),
           ),
         ],
-      ),
-    );
+      );
+    } else {
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () {
+            debugPrint('View exam: ${exam.title}');
+          },
+          icon: const Icon(Icons.visibility_outlined, size: 16),
+          label: const Text('مشاهده جزئیات'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: color.withOpacity(0.1),
+            foregroundColor: color,
+            elevation: 0,
+            padding: const EdgeInsets.symmetric(vertical: 10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: BorderSide(color: color.withOpacity(0.3)),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   // ==================== HELPER WIDGETS ====================
