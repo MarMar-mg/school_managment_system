@@ -62,13 +62,12 @@ class _CoursesPageState extends State<CoursesPage>
   void _startAnimations(int itemCount) {
     _cardAnims = List.generate(
       itemCount + 2, // +2 for stats cards
-          (i) =>
-          Tween<double>(begin: 0.0, end: 1.0).animate(
-            CurvedAnimation(
-              parent: _controller,
-              curve: Interval(0.1 + i * 0.1, 1.0, curve: Curves.easeOutCubic),
-            ),
-          ),
+          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+        CurvedAnimation(
+          parent: _controller,
+          curve: Interval(0.1 + i * 0.1, 1.0, curve: Curves.easeOutCubic),
+        ),
+      ),
     );
     _controller.forward(from: 0.0);
   }
@@ -80,6 +79,11 @@ class _CoursesPageState extends State<CoursesPage>
     if (avg >= 12) return 'B-';
     if (avg >= 10) return 'C';
     return 'F';
+  }
+
+  // ==================== HELPER METHOD ====================
+  bool _isTeacher() {
+    return widget.role == Role.teacher;
   }
 
   @override
@@ -135,11 +139,10 @@ class _CoursesPageState extends State<CoursesPage>
               _buildShimmerTitle(),
               const SizedBox(height: 16),
               ...List.generate(4, (_) => const _ShimmerCourseCard())
-                  .map((card) =>
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: card,
-                  )),
+                  .map((card) => Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: card,
+              )),
             ],
           ),
         ),
@@ -152,7 +155,7 @@ class _CoursesPageState extends State<CoursesPage>
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Icon(Icons.error_outline, size: 64, color: Colors.red),
+          Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
           const SizedBox(height: 16),
           Text(
             'خطا در بارگذاری',
@@ -189,6 +192,7 @@ class _CoursesPageState extends State<CoursesPage>
           Text(
             'دروسی یافت نشد',
             style: TextStyle(fontSize: 18, color: AppColor.lightGray),
+            textDirection: TextDirection.rtl,
           ),
         ],
       ),
@@ -208,28 +212,33 @@ class _CoursesPageState extends State<CoursesPage>
               AnimatedStatRow(
                 coursesCount: courses.length,
                 averageFuture: _averageFuture,
-                animation: _cardAnims[0],
+                animation: _cardAnims.isNotEmpty ? _cardAnims[0] : const AlwaysStoppedAnimation(1.0),
                 convertToGrade: _convertToGrade,
               ),
 
               const SizedBox(height: 24),
 
               // Title
-              AnimatedSectionTitle(animation: _cardAnims[1]),
+              AnimatedSectionTitle(
+                animation: _cardAnims.length > 1 ? _cardAnims[1] : const AlwaysStoppedAnimation(1.0),
+              ),
 
               const SizedBox(height: 16),
 
               // Courses
-              ...courses
-                  .asMap()
-                  .entries
-                  .map((entry) {
+              ...courses.asMap().entries.map((entry) {
                 final index = entry.key + 2;
+                final cardAnim = index < _cardAnims.length
+                    ? _cardAnims[index]
+                    : const AlwaysStoppedAnimation(1.0);
+
                 return AnimatedCourseCard(
                   course: entry.value,
-                  animation: _cardAnims[index], userId: widget.userIdi, isTeacher: widget.role.index == 1,
+                  animation: cardAnim,
+                  isTeacher: _isTeacher(),
+                  userId: widget.userIdi,
                 );
-              }),
+              }).toList(),
             ],
           ),
         ),
@@ -378,40 +387,6 @@ class AnimatedSectionTitle extends StatelessWidget {
         ),
         textDirection: TextDirection.rtl,
       ),
-    );
-  }
-}
-
-class AnimatedCourseCard extends StatelessWidget {
-  final Map<String, dynamic> course;
-  final Animation<double> animation;
-  final int userId;
-  final bool isTeacher;
-
-  const AnimatedCourseCard({
-    super.key,
-    required this.course,
-    required this.animation, required this.userId, required this.isTeacher,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, child) {
-        final value = animation.value;
-        return Opacity(
-          opacity: value,
-          child: Transform.translate(
-            offset: Offset(0, 60 * (1 - value)),
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 12),
-              child: child,
-            ),
-          ),
-        );
-      },
-      child: CourseCardWidget(course: course, userId: userId, isTeacher: isTeacher,),
     );
   }
 }

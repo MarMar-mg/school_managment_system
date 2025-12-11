@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../../../../../applications/colors.dart';
 import 'item_dialog_student.dart';
 import 'item_dialog_teacher.dart';
@@ -8,7 +9,7 @@ import 'item_dialog_teacher.dart';
 class CourseCardWidget extends StatefulWidget {
   final Map<String, dynamic> course;
   final bool isTeacher;
-  final int? userId;
+  final int userId;
   final VoidCallback? onAddExam;
   final VoidCallback? onAddAssignment;
   final Function(dynamic)? onEditExam;
@@ -20,7 +21,7 @@ class CourseCardWidget extends StatefulWidget {
     super.key,
     required this.course,
     this.isTeacher = false,
-    this.userId,
+    required this.userId,
     this.onAddExam,
     this.onAddAssignment,
     this.onEditExam,
@@ -46,9 +47,10 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
       vsync: this,
       duration: const Duration(milliseconds: 200),
     );
-    _elevationAnimation = Tween<double>(begin: 4.0, end: 16.0).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
-    );
+    _elevationAnimation = Tween<double>(
+      begin: 4.0,
+      end: 16.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
   }
 
   @override
@@ -180,11 +182,7 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
-      child: Icon(
-        widget.course['icon'],
-        color: color,
-        size: 28,
-      ),
+      child: Icon(widget.course['icon'], color: color, size: 28),
     );
   }
 
@@ -288,13 +286,13 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: () => _showCourseDialog(color),
+          onTap: () => _showCourseDialog(),
           borderRadius: BorderRadius.circular(14),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                'مشاهده تمرین‌ها و امتحانات' ,
+                'مشاهده تمرین‌ها و امتحانات',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
@@ -311,33 +309,24 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
     );
   }
 
-  void _showCourseDialog(Color color) {
+  void _showCourseDialog() {
     if (widget.isTeacher) {
-      // Teacher: Show assignments and exams dialog
-      if (widget.userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('خطا: شناسه کاربر یافت نشد')),
-        );
-        return;
-      }
-
+      // CALL TEACHER DIALOG: Show assignments and exams dialog
       showCourseItemsDialog(
         context,
         course: widget.course,
-        userId: widget.userId!,
-        onAddExam: widget.onAddExam ?? () {},
-        onAddAssignment: widget.onAddAssignment ?? () {},
-        onEditExam: widget.onEditExam ?? (e) {},
-        onEditAssignment: widget.onEditAssignment ?? (a) {},
-        onDeleteExam: widget.onDeleteExam ?? (e) {},
-        onDeleteAssignment: widget.onDeleteAssignment ?? (a) {},
-        isTeacher: true, courseId: widget.course['id'],
+        userId: widget.userId,
+        courseId: widget.course['id'] ?? 0,
+        onRefresh: () => setState(() {}),
+        isTeacher: true,
       );
     } else {
-      showStudentClassesDialog(
+      // CALL STUDENT DIALOG
+      showStudentCourseDialog(
         context,
-        classes: [widget.course],
-        onRefresh: () {},
+        course: widget.course,
+        userId: widget.userId,
+        onRefresh: () => setState(() {}),
       );
     }
   }
@@ -348,7 +337,7 @@ class AnimatedCourseCard extends StatelessWidget {
   final Map<String, dynamic> course;
   final Animation<double> animation;
   final bool isTeacher;
-  final int? userId;
+  final int userId;
   final VoidCallback? onAddExam;
   final VoidCallback? onAddAssignment;
   final Function(dynamic)? onEditExam;
@@ -361,7 +350,7 @@ class AnimatedCourseCard extends StatelessWidget {
     required this.course,
     required this.animation,
     this.isTeacher = false,
-    this.userId,
+    required this.userId,
     this.onAddExam,
     this.onAddAssignment,
     this.onEditExam,
