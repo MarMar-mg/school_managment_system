@@ -4,6 +4,7 @@ import 'package:shamsi_date/shamsi_date.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
 import '../../../../../core/services/api_service.dart';
+import '../../../../../core/services/exam_time_validator.dart';
 import '../../../shared/presentations/widgets/submit_answer_dialog.dart';
 import '../../entities/models/exam_model.dart';
 
@@ -28,6 +29,13 @@ class ExamCard extends StatelessWidget {
         ? _formatJalali(item.submittedDate!)
         : 'بارگزاری نشده است';
     final submittedT = item.submittedTime != null ? item.submittedTime : '';
+
+    // Check exam status for time validation
+    final examStatus = ExamTimeValidator.getExamStatus(
+      examDate: item.dueDate ?? '',
+      startTime: item.startTime ?? '00:00',
+      endTime: item.endTime ?? '23:59',
+    );
 
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
@@ -102,6 +110,11 @@ class ExamCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 16),
+
+            // TIME STATUS BANNER - Show only for pending exams outside time window
+            if (examStatus != 'during' && item.status == ExamStatus.pending)
+              _buildTimeStatusBanner(examStatus),
+
             // Description
             if (item.description?.isNotEmpty == true) ...[
               const SizedBox(height: 16),
@@ -119,7 +132,7 @@ class ExamCard extends StatelessWidget {
 
             // State-specific content
             if (item.status == ExamStatus.pending)
-              ..._pendingContent(due, time),
+              ..._pendingContent(due, time, examStatus),
             if (item.status == ExamStatus.answered)
               ..._answeredContent(submittedD, due, dueT),
             if (item.status == ExamStatus.scored)
@@ -127,306 +140,254 @@ class ExamCard extends StatelessWidget {
 
             const SizedBox(height: 16),
             ((item.status == ExamStatus.pending ||
-                        item.status != ExamStatus.answered) &&
-                    item.answerImage != null)
+                item.status != ExamStatus.answered) &&
+                item.answerImage != null)
                 ? _buildShowButton(context)
                 : const SizedBox(),
             const SizedBox(height: 16),
 
             // Action Button
-            _buildActionButton(context),
+            _buildActionButton(context, examStatus),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildShowButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          debugPrint('View answer for ${item.title}');
-        },
-        icon: const Icon(Icons.list_alt, size: 18),
-        label: const Text("مشاهده"),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: AppColor.purple,
-          side: BorderSide(color: AppColor.purple.withOpacity(0.3)),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+  /// Build time status banner for pending exams
+  Widget _buildTimeStatusBanner(String status) {
+    late String message;
+    late Color bannerColor;
+    late IconData icon;
+
+    if (status == 'before_start') {
+      final minutesUntil = ExamTimeValidator.getMinutesUntilStart(
+        examDate: item.dueDate ?? '',
+        startTime: item.startTime ?? '00:00',
+      );
+
+      message = minutesUntil > 0
+          ? 'امتحان ${_formatTimeUntilStart(minutesUntil)} دیگر شروع می‌شود'
+          : 'امتحان در حال شروع است...';
+      bannerColor = Colors.orange;
+      icon = Icons.schedule;
+    } else {
+      message = 'زمان تحویل امتحان به پایان رسیده است';
+      bannerColor = Colors.red;
+      icon = Icons.error_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: bannerColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: bannerColor, size: 18),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 12,
+                color: bannerColor,
+                fontWeight: FontWeight.w600,
+              ),
+              textDirection: TextDirection.rtl,
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildActionButton(BuildContext context) {
-    // Pending: Show "ارسال پاسخ"
-    if (item.status == ExamStatus.pending && item.answerImage == null) {
-      return Row(
-        children: [
-          Expanded(
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: () {
-                  print('DEBUG: Opening dialog with examId=${item.examId}');
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext ctx) => SubmitAnswerDialog(
-                      type: 'exam',
-                      id: item.examId,
-                      userId: userId,
-                      onSubmitted: onRefresh,
-                      isEditing: false,
-                    ),
-                  );
-                },
-                icon: const Icon(Icons.attach_file, size: 18),
-                label: const Text("ارسال پاسخ"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColor.purple.withOpacity(0.1),
-                  foregroundColor: AppColor.purple,
-                  elevation: 0,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: _buildShowButton(context)),
-        ],
-      );
+  /// Format time until exam start in readable format (Days > Hours > Minutes)
+  String _formatTimeUntilStart(int totalMinutes) {
+    if (totalMinutes <= 0) return '';
+
+    final days = totalMinutes ~/ (24 * 60);
+    final remainingAfterDays = totalMinutes % (24 * 60);
+    final hours = remainingAfterDays ~/ 60;
+    final minutes = remainingAfterDays % 60;
+
+    final parts = <String>[];
+
+    if (days > 0) {
+      parts.add('$days روز');
+    }
+    if (hours > 0) {
+      parts.add('$hours ساعت');
+    }
+    if (minutes > 0) {
+      parts.add('$minutes دقیقه');
     }
 
-    // Answered/Pending with answer: Show "تغییر پاسخ" and "دانلود"
-    if ((item.status == ExamStatus.pending ||
-            item.status == ExamStatus.answered) &&
-        item.answerImage != null) {
-      return Row(
-        children: [
-          // Download Button
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await _downloadFile(context, 'exam');
-              },
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("دانلود"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade50,
-                foregroundColor: Colors.green,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Edit Button
-          (item.status != ExamStatus.answered)
-              ? Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      print(
-                        'DEBUG: Opening edit dialog with examId=${item.examId}',
-                      );
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext ctx) => SubmitAnswerDialog(
-                          type: 'exam',
-                          id: item.examId,
-                          userId: userId,
-                          onSubmitted: onRefresh,
-                          isEditing: true,
-                          previousDescription: item.submittedDescription,
-                          previousFileName: item.filename,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text("تغییر"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                )
-              : Expanded(child: _buildShowButton(context)),
-          // const SizedBox(width: 8),
-          // Expanded(child: _buildShowButton(context)),
-        ],
-      );
+    // If nothing to show, return minutes
+    if (parts.isEmpty) {
+      return 'کمتر از یک دقیقه';
     }
 
-    // Scored: Show download and view buttons
-    if (item.status == ExamStatus.scored) {
-      return Row(
-        children: [
-          // Download Button
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await _downloadFile(context, 'exam');
-              },
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("دانلود پاسخ"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade50,
-                foregroundColor: Colors.green,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(child: _buildShowButton(context)),
-        ],
-      );
-    }
-
-    // Default
-    return _buildShowButton(context);
+    return parts.join(' و ');
   }
 
-  // Download file helper method
-  Future<void> _downloadFile(BuildContext context, String type) async {
-    try {
-      // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (ctx) => const AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('در حال دانلود...'),
-            ],
-          ),
+  List<Widget> _pendingContent(
+      String? due,
+      String? time,
+      String examStatus,
+      ) =>
+      [
+        Row(
+          children: [
+            _infoChip("", time ?? "نامشخص", Icons.access_time),
+            const SizedBox(width: 12),
+            _infoChip(
+              "تاریخ",
+              DateFormatManager.formatDate(due) ?? "نامشخص",
+              Icons.calendar_today,
+            ),
+          ],
         ),
-      );
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    " زمان آزمون: ${item.duration}",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Container(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Center(
+                  child: Text(
+                    "نمره کل: ${item.totalScore}",
+                    style: TextStyle(
+                      color: Colors.blue,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        // Show remaining time during active exam
+        if (examStatus == 'during') ...[
+          const SizedBox(height: 12),
+          _buildRemainingTimeWidget(),
+        ],
+      ];
 
-      final filePath = await ApiService.downloadAndSaveFile(
-        type: type,
-        submissionId: item.estId,
-        fileName: item.filename ?? 'answer_${item.examId}',
-      );
+  /// Build remaining time widget during active exam
+  Widget _buildRemainingTimeWidget() {
+    final remainingMinutes = ExamTimeValidator.getRemainingMinutes(
+      examDate: item.dueDate ?? '',
+      startTime: item.startTime ?? '00:00',
+      endTime: item.endTime ?? '23:59',
+    );
 
-      if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('فایل با موفقیت دانلود شد: $filePath'),
-            backgroundColor: Colors.green,
-            duration: const Duration(seconds: 3),
-          ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        Navigator.pop(context); // Close loading dialog
-
-        // Show error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطا در دانلود: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
+    if (remainingMinutes <= 0) {
+      return const SizedBox();
     }
+
+    final timeFormatted = _formatTimeRemaining(remainingMinutes);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            'زمان باقی‌مانده: $timeFormatted',
+            style: TextStyle(
+              color: Colors.amber.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
-  List<Widget> _pendingContent(String? due, String? time) => [
-    Row(
-      children: [
-        _infoChip("", time ?? "نامشخص", Icons.access_time),
-        const SizedBox(width: 12),
-        _infoChip(
-          "تاریخ",
-          DateFormatManager.formatDate(due) ?? "نامشخص",
-          Icons.calendar_today,
-        ),
-      ],
-    ),
-    const SizedBox(height: 16),
-    Row(
-      children: [
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                " زمان آزمون: ${item.duration}",
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Container(
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.blue.shade50,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Center(
-              child: Text(
-                "نمره کل: ${item.totalScore}",
-                style: TextStyle(
-                  color: Colors.blue,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    ),
-  ];
+  /// Format remaining time in readable format (Days > Hours > Minutes)
+  String _formatTimeRemaining(int totalMinutes) {
+    if (totalMinutes <= 0) return 'زمان تمام شد';
+
+    final days = totalMinutes ~/ (24 * 60);
+    final remainingAfterDays = totalMinutes % (24 * 60);
+    final hours = remainingAfterDays ~/ 60;
+    final minutes = remainingAfterDays % 60;
+
+    final parts = <String>[];
+
+    if (days > 0) {
+      parts.add('$days روز');
+    }
+    if (hours > 0) {
+      parts.add('$hours ساعت');
+    }
+    if (minutes > 0) {
+      parts.add('$minutes دقیقه');
+    }
+
+    // If nothing to show, return less than a minute
+    if (parts.isEmpty) {
+      return 'کمتر از یک دقیقه';
+    }
+
+    return parts.join(' و ');
+  }
 
   List<Widget> _answeredContent(
-    String? submitted,
-    String? due,
-    String? dueT,
-  ) => [
-    Text(
-      "اتمام محلت - در انتظار نمره",
-      style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-    ),
-    const SizedBox(height: 8),
-    Text(
-      "زمان پایان: ${due!}($dueT)",
-      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-    ),
-    const SizedBox(height: 8),
-    Text(
-      'تاریخ بارگزاری: ${submitted ?? "نامشخص"}',
-      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-    ),
-  ];
+      String? submitted,
+      String? due,
+      String? dueT,
+      ) =>
+      [
+        Text(
+          "اتمام محلت - در انتظار نمره",
+          style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          "زمان پایان: ${due!}($dueT)",
+          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'تاریخ بارگزاری: ${submitted ?? "نامشخص"}',
+          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+        ),
+      ];
 
   List<Widget> _scoredContent(String? submittedTime, String? submittedDate) {
     final percent = (item.score! / item.totalScore!.toInt()) * 100;
@@ -518,6 +479,229 @@ class ExamCard extends StatelessWidget {
       ),
     ),
   );
+
+  Widget _buildShowButton(BuildContext context) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+          debugPrint('View answer for ${item.title}');
+        },
+        icon: const Icon(Icons.list_alt, size: 18),
+        label: const Text("مشاهده"),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColor.purple,
+          side: BorderSide(color: AppColor.purple.withOpacity(0.3)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildActionButton(BuildContext context, String examStatus) {
+    // Pending: Show "ارسال پاسخ"
+    if (item.status == ExamStatus.pending && item.answerImage == null) {
+      final isTimeValid = examStatus == 'during';
+
+      return Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: isTimeValid
+                    ? () {
+                  print('DEBUG: Opening dialog with examId=${item.examId}');
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) => SubmitAnswerDialog(
+                      type: 'exam',
+                      id: item.examId,
+                      userId: userId,
+                      onSubmitted: onRefresh,
+                      isEditing: false,
+                      examDate: item.dueDate,
+                      examStartTime: item.startTime,
+                      examEndTime: item.endTime,
+                    ),
+                  );
+                }
+                    : null,
+                icon: const Icon(Icons.attach_file, size: 18),
+                label: const Text("ارسال پاسخ"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isTimeValid
+                      ? AppColor.purple.withOpacity(0.1)
+                      : Colors.grey.shade200,
+                  foregroundColor:
+                  isTimeValid ? AppColor.purple : Colors.grey,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: _buildShowButton(context)),
+        ],
+      );
+    }
+
+    // Answered/Pending with answer: Show "تغییر پاسخ" and "دانلود"
+    if ((item.status == ExamStatus.pending ||
+        item.status == ExamStatus.answered) &&
+        item.answerImage != null) {
+      final isTimeValid = examStatus == 'during';
+
+      return Row(
+        children: [
+          // Download Button
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await _downloadFile(context, 'exam');
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text("دانلود"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          // Edit Button
+          (item.status != ExamStatus.answered && isTimeValid)
+              ? Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () {
+                print(
+                  'DEBUG: Opening edit dialog with examId=${item.examId}',
+                );
+                showDialog(
+                  context: context,
+                  builder: (BuildContext ctx) => SubmitAnswerDialog(
+                    type: 'exam',
+                    id: item.examId,
+                    userId: userId,
+                    onSubmitted: onRefresh,
+                    isEditing: true,
+                    previousDescription: item.submittedDescription,
+                    previousFileName: item.filename,
+                    examDate: item.dueDate,
+                    examStartTime: item.startTime,
+                    examEndTime: item.endTime,
+                  ),
+                );
+              },
+              icon: const Icon(Icons.edit_outlined, size: 18),
+              label: const Text("تغییر"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          )
+              : Expanded(child: _buildShowButton(context)),
+        ],
+      );
+    }
+
+    // Scored: Show download and view buttons
+    if (item.status == ExamStatus.scored) {
+      return Row(
+        children: [
+          // Download Button
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await _downloadFile(context, 'exam');
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text("دانلود پاسخ"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(child: _buildShowButton(context)),
+        ],
+      );
+    }
+
+    // Default
+    return _buildShowButton(context);
+  }
+
+  // Download file helper method
+  Future<void> _downloadFile(BuildContext context, String type) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('در حال دانلود...'),
+            ],
+          ),
+        ),
+      );
+
+      final filePath = await ApiService.downloadAndSaveFile(
+        type: type,
+        submissionId: item.estId,
+        fileName: item.filename ?? 'answer_${item.examId}',
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل با موفقیت دانلود شد: $filePath'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   Color _headerColor() => switch (item.status) {
     ExamStatus.pending => Colors.orange,

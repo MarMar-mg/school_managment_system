@@ -5,6 +5,7 @@ import 'package:school_management_system/features/student/assignments/data/model
 import 'package:school_management_system/features/student/exam/entities/models/exam_model.dart';
 import 'package:school_management_system/commons/utils/manager/date_manager.dart';
 import '../../../student/shared/presentations/widgets/submit_answer_dialog.dart';
+import 'package:school_management_system/core/services/exam_time_validator.dart';
 
 void showStudentCourseDialog(
     BuildContext context, {
@@ -394,26 +395,26 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
                   ],
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 6,
-                ),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color.withOpacity(0.3)),
-                ),
-                child: Text(
-                  assignment.badgeText,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.bold,
-                    color: color,
-                    letterSpacing: 0.3,
-                  ),
-                ),
-              ),
+              // Container(
+              //   padding: const EdgeInsets.symmetric(
+              //     horizontal: 10,
+              //     vertical: 6,
+              //   ),
+              //   decoration: BoxDecoration(
+              //     color: color.withOpacity(0.15),
+              //     borderRadius: BorderRadius.circular(8),
+              //     border: Border.all(color: color.withOpacity(0.3)),
+              //   ),
+              //   child: Text(
+              //     assignment.badgeText,
+              //     style: TextStyle(
+              //       fontSize: 10,
+              //       fontWeight: FontWeight.bold,
+              //       color: color,
+              //       letterSpacing: 0.3,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
 
@@ -639,6 +640,14 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
   }
 
   Widget _buildExamCard(ExamItem exam, Color color) {
+    // Check exam time status
+    final examStatus = ExamTimeValidator.getExamStatus(
+      examDate: exam.dueDate ?? '',
+      startTime: exam.startTime ?? '00:00',
+      endTime: exam.endTime ?? '23:59',
+    );
+
+    final isTimeValid = examStatus == 'during';
     final percentage = exam.score != null && exam.totalScore != null
         ? (int.parse(exam.score.toString()) / int.parse(exam.totalScore!)) * 100
         : null;
@@ -661,6 +670,15 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // TIME STATUS BANNER - Show for pending exams outside time window
+          if (exam.status == ExamStatus.pending && examStatus != 'during')
+            Column(
+              children: [
+                _buildExamTimeStatusBanner(examStatus, exam),
+                const SizedBox(height: 12),
+              ],
+            ),
+
           // Header Row
           Row(
             children: [
@@ -704,27 +722,26 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
                   ],
                 ),
               ),
-              if (exam.score != null)
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: color.withOpacity(0.3)),
-                  ),
-                  child: Text(
-                    '${exam.score}/${exam.totalScore}',
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.bold,
-                      color: color,
-                      letterSpacing: 0.3,
-                    ),
-                  ),
-                ),
+              // Container(
+              //   padding: const EdgeInsets.symmetric(
+              //     horizontal: 10,
+              //     vertical: 6,
+              //   ),
+              //   decoration: BoxDecoration(
+              //     color: color.withOpacity(0.15),
+              //     borderRadius: BorderRadius.circular(8),
+              //     border: Border.all(color: color.withOpacity(0.3)),
+              //   ),
+              //   child: Text(
+              //     'exam.badgeText',
+              //     style: TextStyle(
+              //       fontSize: 10,
+              //       fontWeight: FontWeight.bold,
+              //       color: color,
+              //       letterSpacing: 0.3,
+              //     ),
+              //   ),
+              // ),
             ],
           ),
 
@@ -797,6 +814,12 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
             ),
           ],
 
+          // REMAINING TIME FOR ACTIVE EXAM
+          if (exam.status == ExamStatus.pending && isTimeValid) ...[
+            const SizedBox(height: 12),
+            _buildExamRemainingTimeWidget(exam),
+          ],
+
           const SizedBox(height: 12),
 
           // Score Info for Scored Exams
@@ -854,49 +877,197 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
           ],
 
           // Action Button based on status
-          _buildExamActionButton(exam, color),
+          _buildExamActionButton(exam, color, isTimeValid),
         ],
       ),
     );
   }
 
-  Widget _buildExamActionButton(ExamItem exam, Color color) {
+  /// Build time status banner for exams in dialog
+  Widget _buildExamTimeStatusBanner(String status, ExamItem exam) {
+    late String message;
+    late Color bannerColor;
+    late IconData icon;
+
+    if (status == 'before_start') {
+      final minutesUntil = ExamTimeValidator.getMinutesUntilStart(
+        examDate: exam.dueDate ?? '',
+        startTime: exam.startTime ?? '00:00',
+      );
+
+      message = minutesUntil > 0
+          ? 'امتحان ${_formatExamTimeUntilStart(minutesUntil)} دیگر شروع می‌شود'
+          : 'امتحان در حال شروع است...';
+      bannerColor = Colors.orange;
+      icon = Icons.schedule;
+    } else {
+      message = 'زمان تحویل امتحان به پایان رسیده است';
+      bannerColor = Colors.red;
+      icon = Icons.error_outline;
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+      decoration: BoxDecoration(
+        color: bannerColor.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: bannerColor.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: bannerColor, size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                fontSize: 11,
+                color: bannerColor,
+                fontWeight: FontWeight.w600,
+              ),
+              textDirection: TextDirection.rtl,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Format time until exam start (Days > Hours > Minutes)
+  String _formatExamTimeUntilStart(int totalMinutes) {
+    if (totalMinutes <= 0) return '';
+
+    final days = totalMinutes ~/ (24 * 60);
+    final remainingAfterDays = totalMinutes % (24 * 60);
+    final hours = remainingAfterDays ~/ 60;
+    final minutes = remainingAfterDays % 60;
+
+    final parts = <String>[];
+
+    if (days > 0) {
+      parts.add('$days روز');
+    }
+    if (hours > 0) {
+      parts.add('$hours ساعت');
+    }
+    if (minutes > 0) {
+      parts.add('$minutes دقیقه');
+    }
+
+    if (parts.isEmpty) {
+      return 'کمتر از یک دقیقه';
+    }
+
+    return parts.join(' و ');
+  }
+
+  /// Build remaining time widget for active exam
+  Widget _buildExamRemainingTimeWidget(ExamItem exam) {
+    final remainingMinutes = ExamTimeValidator.getRemainingMinutes(
+      examDate: exam.dueDate ?? '',
+      startTime: exam.startTime ?? '00:00',
+      endTime: exam.endTime ?? '23:59',
+    );
+
+    if (remainingMinutes <= 0) {
+      return const SizedBox();
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.amber.shade50,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: Colors.amber.shade300),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 18),
+          const SizedBox(width: 6),
+          Text(
+            'زمان باقی‌مانده: $remainingMinutes دقیقه',
+            style: TextStyle(
+              color: Colors.amber.shade700,
+              fontWeight: FontWeight.w600,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Build exam action button with time validation
+  Widget _buildExamActionButton(
+      ExamItem exam,
+      Color color,
+      bool isTimeValid,
+      ) {
     if (exam.status == ExamStatus.pending && exam.answerImage == null) {
       return SizedBox(
         width: double.infinity,
         child: ElevatedButton.icon(
-          onPressed: () => _handleSubmitExam(exam),
+          onPressed: isTimeValid
+              ? () => _handleSubmitExam(exam)
+              : null,
           icon: const Icon(Icons.attach_file_rounded, size: 16),
           label: const Text('ارسال پاسخ'),
           style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
-            foregroundColor: color,
+            backgroundColor: isTimeValid
+                ? color.withOpacity(0.1)
+                : Colors.grey.shade300,
+            foregroundColor: isTimeValid ? color : Colors.grey,
             elevation: 0,
             padding: const EdgeInsets.symmetric(vertical: 10),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: color.withOpacity(0.3)),
+              side: BorderSide(
+                color: isTimeValid
+                    ? color.withOpacity(0.3)
+                    : Colors.grey.shade300,
+              ),
             ),
           ),
         ),
       );
-    } else if ((exam.status == ExamStatus.pending || exam.status == ExamStatus.answered) &&
+    } else if ((exam.status == ExamStatus.pending ||
+        exam.status == ExamStatus.answered) &&
         exam.answerImage != null) {
       return Row(
         children: [
           Expanded(
             child: ElevatedButton.icon(
-              onPressed: () => _handleEditExam(exam),
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text('تغییر پاسخ'),
+              onPressed: () async {
+                await _downloadExamFile(exam);
+              },
+              icon: const Icon(Icons.download_rounded, size: 16),
+              label: const Text("دانلود"),
               style: ElevatedButton.styleFrom(
-                backgroundColor: color.withOpacity(0.1),
-                foregroundColor: color,
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 10),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: color.withOpacity(0.3)),
+                  side: BorderSide(color: Colors.green.shade300),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: isTimeValid ? () => _handleEditExam(exam) : null,
+              icon: const Icon(Icons.edit_outlined, size: 16),
+              label: const Text("تغییر"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isTimeValid ? Colors.blue : Colors.grey.shade300,
+                foregroundColor: isTimeValid ? Colors.white : Colors.grey,
+                elevation: 0,
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
                 ),
               ),
             ),
@@ -926,6 +1097,21 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
       );
     }
   }
+
+  /// Download exam file
+  Future<void> _downloadExamFile(ExamItem exam) async {
+    try {
+      final filePath = await ApiService.downloadAndSaveFile(
+        type: 'exam',
+        submissionId: exam.estId,
+        fileName: exam.filename ?? 'answer_${exam.examId}',
+      );
+      print('Downloaded: $filePath');
+    } catch (e) {
+      print('Download error: $e');
+    }
+  }
+
 
   // ==================== HELPER WIDGETS ====================
   Widget _buildSectionHeader(String title, Color color, int count) {
