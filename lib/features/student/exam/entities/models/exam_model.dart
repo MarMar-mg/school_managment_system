@@ -18,7 +18,9 @@ class ExamItem {
   final String? description;
   final ExamStatus status;
   final String? answerImage;
+  final String? filenameQ;
   final String? filename;
+  final String? file;
   final VoidCallback? onReminderTap;
   final VoidCallback? onViewAnswer;
   final String? submittedDescription;
@@ -37,7 +39,9 @@ class ExamItem {
     required this.description,
     required this.status,
     this.answerImage,
+    this.filenameQ,
     this.filename,
+    this.file,
     this.onReminderTap,
     this.onViewAnswer,
     this.startTime,

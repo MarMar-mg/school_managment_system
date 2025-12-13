@@ -439,6 +439,8 @@ class ApiService {
           status: status,
           answerImage: json['answerImage'],
           filename: json['filename'],
+          file: json['file'],
+          filenameQ: json['filenameQ'],
           onReminderTap: () => print('Reminder set for ${json['title']}'),
           onViewAnswer: () => print('View answer for ${json['title']}'),
           duration: (json['duration'] ?? 0).toString(),
@@ -1534,6 +1536,56 @@ class ApiService {
     } catch (e) {
       print('Error fetching exercise students: $e');
       throw Exception('خطا: $e');
+    }
+  }
+
+  /// Download exam question file (from Exam.File field)
+  static Future<Uint8List> downloadExamQuestionFile(int examId) async {
+    final url = Uri.parse('$baseUrl/student/download/exam-question/$examId');
+
+    try {
+      final response = await http.get(url).timeout(_timeout);
+
+      print('Download Exam Question Status: ${response.statusCode}');
+      print('Download Exam Question Body Length: ${response.bodyBytes.length}');
+
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      } else if (response.statusCode == 404) {
+        throw Exception('فایل سوال یافت نشد');
+      } else if (response.bodyBytes.isEmpty) {
+        throw Exception('فایل خالی است');
+      } else {
+        throw Exception('خطا در دانلود: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Download Exam Question Error: $e');
+      throw Exception('خطا در دانلود فایل: $e');
+    }
+  }
+
+  /// Download assignment question file (from Exercise.File field)
+  static Future<Uint8List> downloadAssignmentQuestionFile(int assignmentId) async {
+    final url = Uri.parse('$baseUrl/student/download/assignment-question/$assignmentId');
+
+    try {
+      final response = await http.get(url).timeout(_timeout);
+
+      print('Download Assignment Question Status: ${response.statusCode}');
+      print('Download Assignment Question Body Length: ${response.bodyBytes.length}');
+
+      if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
+        return response.bodyBytes;
+      } else if (response.statusCode == 404) {
+        throw Exception('فایل تمرین یافت نشد');
+      } else if (response.bodyBytes.isEmpty) {
+        throw Exception('فایل خالی است');
+      } else {
+        throw Exception('خطا در دانلود: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Download Assignment Question Error: $e');
+      throw Exception('خطا در دانلود فایل: $e');
     }
   }
 

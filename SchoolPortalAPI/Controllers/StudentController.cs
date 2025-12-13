@@ -153,7 +153,9 @@ namespace SchoolPortalAPI.Controllers
                    e.Enddate,
                    e.Endtime,
                    e.Score,
-                   e.Courseid
+                   e.Courseid,
+                   e.File,
+                   e.Filename
                })
                .ToListAsync();
 
@@ -222,6 +224,8 @@ namespace SchoolPortalAPI.Controllers
                    description = e.Description ?? "",
                    endTime = e.Endtime ?? "نامشخص",
                    dueDate = dueDateStr ?? "نامشخص",
+                   file = e?.File,
+                   filenameQ = e?.Filename,
                    totalScore = e.Score?.ToString() ?? "نامشخص",
                    isUrgent,
                    status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : (!isPastDue ? "pending" : "notSubmitted")),
@@ -296,6 +300,8 @@ namespace SchoolPortalAPI.Controllers
                         endTime = e.Endtime,
                         possibleScore = e.PossibleScore,
                         duration = e.Duration,
+                        file = e.File,
+                        filenameQ = e.Filename,
 
                         // Get student's submission data from ExamStuTeach
                         score = _context.ExamStuTeaches
@@ -1127,6 +1133,113 @@ namespace SchoolPortalAPI.Controllers
             catch (Exception ex)
             {
                 Console.WriteLine($"[DOWNLOAD EXAM] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Download exam question file
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/exam-question/{examId}")]
+        public async Task<IActionResult> DownloadExamQuestionFile(long examId)
+        {
+            try
+            {
+                // Get the exam
+                var exam = await _context.Exams.FindAsync(examId);
+
+                if (exam == null)
+                    return NotFound(new { message = "امتحان یافت نشد" });
+
+                // Check if File field is populated (not Filename)
+                if (string.IsNullOrEmpty(exam.File))
+                    return NotFound(new { message = "فایل سوال برای این امتحان موجود نیست" });
+
+                // Build file path using File field
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "exams",
+                    exam.File); // Use File field, not Filename
+
+                // Check if file exists
+                if (!System.IO.File.Exists(filePath))
+                {
+                    Console.WriteLine($"[DOWNLOAD EXAM QUESTION] File not found at: {filePath}");
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+                }
+
+                // Get file info
+                var fileInfo = new FileInfo(filePath);
+                var fileName = fileInfo.Name;
+
+                // Read file
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+                Console.WriteLine($"[DOWNLOAD EXAM QUESTION] Sending {fileBytes.Length} bytes for exam {examId}");
+
+                // Determine content type
+                var contentType = GetContentType(filePath);
+
+                // Return file
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DOWNLOAD EXAM QUESTION] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+
+        // ──────────────────────────────────────────────────────────────
+        // Download assignment question file
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("download/assignment-question/{assignmentId}")]
+        public async Task<IActionResult> DownloadAssignmentQuestionFile(long assignmentId)
+        {
+            try
+            {
+                // Get the assignment (exercise)
+                var assignment = await _context.Exercises.FindAsync(assignmentId);
+
+                if (assignment == null)
+                    return NotFound(new { message = "تمرین یافت نشد" });
+
+                // Check if File field is populated (not Filename)
+                if (string.IsNullOrEmpty(assignment.File))
+                    return NotFound(new { message = "فایل سوال برای این تمرین موجود نیست" });
+
+                // Build file path using File field
+                var filePath = Path.Combine(
+                    Directory.GetCurrentDirectory(),
+                    "wwwroot", "uploads", "exercises",
+                    assignment.File); // Use File field, not Filename
+
+                // Check if file exists
+                if (!System.IO.File.Exists(filePath))
+                {
+                    Console.WriteLine($"[DOWNLOAD ASSIGNMENT QUESTION] File not found at: {filePath}");
+                    return NotFound(new { message = "فایل در سرور یافت نشد" });
+                }
+
+                // Get file info
+                var fileInfo = new FileInfo(filePath);
+                var fileName = fileInfo.Name;
+
+                // Read file
+                var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+                Console.WriteLine($"[DOWNLOAD ASSIGNMENT QUESTION] Sending {fileBytes.Length} bytes for assignment {assignmentId}");
+
+                // Determine content type
+                var contentType = GetContentType(filePath);
+
+                // Return file
+                return File(fileBytes, contentType, fileName);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DOWNLOAD ASSIGNMENT QUESTION] Error: {ex.Message}");
                 return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
             }
         }

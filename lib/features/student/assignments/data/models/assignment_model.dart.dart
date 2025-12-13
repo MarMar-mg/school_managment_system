@@ -15,7 +15,9 @@ class AssignmentItemm {
   final bool isUrgent;
   final String status; // pending | submitted | graded
   final String? finalScore;
+  final String? filenameQ;
   final String? filename;
+  final String? file;
   final String? submittedDescription;
 
   const AssignmentItemm({
@@ -30,6 +32,8 @@ class AssignmentItemm {
     required this.status,
     this.finalScore,
     this.endTime,
+    this.file,
+    this.filenameQ,
     this.filename,
     this.submittedDescription,
   });
@@ -49,7 +53,9 @@ class AssignmentItemm {
       isUrgent: urgent,
       status: status,
       finalScore: json['finalScore'],
+      filenameQ: json['filenameQ'],
       filename: json['filename'],
+      file: json['file'],
       submittedDescription: json['submittedDescription'],
       estId: json['estId'],
     );

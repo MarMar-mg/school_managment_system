@@ -236,20 +236,97 @@ class AssignmentCard extends StatelessWidget {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {
-          debugPrint('View answer for ${item.title}');
+        onPressed: () async {
+          await _downloadQuestionFile(context, 'assignment');
         },
-        icon: const Icon(Icons.list_alt, size: 18),
-        label: const Text("مشاهده"),
+        icon: Icon(
+          Icons.download_rounded,
+          size: 18,
+          color: item.badgeColor,
+        ),
+        label: Text(
+          "دانلود سوال",
+          style: TextStyle(color: item.badgeColor),
+        ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColor.purple,
-          side: BorderSide(color: AppColor.purple.withOpacity(0.3)),
+          foregroundColor: item.badgeColor,
+          side: BorderSide(color: item.badgeColor.withOpacity(0.3)),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
         ),
       ),
     );
+  }
+
+  Future<void> _downloadQuestionFile(BuildContext context, String type) async {
+    try {
+      // Verify file exists before downloading
+      if (item.file == null || item.file!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل تمرین برای این سوال موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('در حال دانلود...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Download file
+      print('Attempting to download assignment question file for: ${item.id}');
+      final fileBytes = await ApiService.downloadAssignmentQuestionFile(item.id);
+
+      print('Downloaded ${fileBytes.length} bytes');
+
+      // Save file
+      final fileName = item.filenameQ ?? 'assignment_${item.id}.pdf';
+      final filePath = await ApiService.saveFileToDevice(fileBytes, fileName);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل تمرین با موفقیت دانلود شد'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Download error: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildActionButton(BuildContext context) {
@@ -303,7 +380,7 @@ class AssignmentCard extends StatelessWidget {
                 await _downloadFile(context, 'assignment');
               },
               icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("دانلود"),
+              label: const Text("دانلود پاسخ"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade50,
                 foregroundColor: Colors.green,
@@ -368,7 +445,7 @@ class AssignmentCard extends StatelessWidget {
                 await _downloadFile(context, 'assignment');
               },
               icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("دانلود"),
+              label: const Text("دانلود پاسخ"),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green.shade50,
                 foregroundColor: Colors.green,

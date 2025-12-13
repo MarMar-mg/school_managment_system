@@ -13,8 +13,32 @@
       "PackagePath": "staticwebassets\\uploads\\assignments\\aa298064-99c0-4550-bcbf-7de4ada60cc5_CamScanner 09-28-2024 19.58.pdf"
     },
     {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\d88ad204-8852-448d-a375-37b0bfab49f3_1-5.pdf",
+      "PackagePath": "staticwebassets\\uploads\\assignments\\d88ad204-8852-448d-a375-37b0bfab49f3_1-5.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\f4fdf44d-2e40-41cc-b696-00d46ecdee41_63613883005.pdf",
+      "PackagePath": "staticwebassets\\uploads\\assignments\\f4fdf44d-2e40-41cc-b696-00d46ecdee41_63613883005.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\011184dd-f6ff-43f9-bcb4-82fe772dfde0_1-5.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\011184dd-f6ff-43f9-bcb4-82fe772dfde0_1-5.pdf"
+    },
+    {
       "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\02b77232-8cc6-4e9f-b229-338095021b68_1-5.pdf",
       "PackagePath": "staticwebassets\\uploads\\exams\\02b77232-8cc6-4e9f-b229-338095021b68_1-5.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\0306b749-2b76-46f8-af15-34ea05549ec6_8-9-10 correct.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\0306b749-2b76-46f8-af15-34ea05549ec6_8-9-10 correct.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\22c83a16-77a1-4fda-9f9f-404977c1d33a_1-5.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\22c83a16-77a1-4fda-9f9f-404977c1d33a_1-5.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\6214ab5b-ea10-4981-85fa-3838b3ac9197_S1-7.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\6214ab5b-ea10-4981-85fa-3838b3ac9197_S1-7.pdf"
     },
     {
       "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\658022ce-2394-41d9-8e5d-982e7ba4b389_5998917656142531916 (1).jpg",
@@ -25,6 +49,10 @@
       "PackagePath": "staticwebassets\\uploads\\exams\\7d19c001-d691-4750-b2ee-bc8ff6f44b42_63613883005.pdf"
     },
     {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\95e9fabf-27de-4aff-a3ee-1dcd891e8de5_1-5.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\95e9fabf-27de-4aff-a3ee-1dcd891e8de5_1-5.pdf"
+    },
+    {
       "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg",
       "PackagePath": "staticwebassets\\uploads\\exams\\b5062681-adb3-429c-8c3b-4f37ffa1c748_5998917656142531916.jpg"
     },
@@ -33,8 +61,20 @@
       "PackagePath": "staticwebassets\\uploads\\exams\\d9b5f589-26ad-42a4-8178-970c255672bf_1-5.pdf"
     },
     {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\dd9881de-c1bc-489a-9eea-cdbddb33f613_1-5.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\dd9881de-c1bc-489a-9eea-cdbddb33f613_1-5.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\f3f05996-700a-4150-ad39-6a003862be1e_chapter 1 S1_S5 (1).pdf",
+      "PackagePath": "staticwebassets\\uploads\\exams\\f3f05996-700a-4150-ad39-6a003862be1e_chapter 1 S1_S5 (1).pdf"
+    },
+    {
       "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\f9034ac4-a93f-4636-b28e-b7ed070ed3f6_chapter 1 S1_S5.pdf",
       "PackagePath": "staticwebassets\\uploads\\exams\\f9034ac4-a93f-4636-b28e-b7ed070ed3f6_chapter 1 S1_S5.pdf"
+    },
+    {
+      "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exercises\\0616654b-752f-4096-abf1-04e5e30b512c_8-9-10 correct.pdf",
+      "PackagePath": "staticwebassets\\uploads\\exercises\\0616654b-752f-4096-abf1-04e5e30b512c_8-9-10 correct.pdf"
     },
     {
       "Id": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exercises\\aa867ad5-9d79-41e3-84d4-08c9e509d238_8-9-10 correct.pdf",

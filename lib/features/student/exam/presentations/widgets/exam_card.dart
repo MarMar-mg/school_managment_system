@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
-import 'package:school_management_system/applications/colors.dart';
+
 import '../../../../../commons/utils/manager/date_manager.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../../../../core/services/exam_time_validator.dart';
@@ -27,7 +28,7 @@ class ExamCard extends StatelessWidget {
     final time = '${item.startTime} تا ${item.endTime}';
     final submittedD = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
-        : 'بارگزاری نشده است';
+        : 'بدون پاسخ';
     final submittedT = item.submittedTime != null ? item.submittedTime : '';
 
     // Check exam status for time validation
@@ -140,8 +141,8 @@ class ExamCard extends StatelessWidget {
 
             const SizedBox(height: 16),
             ((item.status == ExamStatus.pending ||
-                item.status != ExamStatus.answered) &&
-                item.answerImage != null)
+                        item.status != ExamStatus.answered) &&
+                    item.answerImage != null)
                 ? _buildShowButton(context)
                 : const SizedBox(),
             const SizedBox(height: 16),
@@ -233,11 +234,7 @@ class ExamCard extends StatelessWidget {
     return parts.join(' و ');
   }
 
-  List<Widget> _pendingContent(
-      String? due,
-      String? time,
-      String examStatus,
-      ) =>
+  List<Widget> _pendingContent(String? due, String? time, String examStatus) =>
       [
         Row(
           children: [
@@ -368,26 +365,25 @@ class ExamCard extends StatelessWidget {
   }
 
   List<Widget> _answeredContent(
-      String? submitted,
-      String? due,
-      String? dueT,
-      ) =>
-      [
-        Text(
-          "اتمام محلت - در انتظار نمره",
-          style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          "زمان پایان: ${due!}($dueT)",
-          style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          'تاریخ بارگزاری: ${submitted ?? "نامشخص"}',
-          style: TextStyle(fontSize: 13, color: Colors.grey[600]),
-        ),
-      ];
+    String? submitted,
+    String? due,
+    String? dueT,
+  ) => [
+    Text(
+      "اتمام محلت - در انتظار نمره",
+      style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.w500),
+    ),
+    const SizedBox(height: 8),
+    Text(
+      "زمان پایان: ${due!}($dueT)",
+      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
+    ),
+    const SizedBox(height: 8),
+    Text(
+      'تاریخ بارگزاری: ${submitted ?? "نامشخص"}',
+      style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+    ),
+  ];
 
   List<Widget> _scoredContent(String? submittedTime, String? submittedDate) {
     final percent = (item.score! / item.totalScore!.toInt()) * 100;
@@ -481,17 +477,40 @@ class ExamCard extends StatelessWidget {
   );
 
   Widget _buildShowButton(BuildContext context) {
+    // Check exam time status
+    final examStatus = ExamTimeValidator.getExamStatus(
+      examDate: item.dueDate ?? '',
+      startTime: item.startTime ?? '00:00',
+      endTime: item.endTime ?? '23:59',
+    );
+
+    final isTimeValid = examStatus != 'before_start';
+    final isTimeExpired = examStatus == 'after_end';
+
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
-        onPressed: () {
-          debugPrint('View answer for ${item.title}');
-        },
-        icon: const Icon(Icons.list_alt, size: 18),
-        label: const Text("مشاهده"),
+        onPressed: isTimeValid
+            ? () async {
+                await _downloadQuestionFile(context, 'exam');
+              }
+            : null,
+        icon: Icon(
+          Icons.download_rounded,
+          size: 18,
+          color: isTimeValid ? AppColor.purple : Colors.grey,
+        ),
+        label: Text(
+          "دانلود سوال",
+          style: TextStyle(color: isTimeValid ? AppColor.purple : Colors.grey),
+        ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColor.purple,
-          side: BorderSide(color: AppColor.purple.withOpacity(0.3)),
+          foregroundColor: isTimeValid ? AppColor.purple : Colors.grey,
+          side: BorderSide(
+            color: isTimeValid
+                ? AppColor.purple.withOpacity(0.3)
+                : Colors.grey.withOpacity(0.3),
+          ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -500,7 +519,82 @@ class ExamCard extends StatelessWidget {
     );
   }
 
+  Future<void> _downloadQuestionFile(BuildContext context, String type) async {
+    try {
+      // Verify file exists before downloading
+      if (item.file == null || item.file!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل سوال برای این امتحان موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('در حال دانلود...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Download file
+      print(
+        'Attempting to download exam question file for exam: ${item.examId}',
+      );
+      final fileBytes = await ApiService.downloadExamQuestionFile(item.examId);
+
+      print('Downloaded ${fileBytes.length} bytes');
+
+      // Save file
+      final fileName = item.filenameQ ?? 'exam_${item.examId}.pdf';
+      final filePath = await ApiService.saveFileToDevice(fileBytes, fileName);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل سوال با موفقیت دانلود شد'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Download error: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
   Widget _buildActionButton(BuildContext context, String examStatus) {
+    // Check if download is allowed (after start time)
+    final isDownloadAllowed = examStatus != 'before_start';
+
     // Pending: Show "ارسال پاسخ"
     if (item.status == ExamStatus.pending && item.answerImage == null) {
       final isTimeValid = examStatus == 'during';
@@ -513,21 +607,23 @@ class ExamCard extends StatelessWidget {
               child: ElevatedButton.icon(
                 onPressed: isTimeValid
                     ? () {
-                  print('DEBUG: Opening dialog with examId=${item.examId}');
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext ctx) => SubmitAnswerDialog(
-                      type: 'exam',
-                      id: item.examId,
-                      userId: userId,
-                      onSubmitted: onRefresh,
-                      isEditing: false,
-                      examDate: item.dueDate,
-                      examStartTime: item.startTime,
-                      examEndTime: item.endTime,
-                    ),
-                  );
-                }
+                        print(
+                          'DEBUG: Opening dialog with examId=${item.examId}',
+                        );
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext ctx) => SubmitAnswerDialog(
+                            type: 'exam',
+                            id: item.examId,
+                            userId: userId,
+                            onSubmitted: onRefresh,
+                            isEditing: false,
+                            examDate: item.dueDate,
+                            examStartTime: item.startTime,
+                            examEndTime: item.endTime,
+                          ),
+                        );
+                      }
                     : null,
                 icon: const Icon(Icons.attach_file, size: 18),
                 label: const Text("ارسال پاسخ"),
@@ -535,8 +631,7 @@ class ExamCard extends StatelessWidget {
                   backgroundColor: isTimeValid
                       ? AppColor.purple.withOpacity(0.1)
                       : Colors.grey.shade200,
-                  foregroundColor:
-                  isTimeValid ? AppColor.purple : Colors.grey,
+                  foregroundColor: isTimeValid ? AppColor.purple : Colors.grey,
                   elevation: 0,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
@@ -553,74 +648,10 @@ class ExamCard extends StatelessWidget {
 
     // Answered/Pending with answer: Show "تغییر پاسخ" and "دانلود"
     if ((item.status == ExamStatus.pending ||
-        item.status == ExamStatus.answered) &&
+            item.status == ExamStatus.answered) &&
         item.answerImage != null) {
       final isTimeValid = examStatus == 'during';
 
-      return Row(
-        children: [
-          // Download Button
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await _downloadFile(context, 'exam');
-              },
-              icon: const Icon(Icons.download_rounded, size: 18),
-              label: const Text("دانلود"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade50,
-                foregroundColor: Colors.green,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          // Edit Button
-          (item.status != ExamStatus.answered && isTimeValid)
-              ? Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () {
-                print(
-                  'DEBUG: Opening edit dialog with examId=${item.examId}',
-                );
-                showDialog(
-                  context: context,
-                  builder: (BuildContext ctx) => SubmitAnswerDialog(
-                    type: 'exam',
-                    id: item.examId,
-                    userId: userId,
-                    onSubmitted: onRefresh,
-                    isEditing: true,
-                    previousDescription: item.submittedDescription,
-                    previousFileName: item.filename,
-                    examDate: item.dueDate,
-                    examStartTime: item.startTime,
-                    examEndTime: item.endTime,
-                  ),
-                );
-              },
-              icon: const Icon(Icons.edit_outlined, size: 18),
-              label: const Text("تغییر"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-          )
-              : Expanded(child: _buildShowButton(context)),
-        ],
-      );
-    }
-
-    // Scored: Show download and view buttons
-    if (item.status == ExamStatus.scored) {
       return Row(
         children: [
           // Download Button
@@ -642,7 +673,90 @@ class ExamCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Expanded(child: _buildShowButton(context)),
+          // Edit Button
+          (item.status != ExamStatus.answered && isTimeValid)
+              ? Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {
+                      print(
+                        'DEBUG: Opening edit dialog with examId=${item.examId}',
+                      );
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext ctx) => SubmitAnswerDialog(
+                          type: 'exam',
+                          id: item.examId,
+                          userId: userId,
+                          onSubmitted: onRefresh,
+                          isEditing: true,
+                          previousDescription: item.submittedDescription,
+                          previousFileName: item.filename,
+                          examDate: item.dueDate,
+                          examStartTime: item.startTime,
+                          examEndTime: item.endTime,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    label: const Text("تغییر"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                  ),
+                )
+              : Expanded(child: _buildShowButton(context)),
+        ],
+      );
+    }
+
+    // Scored: Show download question and view answer buttons
+    if (item.status == ExamStatus.scored) {
+      return Row(
+        children: [
+          // Download Question Button (only if allowed and file exists)
+          if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  await _downloadQuestionFile(context, 'exam');
+                },
+                icon: const Icon(Icons.download_rounded, size: 18),
+                label: const Text("دانلود سوال"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.purple.shade50,
+                  foregroundColor: Colors.purple,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
+          if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
+            const SizedBox(width: 8),
+          // Download Answer Button
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: () async {
+                await _downloadFile(context, 'exam');
+              },
+              icon: const Icon(Icons.download_rounded, size: 18),
+              label: const Text("دانلود پاسخ"),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green.shade50,
+                foregroundColor: Colors.green,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ),
         ],
       );
     }
@@ -654,6 +768,15 @@ class ExamCard extends StatelessWidget {
   // Download file helper method
   Future<void> _downloadFile(BuildContext context, String type) async {
     try {
+      if (item.filename == null || item.filename!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل پاسخی برای این امتحان موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
       // Show loading dialog
       showDialog(
         context: context,
