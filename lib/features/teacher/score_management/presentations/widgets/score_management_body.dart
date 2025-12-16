@@ -1,5 +1,3 @@
-// File: lib/features/teacher/exam_management/score_management/presentations/widgets/score_management_body.dart
-
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
@@ -108,7 +106,6 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
           error: widget.error,
           selectedItem: _selectedItem,
           selectedClassId: _selectedClassId,
-          // ← ADD THIS LINE
           onItemSelected: _loadSubmissions,
           onRetry: widget.onRetry,
         ),

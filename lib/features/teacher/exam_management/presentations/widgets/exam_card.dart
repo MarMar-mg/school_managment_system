@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/features/teacher/exam_management/presentations/widgets/score_management_widget.dart';
+import '../../../../../core/services/api_service.dart';
 import '../../data/models/exam_model.dart';
 
 class TeacherExamCard extends StatefulWidget {
@@ -26,10 +27,12 @@ class _TeacherExamCardState extends State<TeacherExamCard>
   bool _isPressed = false;
   late AnimationController _controller;
   late Animation<double> _elevationAnimation;
+  late Future<Map<String, dynamic>> _statsFuture;
 
   @override
   void initState() {
     super.initState();
+    _statsFuture = ApiService.getExamStats(widget.exam.id);
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 200),
@@ -190,38 +193,38 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                 const SizedBox(height: 14),
 
                 // description
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'توضیحات',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColor.lightGray,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          widget.exam.description,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColor.darkText,
-                            height: 1.5,
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade50,
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'توضیحات',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColor.lightGray,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.exam.description,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColor.darkText,
+                          height: 1.5,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
                 const SizedBox(height: 14),
 
                 // Stats Row
@@ -236,20 +239,43 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                       ),
                     ),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: _buildStatCard(
-                        'ثبت‌نام شده',
-                        '${widget.exam.students}',
-                        Colors.purple.withOpacity(0.1),
-                        AppColor.purple,
-                      ),
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: _statsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final stats = snapshot.data!;
+                          return Expanded(
+                            child: _buildStatCard(
+                              'ثبت‌نام شده',
+                              '${stats['totalSubmissions']}',
+                              Colors.purple.withOpacity(0.1),
+                              AppColor.purple,
+                            ),
+                          );
+                        }
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                        child: Padding(
+                        padding: EdgeInsets.all(20),
+                        child: CircularProgressIndicator(),
+                        ),
+                        );
+                        }
+                        return
+                        const
+                        SizedBox
+                        .
+                        shrink
+                        (
+                        );
+                      },
                     ),
                     if (!isUpcoming) ...[
                       const SizedBox(width: 10),
                       Expanded(
                         child: _buildStatCard(
                           'درصد قبولی',
-                          '${widget.exam.passPercentage?.toStringAsFixed(0) ?? "-"}%',
+                          '${widget.exam.passPercentage?.toString() ?? "-"}%',
                           Colors.green.withOpacity(0.1),
                           Colors.green,
                         ),
@@ -299,38 +325,28 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                     // View/Score Button
                     Expanded(
                       child: ElevatedButton.icon(
-                        onPressed: isUpcoming
-                            ? () => debugPrint(
-                                'View details: ${widget.exam.title}',
-                              )
-                            : () {
-                                showExamScoreManagementDialog(
-                                  context,
-                                  examId: widget.exam.id,
-                                  examTitle: widget.exam.title,
-                                  possibleScore: widget.exam.possibleScore,
-                                );
-                              },
+                        onPressed: () {
+                          showExamScoreManagementDialog(
+                            context,
+                            examId: widget.exam.id,
+                            examTitle: widget.exam.title,
+                            possibleScore: widget.exam.possibleScore,
+                          );
+                        },
                         icon: Icon(
-                          isUpcoming ? Icons.visibility_outlined : Icons.score,
+                          Icons.score,
                           size: 16,
                         ),
-                        label: Text(isUpcoming ? 'مشاهده' : 'مدیریت نمرات'),
+                        label: Text('مدیریت نمرات'),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isUpcoming
-                              ? Colors.grey.shade50
-                              : Colors.blue.shade50,
-                          foregroundColor: isUpcoming
-                              ? AppColor.darkText
-                              : Colors.blue,
+                          backgroundColor: Colors.blue.shade50,
+                          foregroundColor: Colors.blue,
                           elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                             side: BorderSide(
-                              color: isUpcoming
-                                  ? Colors.grey.shade300
-                                  : Colors.blue.shade300,
+                              color: Colors.blue.shade300,
                             ),
                           ),
                         ),
@@ -380,12 +396,10 @@ class _TeacherExamCardState extends State<TeacherExamCard>
     );
   }
 
-  Widget _buildStatCard(
-    String label,
-    String value,
-    Color bgColor,
-    Color textColor,
-  ) {
+  Widget _buildStatCard(String label,
+      String value,
+      Color bgColor,
+      Color textColor,) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(

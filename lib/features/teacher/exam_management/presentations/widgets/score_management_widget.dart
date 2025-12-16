@@ -141,7 +141,7 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
 
                   // Submissions Title
                   const Text(
-                    'رسالت‌های دانش‌آموزان',
+                    'ارسال‌های دانش‌آموزان',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -185,7 +185,7 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
                                 ),
                                 const SizedBox(height: 12),
                                 const Text(
-                                  'رسالتی یافت نشد',
+                                  'ارسالی یافت نشد',
                                   style: TextStyle(color: AppColor.lightGray),
                                 ),
                               ],
