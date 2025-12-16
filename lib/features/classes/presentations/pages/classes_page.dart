@@ -238,7 +238,7 @@ class _CoursesPageState extends State<CoursesPage>
                   isTeacher: _isTeacher(),
                   userId: widget.userIdi,
                 );
-              }).toList(),
+              }),
             ],
           ),
         ),

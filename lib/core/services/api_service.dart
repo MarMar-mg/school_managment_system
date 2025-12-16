@@ -256,7 +256,7 @@ class ApiService {
                   'location': c['location'] ?? 'نامشخص',
                   'Classtime': c['time'] ?? 'نامشخص',
                   'progress': c['progress'] ?? 0,
-                  'grade': c['grade'] ?? '-',
+                  'grade': c['averageGrade'] ?? '-',
                   'color': _getColor(c['courseName']),
                   'icon': _getIcon(c['courseName']),
                 },
