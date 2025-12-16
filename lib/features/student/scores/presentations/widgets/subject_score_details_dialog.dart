@@ -71,13 +71,24 @@ class _SubjectScoreDetailsDialogState
     });
   }
 
+  double _average(List<num> scores) {
+    if (scores.isEmpty) return 0;
+
+    final total = scores.fold<double>(
+      0,
+          (sum, item) => sum + item.toDouble(),
+    );
+
+    return total / scores.length;
+  }
+
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.all(12),
       child: SizedBox(
-        width: double.infinity,
         height: MediaQuery.of(context).size.height * 0.8,
         child: Column(
           children: [
@@ -96,28 +107,46 @@ class _SubjectScoreDetailsDialogState
                   FutureBuilder<List<AssignmentItemm>>(
                     future: _assignmentsFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('خطا: ${snapshot.error}');
-                      }
                       if (!snapshot.hasData) {
                         return const Center(
                             child: CircularProgressIndicator());
                       }
-                      return _buildAssignmentSection(snapshot.data!);
+                      final items = snapshot.data!;
+                      return _buildSection(
+                        title: 'تمرینات نمره‌دار',
+                        itemsCount: items.length,
+                        average: _average(items.map((e) => e.totalScore!.toInt()).toList()),
+                        expandedKey: 'assignments',
+                        children: items
+                            .map((e) => TitleScoreTile(
+                          title: e.title,
+                          score: e.totalScore!.toInt(),
+                        ))
+                            .toList(),
+                      );
                     },
                   ),
                   const SizedBox(height: 16),
                   FutureBuilder<List<ExamItem>>(
                     future: _examsFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.hasError) {
-                        return Text('خطا: ${snapshot.error}');
-                      }
                       if (!snapshot.hasData) {
                         return const Center(
                             child: CircularProgressIndicator());
                       }
-                      return _buildExamSection(snapshot.data!);
+                      final items = snapshot.data!;
+                      return _buildSection(
+                        title: 'امتحانات نمره‌دار',
+                        itemsCount: items.length,
+                        average: _average(items.map((e) => e.score!.toInt()).toList()),
+                        expandedKey: 'exams',
+                        children: items
+                            .map((e) => TitleScoreTile(
+                          title: e.title,
+                          score: e.score!.toInt(),
+                        ))
+                            .toList(),
+                      );
                     },
                   ),
                 ],
@@ -129,59 +158,34 @@ class _SubjectScoreDetailsDialogState
     );
   }
 
-  Widget _buildAssignmentSection(List<AssignmentItemm> items) {
+  Widget _buildSection({
+    required String title,
+    required int itemsCount,
+    required double average,
+    required String expandedKey,
+    required List<Widget> children,
+  }) {
     return ExpansionPanelList(
-      expansionCallback: (_, __) => _toggleSection('assignments'),
+      expansionCallback: (_, __) => _toggleSection(expandedKey),
       children: [
         ExpansionPanel(
-          isExpanded: _expandedSections['assignments']!,
+          isExpanded: _expandedSections[expandedKey]!,
           headerBuilder: (_, __) => ListTile(
-            title: Text('تمرینات نمره‌دار (${items.length})'),
+            title: Text('$title ($itemsCount)'),
+            subtitle: Text(
+              'میانگین: ${average.toStringAsFixed(1)}',
+              style: TextStyle(
+                color: scoreColor(average),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          body: items.isEmpty
+          body: children.isEmpty
               ? const Padding(
             padding: EdgeInsets.all(16),
-            child: Text('تمرینی یافت نشد'),
+            child: Text('موردی یافت نشد'),
           )
-              : Column(
-            children: items
-                .map(
-                  (item) => TitleScoreTile(
-                title: item.title,
-                score: item.totalScore!.toInt(),
-              ),
-            )
-                .toList(),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExamSection(List<ExamItem> items) {
-    return ExpansionPanelList(
-      expansionCallback: (_, __) => _toggleSection('exams'),
-      children: [
-        ExpansionPanel(
-          isExpanded: _expandedSections['exams']!,
-          headerBuilder: (_, __) => ListTile(
-            title: Text('امتحانات نمره‌دار (${items.length})'),
-          ),
-          body: items.isEmpty
-              ? const Padding(
-            padding: EdgeInsets.all(16),
-            child: Text('امتحانی یافت نشد'),
-          )
-              : Column(
-            children: items
-                .map(
-                  (item) => TitleScoreTile(
-                title: item.title,
-                score: item.score!.toInt(),
-              ),
-            )
-                .toList(),
-          ),
+              : Column(children: children),
         ),
       ],
     );
@@ -200,30 +204,36 @@ class TitleScoreTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final color = scoreColor(score);
+
     return Card(
       elevation: 0,
       margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       child: ListTile(
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.w600),
-        ),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.w600)),
         trailing: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
           decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.15),
+            color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Text(
             score.toString(),
-            style: const TextStyle(
-              color: Colors.green,
+            style: TextStyle(
+              color: color,
               fontWeight: FontWeight.bold,
+              fontSize: 15,
             ),
           ),
         ),
       ),
     );
   }
+}
+
+Color scoreColor(num score) {
+  if (score < 10) return Colors.red;
+  if (score < 15) return Colors.orange;
+  return Colors.green;
 }
