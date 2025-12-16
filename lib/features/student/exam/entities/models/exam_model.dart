@@ -48,4 +48,46 @@ class ExamItem {
     this.endTime,
     this.submittedDescription,
   });
+
+  factory ExamItem.fromJson(Map<String, dynamic> json) {
+    final statusStr = json['status'] as String? ?? 'pending';
+    ExamStatus parsedStatus;
+    switch (statusStr.toLowerCase()) {
+      case 'pending':
+        parsedStatus = ExamStatus.pending;
+        break;
+      case 'answered':
+      case 'answered_submitted':
+      case 'answered_not_submitted':
+        parsedStatus = ExamStatus.answered;
+        break;
+      case 'scored':
+        parsedStatus = ExamStatus.scored;
+        break;
+      default:
+        parsedStatus = ExamStatus.pending;
+    }
+
+    return ExamItem(
+      title: json['title'] ?? 'بدون عنوان',
+      examId: json['examId'] ?? 0,
+      estId: json['estId'],
+      courseName: json['courseName'] ?? 'نامشخص',
+      dueDate: json['dueDate'],
+      submittedDate: json['submittedDate'],
+      submittedTime: json['submittedTime'],
+      score: json['score'],
+      totalScore: json['totalScore'],
+      duration: json['duration'],
+      description: json['description'],
+      status: parsedStatus,
+      answerImage: json['answerImage'],
+      filenameQ: json['filenameQ'],
+      filename: json['filename'],
+      file: json['file'],
+      startTime: json['startTime'],
+      endTime: json['endTime'],
+      submittedDescription: json['submittedDescription'],
+    );
+  }
 }

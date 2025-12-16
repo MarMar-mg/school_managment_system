@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
-
 import '../../../../../commons/utils/manager/date_manager.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../../../../core/services/exam_time_validator.dart';
@@ -241,7 +240,7 @@ class ExamCard extends StatelessWidget {
             _infoChip("", time ?? "نامشخص", Icons.access_time),
             const SizedBox(width: 12),
             _infoChip(
-              "تاریخ",
+              "",
               DateFormatManager.formatDate(due) ?? "نامشخص",
               Icons.calendar_today,
             ),
@@ -458,7 +457,7 @@ class ExamCard extends StatelessWidget {
 
   Widget _infoChip(String label, String value, IconData icon) => Expanded(
     child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.grey.shade50,
         borderRadius: BorderRadius.circular(12),

@@ -4,6 +4,8 @@ import 'package:school_management_system/core/services/api_service.dart';
 import 'package:school_management_system/features/student/assignments/data/models/assignment_model.dart.dart';
 import 'package:school_management_system/features/student/exam/entities/models/exam_model.dart';
 import 'package:school_management_system/commons/utils/manager/date_manager.dart';
+import '../../../student/assignments/presentations/widgets/assignment_card.dart';
+import '../../../student/exam/presentations/widgets/exam_card.dart';
 import '../../../student/shared/presentations/widgets/submit_answer_dialog.dart';
 import 'package:school_management_system/core/services/exam_time_validator.dart';
 
@@ -42,8 +44,16 @@ class StudentCourseDialog extends StatefulWidget {
 class _StudentCourseDialogState extends State<StudentCourseDialog>
     with TickerProviderStateMixin {
   late TabController _tabController;
-  late Future<Map<String, List<dynamic>>> _assignmentsFuture;
+  late Future<Map<String, List<AssignmentItemm>>> _assignmentsFuture;
   late Future<Map<String, List<ExamItem>>> _examsFuture;
+
+  final Map<String, bool> _expandedSections = {
+    'pending': false,
+    'submitted': false,
+    'graded': false,
+    'upcoming': false,
+    'completed': false,
+  };
 
   @override
   void initState() {
@@ -53,8 +63,34 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
   }
 
   void _loadData() {
-    _assignmentsFuture = ApiService.getAllAssignments(widget.userId);
-    _examsFuture = ApiService.getAllExams(widget.userId);
+    _assignmentsFuture = ApiService.getAllAssignments(widget.userId).then((data) {
+      final String courseName = widget.course['name'] ?? '';
+      final List<AssignmentItemm> pending = (data['pending'] as List<AssignmentItemm>? ?? []).where((item) => item.subject == courseName).toList();
+      final List<AssignmentItemm> answeredSubmitted = (data['answered_submitted'] as List<AssignmentItemm>? ?? []);
+      final List<AssignmentItemm> answeredNotSubmitted = (data['answered_not_submitted'] as List<AssignmentItemm>? ?? []);
+      final List<AssignmentItemm> submitted = [...answeredSubmitted, ...answeredNotSubmitted].where((item) => item.subject == courseName).toList();
+      final List<AssignmentItemm> graded = (data['scored'] as List<AssignmentItemm>? ?? []).where((item) => item.subject == courseName).toList();
+
+      return {
+        'pending': pending,
+        'submitted': submitted,
+        'graded': graded,
+      };
+    });
+    _examsFuture = ApiService.getAllExams(widget.userId).then((data) {
+      final String courseName = widget.course['name'] ?? '';
+      final List<ExamItem> pending = (data['pending'] as List<ExamItem>? ?? []).where((item) => item.courseName == courseName).toList();
+      final List<ExamItem> answeredSubmitted = (data['answered_submitted'] as List<ExamItem>? ?? []);
+      final List<ExamItem> answeredNotSubmitted = (data['answered_not_submitted'] as List<ExamItem>? ?? []);
+      final List<ExamItem> submitted = [...answeredSubmitted, ...answeredNotSubmitted].where((item) => item.courseName == courseName).toList();
+      final List<ExamItem> graded = (data['scored'] as List<ExamItem>? ?? []).where((item) => item.courseName == courseName).toList();
+
+      return {
+        'pending': pending,
+        'submitted': submitted,
+        'graded': graded,
+      };
+    });
   }
 
   @override
@@ -63,1137 +99,160 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
     super.dispose();
   }
 
-  // Filter assignments by course name
-  List<AssignmentItemm> _filterAssignmentsByCourse(List<AssignmentItemm> items) {
-    return items
-        .where((a) => a.subject.toLowerCase() == widget.course['name'].toLowerCase())
-        .toList();
-  }
-
-  // Filter exams by course name
-  List<ExamItem> _filterExamsByCourse(List<ExamItem> items) {
-    return items
-        .where((e) => e.courseName.toLowerCase() == widget.course['name'].toLowerCase())
-        .toList();
-  }
-
-  Future<void> _handleSubmitAssignment(AssignmentItemm assignment) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => SubmitAnswerDialog(
-        type: 'assignment',
-        id: assignment.id,
-        userId: widget.userId,
-        onSubmitted: () {
-          _loadData();
-          setState(() {});
-        },
-        isEditing: false,
-      ),
-    );
-  }
-
-  Future<void> _handleEditAssignment(AssignmentItemm assignment) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => SubmitAnswerDialog(
-        type: 'assignment',
-        id: assignment.id,
-        userId: widget.userId,
-        onSubmitted: () {
-          _loadData();
-          setState(() {});
-        },
-        isEditing: true,
-        previousDescription: assignment.submittedDescription,
-        previousFileName: assignment.filename,
-      ),
-    );
-  }
-
-  Future<void> _handleSubmitExam(ExamItem exam) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => SubmitAnswerDialog(
-        type: 'exam',
-        id: exam.examId,
-        userId: widget.userId,
-        onSubmitted: () {
-          _loadData();
-          setState(() {});
-        },
-        isEditing: false,
-      ),
-    );
-  }
-
-  Future<void> _handleEditExam(ExamItem exam) async {
-    showDialog(
-      context: context,
-      builder: (BuildContext ctx) => SubmitAnswerDialog(
-        type: 'exam',
-        id: exam.examId,
-        userId: widget.userId,
-        onSubmitted: () {
-          _loadData();
-          setState(() {});
-        },
-        isEditing: true,
-        previousDescription: exam.submittedDescription,
-        previousFileName: exam.filename,
-      ),
-    );
+  void _toggleSection(String key) {
+    setState(() {
+      _expandedSections[key] = !_expandedSections[key]!;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColor.purple, AppColor.lightPurple],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      insetPadding: const EdgeInsets.all(10),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width - 20,
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                widget.course['name'] ?? 'نام درس',
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.course['name'] ?? 'نامشخص',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textDirection: TextDirection.rtl,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'معلم: ${widget.course['teacher'] ?? 'نامشخص'}',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: Colors.white70,
-                        ),
-                        textDirection: TextDirection.rtl,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
-            ),
-          ),
-
-          // Tabs
-          Container(
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: TabBar(
+            TabBar(
               controller: _tabController,
               labelColor: AppColor.purple,
               unselectedLabelColor: AppColor.lightGray,
               indicatorColor: AppColor.purple,
-              indicatorWeight: 3,
               tabs: const [
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.assignment_rounded, size: 20),
-                      SizedBox(width: 8),
-                      Text('تمرین‌ها'),
-                    ],
-                  ),
-                ),
-                Tab(
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.description_rounded, size: 20),
-                      SizedBox(width: 8),
-                      Text('امتحانات'),
-                    ],
-                  ),
-                ),
+                Tab(text: 'تکالیف'),
+                Tab(text: 'امتحانات'),
               ],
             ),
-          ),
-
-          // Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildAssignmentsTab(),
-                _buildExamsTab(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==================== ASSIGNMENTS TAB ====================
-  Widget _buildAssignmentsTab() {
-    return FutureBuilder<Map<String, List<dynamic>>>(
-      future: _assignmentsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColor.purple),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
-                const SizedBox(height: 16),
-                const Text('خطا در بارگذاری تمرین‌ها'),
-              ],
-            ),
-          );
-        }
-
-        final allAssignments = snapshot.data ?? {};
-        final pending = _filterAssignmentsByCourse((allAssignments['pending'] ?? []).cast<AssignmentItemm>());
-        final submitted = _filterAssignmentsByCourse((allAssignments['submitted'] ?? []).cast<AssignmentItemm>());
-        final graded = _filterAssignmentsByCourse((allAssignments['graded'] ?? []).cast<AssignmentItemm>());
-
-        if (pending.isEmpty && submitted.isEmpty && graded.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.assignment_outlined,
-                  size: 80,
-                  color: AppColor.lightGray,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'تمرینی وجود ندارد',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.lightGray,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              if (pending.isNotEmpty) ...[
-                _buildSectionHeader('در انتظار', Colors.orange, pending.length),
-                ...pending.map((a) => _buildAssignmentCard(a, Colors.orange)),
-                const SizedBox(height: 20),
-              ],
-              if (submitted.isNotEmpty) ...[
-                _buildSectionHeader('ارسال شده', Colors.blue, submitted.length),
-                ...submitted.map((a) => _buildAssignmentCard(a, Colors.blue)),
-                const SizedBox(height: 20),
-              ],
-              if (graded.isNotEmpty) ...[
-                _buildSectionHeader('نمره‌دار', Colors.green, graded.length),
-                ...graded.map((a) => _buildAssignmentCard(a, Colors.green)),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAssignmentCard(AssignmentItemm assignment, Color color) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Header Row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.assignment_rounded,
-                  size: 20,
-                  color: color,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      assignment.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.darkText,
-                      ),
-                      textDirection: TextDirection.rtl,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      assignment.subject,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColor.lightGray,
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
-                ),
-              ),
-              // Container(
-              //   padding: const EdgeInsets.symmetric(
-              //     horizontal: 10,
-              //     vertical: 6,
-              //   ),
-              //   decoration: BoxDecoration(
-              //     color: color.withOpacity(0.15),
-              //     borderRadius: BorderRadius.circular(8),
-              //     border: Border.all(color: color.withOpacity(0.3)),
-              //   ),
-              //   child: Text(
-              //     assignment.badgeText,
-              //     style: TextStyle(
-              //       fontSize: 10,
-              //       fontWeight: FontWeight.bold,
-              //       color: color,
-              //       letterSpacing: 0.3,
-              //     ),
-              //   ),
-              // ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
-          const SizedBox(height: 12),
-
-          // Details Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.calendar_today_outlined,
-                  'تاریخ',
-                  DateFormatManager.formatDate(assignment.dueDate) ?? 'نامشخص',
-                ),
-              ),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.access_time_outlined,
-                  'ساعت',
-                  assignment.endTime ?? 'نامشخص',
-                ),
-              ),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.grade_outlined,
-                  'امتیاز',
-                  'از ${assignment.totalScore ?? '0'}',
-                ),
-              ),
-            ],
-          ),
-
-          // Description
-          if (assignment.description != null && assignment.description!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
                 children: [
-                  Text(
-                    'توضیحات',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColor.lightGray,
-                      fontWeight: FontWeight.w600,
-                    ),
+                  FutureBuilder<Map<String, List<AssignmentItemm>>>(
+                    future: _assignmentsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('خطا: ${snapshot.error}'));
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final data = snapshot.data!;
+                      return ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          _buildAssignmentSection('در انتظار', data['pending'] ?? [], Colors.orange, 'pending'),
+                          _buildAssignmentSection('ارسال شده', data['submitted'] ?? [], Colors.blue, 'submitted'),
+                          _buildAssignmentSection('نمره‌دار', data['graded'] ?? [], Colors.green, 'graded'),
+                        ],
+                      );
+                    },
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    assignment.description!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColor.darkText,
-                      height: 1.4,
-                    ),
-                    textDirection: TextDirection.rtl,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
+                  FutureBuilder<Map<String, List<ExamItem>>>(
+                    future: _examsFuture,
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return Center(child: Text('خطا: ${snapshot.error}'));
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final data = snapshot.data!;
+                      return ListView(
+                        padding: const EdgeInsets.all(16),
+                        children: [
+                          _buildExamSection('در انتظار', data['pending'] ?? [], Colors.orange, 'pending'),
+                          _buildExamSection('ارسال شده', data['submitted'] ?? [], Colors.blue, 'submitted'),
+                          _buildExamSection('نمره‌دار', data['graded'] ?? [], Colors.green, 'graded'),
+                        ],
+                      );
+                    },
                   ),
                 ],
               ),
             ),
           ],
-
-          const SizedBox(height: 12),
-
-          // Action Button based on status
-          _buildAssignmentActionButton(assignment, color),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAssignmentActionButton(AssignmentItemm assignment, Color color) {
-    if (assignment.status == 'pending') {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () => _handleSubmitAssignment(assignment),
-          icon: const Icon(Icons.upload_file_rounded, size: 16),
-          label: const Text('ارسال پاسخ'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
-            foregroundColor: color,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: color.withOpacity(0.3)),
-            ),
-          ),
-        ),
-      );
-    } else if (assignment.status == 'submitted') {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () => _handleEditAssignment(assignment),
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text('تغییر پاسخ'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: color.withOpacity(0.1),
-                foregroundColor: color,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: color.withOpacity(0.3)),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            debugPrint('View assignment: ${assignment.title}');
-          },
-          icon: const Icon(Icons.visibility_outlined, size: 16),
-          label: const Text('مشاهده جزئیات'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
-            foregroundColor: color,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: color.withOpacity(0.3)),
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  // ==================== EXAMS TAB ====================
-  Widget _buildExamsTab() {
-    return FutureBuilder<Map<String, List<ExamItem>>>(
-      future: _examsFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator(color: AppColor.purple),
-          );
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.error_outline, size: 64, color: Colors.red.shade400),
-                const SizedBox(height: 16),
-                const Text('خطا در بارگذاری امتحانات'),
-              ],
-            ),
-          );
-        }
-
-        final allExams = snapshot.data ?? {};
-        final pending = _filterExamsByCourse(allExams['pending'] ?? []);
-        final answered = _filterExamsByCourse(allExams['answered'] ?? []);
-        final scored = _filterExamsByCourse(allExams['scored'] ?? []);
-
-        if (pending.isEmpty && answered.isEmpty && scored.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(
-                  Icons.description_outlined,
-                  size: 80,
-                  color: AppColor.lightGray,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'امتحانی وجود ندارد',
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: AppColor.lightGray,
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        return SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              if (pending.isNotEmpty) ...[
-                _buildSectionHeader('در انتظار', Colors.orange, pending.length),
-                ...pending.map((e) => _buildExamCard(e, Colors.orange)),
-                const SizedBox(height: 20),
-              ],
-              if (answered.isNotEmpty) ...[
-                _buildSectionHeader('ارسال شده', Colors.blue, answered.length),
-                ...answered.map((e) => _buildExamCard(e, Colors.blue)),
-                const SizedBox(height: 20),
-              ],
-              if (scored.isNotEmpty) ...[
-                _buildSectionHeader('نمره‌دار', Colors.green, scored.length),
-                ...scored.map((e) => _buildExamCard(e, Colors.green)),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildExamCard(ExamItem exam, Color color) {
-    // Check exam time status
-    final examStatus = ExamTimeValidator.getExamStatus(
-      examDate: exam.dueDate ?? '',
-      startTime: exam.startTime ?? '00:00',
-      endTime: exam.endTime ?? '23:59',
-    );
-
-    final isTimeValid = examStatus == 'during';
-    final percentage = exam.score != null && exam.totalScore != null
-        ? (int.parse(exam.score.toString()) / int.parse(exam.totalScore!)) * 100
-        : null;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // TIME STATUS BANNER - Show for pending exams outside time window
-          if (exam.status == ExamStatus.pending && examStatus != 'during')
-            Column(
-              children: [
-                _buildExamTimeStatusBanner(examStatus, exam),
-                const SizedBox(height: 12),
-              ],
-            ),
-
-          // Header Row
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: color.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  Icons.quiz_rounded,
-                  size: 20,
-                  color: color,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exam.title,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.darkText,
-                      ),
-                      textDirection: TextDirection.rtl,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      exam.courseName,
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColor.lightGray,
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
-                ),
-              ),
-              // Container(
-              //   padding: const EdgeInsets.symmetric(
-              //     horizontal: 10,
-              //     vertical: 6,
-              //   ),
-              //   decoration: BoxDecoration(
-              //     color: color.withOpacity(0.15),
-              //     borderRadius: BorderRadius.circular(8),
-              //     border: Border.all(color: color.withOpacity(0.3)),
-              //   ),
-              //   child: Text(
-              //     'exam.badgeText',
-              //     style: TextStyle(
-              //       fontSize: 10,
-              //       fontWeight: FontWeight.bold,
-              //       color: color,
-              //       letterSpacing: 0.3,
-              //     ),
-              //   ),
-              // ),
-            ],
-          ),
-
-          const SizedBox(height: 12),
-          const Divider(height: 1, color: Color(0xFFEEEEEE)),
-          const SizedBox(height: 12),
-
-          // Details Row
-          Row(
-            children: [
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.calendar_today_outlined,
-                  'تاریخ',
-                  exam.dueDate ?? 'نامشخص',
-                ),
-              ),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.access_time_outlined,
-                  'ساعت',
-                  '${exam.startTime ?? 'نامشخص'} - ${exam.endTime ?? ''}',
-                ),
-              ),
-              Expanded(
-                child: _buildDetailItem(
-                  Icons.timer_outlined,
-                  'مدت',
-                  '${exam.duration ?? 'نامشخص'} دقیقه',
-                ),
-              ),
-            ],
-          ),
-
-          // Description
-          if (exam.description != null && exam.description!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade50,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'توضیحات',
-                    style: TextStyle(
-                      fontSize: 10,
-                      color: AppColor.lightGray,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    exam.description!,
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColor.darkText,
-                      height: 1.4,
-                    ),
-                    textDirection: TextDirection.rtl,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-              ),
-            ),
-          ],
-
-          // REMAINING TIME FOR ACTIVE EXAM
-          if (exam.status == ExamStatus.pending && isTimeValid) ...[
-            const SizedBox(height: 12),
-            _buildExamRemainingTimeWidget(exam),
-          ],
-
-          const SizedBox(height: 12),
-
-          // Score Info for Scored Exams
-          if (exam.status == ExamStatus.scored && percentage != null) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withOpacity(0.3)),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'درصد',
-                        style: TextStyle(
-                          fontSize: 10,
-                          color: AppColor.lightGray,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        '${percentage.toStringAsFixed(1)}%',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: color,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: LinearProgressIndicator(
-                          value: percentage / 100,
-                          minHeight: 8,
-                          backgroundColor: color.withOpacity(0.1),
-                          valueColor: AlwaysStoppedAnimation<Color>(color),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 12),
-          ],
-
-          // Action Button based on status
-          _buildExamActionButton(exam, color, isTimeValid),
-        ],
-      ),
-    );
-  }
-
-  /// Build time status banner for exams in dialog
-  Widget _buildExamTimeStatusBanner(String status, ExamItem exam) {
-    late String message;
-    late Color bannerColor;
-    late IconData icon;
-
-    if (status == 'before_start') {
-      final minutesUntil = ExamTimeValidator.getMinutesUntilStart(
-        examDate: exam.dueDate ?? '',
-        startTime: exam.startTime ?? '00:00',
-      );
-
-      message = minutesUntil > 0
-          ? 'امتحان ${_formatExamTimeUntilStart(minutesUntil)} دیگر شروع می‌شود'
-          : 'امتحان در حال شروع است...';
-      bannerColor = Colors.orange;
-      icon = Icons.schedule;
-    } else {
-      message = 'زمان تحویل امتحان به پایان رسیده است';
-      bannerColor = Colors.red;
-      icon = Icons.error_outline;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: bannerColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: bannerColor.withOpacity(0.3)),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, color: bannerColor, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: TextStyle(
-                fontSize: 11,
-                color: bannerColor,
-                fontWeight: FontWeight.w600,
-              ),
-              textDirection: TextDirection.rtl,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Format time until exam start (Days > Hours > Minutes)
-  String _formatExamTimeUntilStart(int totalMinutes) {
-    if (totalMinutes <= 0) return '';
-
-    final days = totalMinutes ~/ (24 * 60);
-    final remainingAfterDays = totalMinutes % (24 * 60);
-    final hours = remainingAfterDays ~/ 60;
-    final minutes = remainingAfterDays % 60;
-
-    final parts = <String>[];
-
-    if (days > 0) {
-      parts.add('$days روز');
-    }
-    if (hours > 0) {
-      parts.add('$hours ساعت');
-    }
-    if (minutes > 0) {
-      parts.add('$minutes دقیقه');
-    }
-
-    if (parts.isEmpty) {
-      return 'کمتر از یک دقیقه';
-    }
-
-    return parts.join(' و ');
-  }
-
-  /// Build remaining time widget for active exam
-  Widget _buildExamRemainingTimeWidget(ExamItem exam) {
-    final remainingMinutes = ExamTimeValidator.getRemainingMinutes(
-      examDate: exam.dueDate ?? '',
-      startTime: exam.startTime ?? '00:00',
-      endTime: exam.endTime ?? '23:59',
-    );
-
-    if (remainingMinutes <= 0) {
-      return const SizedBox();
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Colors.amber.shade50,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.amber.shade300),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.timer_outlined, color: Colors.amber.shade700, size: 18),
-          const SizedBox(width: 6),
-          Text(
-            'زمان باقی‌مانده: $remainingMinutes دقیقه',
-            style: TextStyle(
-              color: Colors.amber.shade700,
-              fontWeight: FontWeight.w600,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  /// Build exam action button with time validation
-  Widget _buildExamActionButton(
-      ExamItem exam,
-      Color color,
-      bool isTimeValid,
-      ) {
-    if (exam.status == ExamStatus.pending && exam.answerImage == null) {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: isTimeValid
-              ? () => _handleSubmitExam(exam)
-              : null,
-          icon: const Icon(Icons.attach_file_rounded, size: 16),
-          label: const Text('ارسال پاسخ'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: isTimeValid
-                ? color.withOpacity(0.1)
-                : Colors.grey.shade300,
-            foregroundColor: isTimeValid ? color : Colors.grey,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(
-                color: isTimeValid
-                    ? color.withOpacity(0.3)
-                    : Colors.grey.shade300,
-              ),
-            ),
-          ),
-        ),
-      );
-    } else if ((exam.status == ExamStatus.pending ||
-        exam.status == ExamStatus.answered) &&
-        exam.answerImage != null) {
-      return Row(
-        children: [
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                await _downloadExamFile(exam);
-              },
-              icon: const Icon(Icons.download_rounded, size: 16),
-              label: const Text("دانلود"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade50,
-                foregroundColor: Colors.green,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  side: BorderSide(color: Colors.green.shade300),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: ElevatedButton.icon(
-              onPressed: isTimeValid ? () => _handleEditExam(exam) : null,
-              icon: const Icon(Icons.edit_outlined, size: 16),
-              label: const Text("تغییر"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isTimeValid ? Colors.blue : Colors.grey.shade300,
-                foregroundColor: isTimeValid ? Colors.white : Colors.grey,
-                elevation: 0,
-                padding: const EdgeInsets.symmetric(vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
-              ),
-            ),
-          ),
-        ],
-      );
-    } else {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () {
-            debugPrint('View exam: ${exam.title}');
-          },
-          icon: const Icon(Icons.visibility_outlined, size: 16),
-          label: const Text('مشاهده جزئیات'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: color.withOpacity(0.1),
-            foregroundColor: color,
-            elevation: 0,
-            padding: const EdgeInsets.symmetric(vertical: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-              side: BorderSide(color: color.withOpacity(0.3)),
-            ),
-          ),
-        ),
-      );
-    }
-  }
-
-  /// Download exam file
-  Future<void> _downloadExamFile(ExamItem exam) async {
-    try {
-      final filePath = await ApiService.downloadAndSaveFile(
-        type: 'exam',
-        submissionId: exam.estId,
-        fileName: exam.filename ?? 'answer_${exam.examId}',
-      );
-      print('Downloaded: $filePath');
-    } catch (e) {
-      print('Download error: $e');
-    }
-  }
-
-
-  // ==================== HELPER WIDGETS ====================
-  Widget _buildSectionHeader(String title, Color color, int count) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3), width: 1.5),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.folder_outlined, size: 20, color: color),
-            const SizedBox(width: 10),
-            Text(
-              '$title',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.bold,
-                color: color,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Text(
-                '($count)',
-                style: TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
-              ),
-            ),
-          ],
         ),
       ),
     );
   }
 
-  Widget _buildDetailItem(
-      IconData icon,
-      String label,
-      String value,
-      ) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
+  Widget _buildAssignmentSection(
+      String title, List<AssignmentItemm> items, Color color, String key) {
+    return ExpansionPanelList(
+      expansionCallback: (int index, bool isExpanded) => _toggleSection(key),
       children: [
-        Icon(icon, size: 14, color: AppColor.purple.withOpacity(0.6)),
-        const SizedBox(width: 4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 9,
-                  color: AppColor.lightGray,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-              const SizedBox(height: 1),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 11,
-                  fontWeight: FontWeight.bold,
-                  color: AppColor.darkText,
-                ),
-                textDirection: TextDirection.rtl,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+        ExpansionPanel(
+          isExpanded: _expandedSections[key]!,
+          headerBuilder: (context, isExpanded) {
+            return ListTile(
+              title: Text('$title (${items.length})'),
+            );
+          },
+          body: items.isEmpty
+              ? const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('موردی یافت نشد'),
+          )
+              : ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return AssignmentCard(
+                item: items[index],
+                userId: widget.userId,
+                onRefresh: widget.onRefresh,
+                isDone: key == 'graded',
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExamSection(
+      String title, List<ExamItem> items, Color color, String key) {
+    return ExpansionPanelList(
+      expansionCallback: (int index, bool isExpanded) => _toggleSection(key),
+      children: [
+        ExpansionPanel(
+          isExpanded: _expandedSections[key]!,
+          headerBuilder: (context, isExpanded) {
+            return ListTile(
+              title: Text('$title (${items.length})'),
+            );
+          },
+          body: items.isEmpty
+              ? const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text('موردی یافت نشد'),
+          )
+              : ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: items.length,
+            itemBuilder: (context, index) {
+              return ExamCard(
+                item: items[index],
+                userId: widget.userId,
+                onRefresh: widget.onRefresh,
+              );
+            },
           ),
         ),
       ],
