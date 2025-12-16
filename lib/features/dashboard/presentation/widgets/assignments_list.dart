@@ -1,11 +1,9 @@
-// features/dashboard/presentation/widgets/assignments_list.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-
 import '../../../../applications/colors.dart';
 import '../../../../core/services/api_service.dart';
 import '../../data/models/dashboard_models.dart';
-import 'assignmrnt_card.dart';
+import 'assignment_card.dart';
 
 /// Premium animated upcoming assignments list with shimmer,
 /// pull-to-refresh, and stunning card entrance animations.

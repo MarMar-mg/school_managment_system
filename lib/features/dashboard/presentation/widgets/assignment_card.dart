@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../commons/utils/manager/date_manager.dart';
 import '../../data/models/dashboard_models.dart';
-// ==================== PREMIUM ASSIGNMENT CARD ====================
 
 class AssignmentCard extends StatefulWidget {
   final AssignmentItem item;
