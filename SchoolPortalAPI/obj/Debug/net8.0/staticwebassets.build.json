@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "CbfUtxHiOnqatDAl4QNfsNjuJvHNQPZFASz/47dSozo=",
+  "Hash": "nMhYaA7OZ+wS4IPJrr4WeiynsHG6qI3p1Tm36ZAtXp4=",
   "Source": "SchoolPortalAPI",
   "BasePath": "_content/SchoolPortalAPI",
   "Mode": "Default",
@@ -186,6 +186,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\uploads\\exams\\22c83a16-77a1-4fda-9f9f-404977c1d33a_1-5.pdf"
+    },
+    {
+      "Identity": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf",
+      "SourceId": "SchoolPortalAPI",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\",
+      "BasePath": "_content/SchoolPortalAPI",
+      "RelativePath": "uploads/exams/4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\exams\\4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf"
     },
     {
       "Identity": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\exams\\6214ab5b-ea10-4981-85fa-3838b3ac9197_S1-7.pdf",

@@ -144,6 +144,22 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\22c83a16-77a1-4fda-9f9f-404977c1d33a_1-5.pdf))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exams/4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\6214ab5b-ea10-4981-85fa-3838b3ac9197_S1-7.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>

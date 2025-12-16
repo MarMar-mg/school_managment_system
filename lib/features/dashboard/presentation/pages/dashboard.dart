@@ -7,7 +7,7 @@ import '../widgets/events_list_widget.dart';
 import '../widgets/news_list_widget.dart';
 import '../widgets/section_header_widget.dart';
 import '../widgets/stats_grid.dart';
-import '../widgets/assignments_list.dart';
+import '../widgets/combined_items_list.dart';
 import '../widgets/progress_list.dart';
 
 /// Main Dashboard with role-based content and smooth staggered animations
@@ -113,7 +113,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ),
                     ),
 
-                    // ====================== ASSIGNMENTS (STUDENT ONLY) ======================
+                    // ====================== ASSIGNMENTS & EXAMS (STUDENT ONLY) ======================
                     if (widget.role == Role.student) ...[
                       const SizedBox(height: 24),
                       _buildAnimatedSection(
@@ -122,12 +122,17 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             SectionHeader(
-                              title: 'تکالیف پیش رو',
+                              title: 'تکالیف و امتحانات پیش رو',
                               onSeeAll: () {},
                               actionText: 'مشاهده همه',
                             ),
                             const SizedBox(height: 12),
-                            AssignmentsList(studentId: widget.userId.toInt()),
+                            CombinedItemsList(
+                              studentId: widget.userId.toInt(),
+                              onRefresh: () {
+                                // Optional: Trigger any refresh logic
+                              },
+                            ),
                           ],
                         ),
                       ),
