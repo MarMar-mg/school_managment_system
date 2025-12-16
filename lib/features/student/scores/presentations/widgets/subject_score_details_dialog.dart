@@ -53,13 +53,13 @@ class _SubjectScoreDetailsDialogState
   void _loadData() {
     _assignmentsFuture =
         ApiService.getAllAssignments(widget.studentId).then((data) {
-          return (data['scored'] as List<AssignmentItemm>? ?? [])
+          return (data['graded'] ?? [])
               .where((e) => e.subject == widget.subject)
               .toList();
         });
 
     _examsFuture = ApiService.getAllExams(widget.studentId).then((data) {
-      return (data['scored'] as List<ExamItem>? ?? [])
+      return (data['scored'] ?? [])
           .where((e) => e.courseName == widget.subject)
           .toList();
     });

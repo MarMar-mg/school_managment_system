@@ -88,8 +88,8 @@ class _MyScorePageState extends State<MyScorePage> {
                       ...data.grades.map((grade) {
                         // Mock sub‑scores (replace with real API later)
                         final subScores = _generateSubScores(
-                          grade.avgExercise,
                           grade.avgExam,
+                          grade.avgExercise,
                         );
 
                         return Padding(
