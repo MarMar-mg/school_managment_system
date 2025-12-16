@@ -3,11 +3,8 @@ import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 import 'package:school_management_system/features/student/assignments/data/models/assignment_model.dart.dart';
 import 'package:school_management_system/features/student/exam/entities/models/exam_model.dart';
-import 'package:school_management_system/commons/utils/manager/date_manager.dart';
 import '../../../student/assignments/presentations/widgets/assignment_card.dart';
 import '../../../student/exam/presentations/widgets/exam_card.dart';
-import '../../../student/shared/presentations/widgets/submit_answer_dialog.dart';
-import 'package:school_management_system/core/services/exam_time_validator.dart';
 
 void showStudentCourseDialog(
     BuildContext context, {

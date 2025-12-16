@@ -1,12 +1,13 @@
-// lib/features/student/scores/presentation/widgets/score_card.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
+import 'package:school_management_system/features/student/scores/presentations/widgets/subject_score_details_dialog.dart';
 
 class ScoreCard extends StatelessWidget {
   final String subject;
   final int percent;
   final String letterGrade;
   final List<SubScore> subScores;
+  final int studentId;
 
   const ScoreCard({
     super.key,
@@ -14,6 +15,7 @@ class ScoreCard extends StatelessWidget {
     required this.percent,
     required this.letterGrade,
     required this.subScores,
+    required this.studentId,
   });
 
   @override
@@ -60,44 +62,32 @@ class ScoreCard extends StatelessWidget {
                   color: AppColor.purple,
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.book, color: Colors.white, size: 28),
+                child: const Icon(Icons.book, color: Colors.white, size: 24),
               ),
             ],
           ),
 
-          const SizedBox(height: 12),
+          const SizedBox(height: 8),
 
-          // === Badge Row ===
-          percent != -1? Row(
-            children: [
-              // Letter Grade Badge
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Text(
-                  letterGrade,
-                  style: TextStyle(
-                    color: Colors.green[700],
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                  ),
+          // Letter Grade
+          Align(
+            alignment: Alignment.centerRight,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: _gradeColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                letterGrade,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: _gradeColor,
                 ),
               ),
-
-              const SizedBox(width: 12),
-
-              // // Label
-              // const Text(
-              //   'تکالیف',
-              //   style: TextStyle(color: Colors.grey, fontSize: 14),
-              // ),
-
-              const Spacer(),
-            ],
-          ): const SizedBox(),
+            ),
+          ),
 
           const SizedBox(height: 20),
 
@@ -106,6 +96,26 @@ class ScoreCard extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 12),
             child: _buildSubScoreRow(s),
           )),
+
+          const SizedBox(height: 12),
+
+          // Details Button
+          Center(
+            child: ElevatedButton(
+              onPressed: () {
+                showSubjectScoreDetailsDialog(
+                  context,
+                  subject: subject,
+                  studentId: studentId,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColor.purple,
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('جزئیات نمرات'),
+            ),
+          ),
         ],
       ),
     );
@@ -165,6 +175,14 @@ class ScoreCard extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  Color get _gradeColor {
+    final p = percent;
+    if (p >= 90) return const Color(0xFF9C27B0);
+    if (p >= 80) return Colors.green;
+    if (p >= 70) return Colors.orange;
+    return Colors.red;
   }
 }
 

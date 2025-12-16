@@ -99,7 +99,7 @@ class _MyScorePageState extends State<MyScorePage> {
                             percent: grade.percent,
 
                             letterGrade: grade.letter,
-                            subScores: subScores,
+                            subScores: subScores, studentId: widget.studentId,
                           ),
                         );
                       }),
