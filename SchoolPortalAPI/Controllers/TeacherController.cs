@@ -647,36 +647,6 @@ namespace SchoolPortalAPI.Controllers
             return Ok(submissions);
         }
 
-//        // ──────────────────────────────────────────────────────────────
-//        // 15. Update Exams Score
-//        // ──────────────────────────────────────────────────────────────
-//        [HttpPut("exams/submissions/{submissionId}/score")]
-//        public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
-//        {
-//            if (request.Score < 0)
-//                return BadRequest("Score cannot be negative");
-//
-//            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
-//
-//            if (submission == null)
-//                return NotFound("Submission not found");
-//
-//            submission.Score = (int)request.Score;
-//
-//            _context.ExamStuTeaches.Update(submission);
-//            await _context.SaveChangesAsync();
-//
-//            return Ok(new {
-//                message = "Score updated successfully",
-//                submission = new
-//                {
-//                    submissionId = submission.Estid,
-//                    studentId = submission.Studentid,
-//                    score = submission.Score
-//                }
-//            });
-//        }
-
         // ──────────────────────────────────────────────────────────────
         // 16. Update Exams Score(group)
         // ──────────────────────────────────────────────────────────────
@@ -719,9 +689,15 @@ namespace SchoolPortalAPI.Controllers
             if (exam == null)
                 return NotFound("Exam not found");
 
+            var allStudents = await _context.Students
+                .Where(s => s.Classeid == exam.Classid)
+                .ToListAsync();
+
             var submissions = await _context.ExamStuTeaches
                 .Where(est => est.Examid == examId)
                 .ToListAsync();
+
+            var submission = submissions.Where(es => es.Date != null).ToList();
 
             var gradedSubmissions = submissions.Where(s => s.Score.HasValue).ToList();
 
@@ -730,7 +706,7 @@ namespace SchoolPortalAPI.Controllers
                 : 0;
 
             double passPercentage = submissions.Count > 0
-                ? (gradedSubmissions.Count(s => s.Score >= (exam.PossibleScore * 0.5)) * 100.0 / submissions.Count)
+                ? (gradedSubmissions.Count(s => s.Score >= (exam.PossibleScore * 0.5)) * 100.0 / allStudents.Count)
                 : 0;
 
             return Ok(new
@@ -739,7 +715,7 @@ namespace SchoolPortalAPI.Controllers
                 title = exam.Title,
                 subject = exam.Course?.Name ?? "نامشخص",
                 possibleScore = exam.PossibleScore,
-                totalSubmissions = submissions.Count,
+                totalSubmissions = submission.Count,
                 gradedSubmissions = gradedSubmissions.Count,
                 pendingSubmissions = submissions.Count - gradedSubmissions.Count,
                 averageScore = Math.Round(avgScore, 2),
@@ -997,110 +973,6 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
-//        // ──────────────────────────────────────────────────────────────
-//        // Get all students for an exam with submission status
-//        // ──────────────────────────────────────────────────────────────
-//        [HttpGet("exams/{examId}/students")]
-//        public async Task<IActionResult> GetExamStudents(long examId)
-//        {
-//            var exam = await _context.Exams
-//                .Include(e => e.Class)
-//                .FirstOrDefaultAsync(e => e.Examid == examId);
-//
-//            if (exam == null)
-//                return NotFound("Exam not found");
-//
-//            // Get all students in the exam's class
-//            var allStudents = await _context.Students
-//                .Where(s => s.Classeid == exam.Classid)
-//                .Select(s => new { s.Studentid, s.Name, s.StuCode })
-//                .ToListAsync();
-//
-//            // Get exam submissions
-//            var submissions = await _context.ExamStuTeaches
-//                .Where(est => est.Examid == examId)
-//                .ToListAsync();
-//
-//            var result = allStudents.Select(student =>
-//            {
-//                var submission = submissions.FirstOrDefault(s => s.Studentid == student.Studentid);
-//
-//                return new
-//                {
-//                    studentId = student.Studentid,
-//                    stuCode = student.StuCode,
-//                    studentName = student.Name,
-//                    score = submission?.Score,
-//                    submissionId = submission?.Estid,
-//                    examId = submission?.Examid,
-//                    hasSubmitted = submission != null,
-//                    submittedAt = submission?.Date,
-//                    submittedTime = submission?.Time,
-//                    answerFile = submission?.Filename ?? ""
-//                };
-//            }).OrderBy(s => s.studentName).ToList();
-//
-//            return Ok(result);
-//        }
-
-//        // ──────────────────────────────────────────────────────────────
-//        // Get all students for an assignment with submission status
-//        // ──────────────────────────────────────────────────────────────
-//        [HttpGet("exercises/{exerciseId}/students")]
-//        public async Task<IActionResult> GetExerciseStudents(long exerciseId)
-//        {
-//            var exercise = await _context.Exercises
-//                .Include(e => e.Course)
-//                .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
-//
-//            if (exercise == null)
-//                return NotFound("Exercise not found");
-//
-//            // Get the class from the course or directly from exercise
-//            var classId = exercise.Classid;
-//            if (classId == null && exercise.Courseid.HasValue)
-//            {
-//                var course = await _context.Courses.FindAsync(exercise.Courseid);
-//                classId = course?.Classid;
-//            }
-//
-//            if (classId == null)
-//                return BadRequest("Class information not available");
-//
-//            // Get all students in the exercise's class
-//            var allStudents = await _context.Students
-//                .Where(s => s.Classeid == classId)
-//                .Select(s => new { s.Studentid, s.Name, s.StuCode })
-//                .ToListAsync();
-//
-//            // Get exercise submissions
-//            var submissions = await _context.ExerciseStuTeaches
-//                .Where(est => est.Exerciseid == exerciseId)
-//                .ToListAsync();
-//
-//            var result = allStudents.Select(student =>
-//            {
-//                var submission = submissions
-//                .FirstOrDefault(s => s.Studentid == student.Studentid);
-//
-//                return new
-//                {
-//                    studentId = student.Studentid,
-//                    stuCode = student.StuCode,
-//                    studentName = student.Name,
-//                    score = submission?.Score,
-//                    submissionId = submission?.Exstid,
-//                    exerciseId = submission?.Exerciseid,
-//                    hasSubmitted = submission != null,
-//                    submittedAt = submission?.Date ?? "",
-//                    submittedTime = submission?.Time ?? "",
-//                    answerFile = submission?.Filename ?? ""
-//                };
-//            }).OrderBy(s => s.studentName).ToList();
-//
-//            return Ok(result);
-//        }
-
         // ──────────────────────────────────────────────────────────────
         // Get all students for an exam (including those without submission)
         // ──────────────────────────────────────────────────────────────
@@ -1136,7 +1008,7 @@ namespace SchoolPortalAPI.Controllers
                     stuCode = student.StuCode,
                     studentName = student.Name,
                     score = submission?.Score,
-                    hasSubmitted = !(submission?.Description == "Score given by teacher without submission" || submission?.Description == null) ,
+                    hasSubmitted = submission?.Date != null,
                     submittedAt = submission?.Date ?? "",
                     submittedTime = submission?.Time ?? "",
                     answerFile = submission?.Filename ?? "",

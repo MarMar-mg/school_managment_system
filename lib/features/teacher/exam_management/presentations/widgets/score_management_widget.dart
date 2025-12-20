@@ -275,7 +275,7 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               _buildStatItem(
-                'کل رسالت',
+                'کل رسال ها',
                 '${stats['totalSubmissions']}',
               ),
               _buildStatItem(
