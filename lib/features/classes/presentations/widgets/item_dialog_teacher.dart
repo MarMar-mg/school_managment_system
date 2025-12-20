@@ -3,19 +3,20 @@ import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 import 'package:school_management_system/features/teacher/assignment_management/presentations/widgets/add_edit_dialog.dart';
 import 'package:school_management_system/features/teacher/exam_management/presentations/widgets/add_edit_dialog.dart';
+
 import '../../../../applications/role.dart';
 import '../../../../commons/utils/manager/date_manager.dart';
 import '../../../teacher/assignment_management/presentations/widgets/assignment_card.dart';
-import '../../../teacher/exam_management/presentations/widgets/exam_card.dart';
 import '../../../teacher/exam_management/data/models/exam_model.dart';
+import '../../../teacher/exam_management/presentations/widgets/exam_card.dart';
 
 void showTeacherCourseDialog(
-    BuildContext context, {
-      required Map<String, dynamic> course,
-      required int userId,
-      required int courseId,
-      required VoidCallback onRefresh,
-    }) {
+  BuildContext context, {
+  required Map<String, dynamic> course,
+  required int userId,
+  required int courseId,
+  required VoidCallback onRefresh,
+}) {
   showDialog(
     context: context,
     builder: (context) => TeacherCourseDialog(
@@ -69,10 +70,11 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
   void _loadData() {
     _assignmentsFuture = ApiService.getTeacherAssignments(widget.userId);
     _examsFuture = ApiService.getTeacherExams(widget.userId);
-    _coursesFuture =
-        ApiService.getCourses(Role.teacher, widget.userId).then((_) async {
-          return await ApiService.getCourses(Role.teacher, widget.userId);
-        });
+    _coursesFuture = ApiService.getCourses(Role.teacher, widget.userId).then((
+      _,
+    ) async {
+      return await ApiService.getCourses(Role.teacher, widget.userId);
+    });
   }
 
   @override
@@ -92,10 +94,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
       context: context,
       builder: (ctx) => AlertDialog(
         title: Text('حذف ${type == 'assignment' ? 'تمرین' : 'امتحان'}'),
-        content: Text(
-          'آیا مطمئن هستید؟',
-          textDirection: TextDirection.rtl,
-        ),
+        content: Text('آیا مطمئن هستید؟', textDirection: TextDirection.rtl),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
@@ -110,10 +109,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
                 _deleteExam(id);
               }
             },
-            child: Text(
-              'حذف',
-              style: TextStyle(color: Colors.red.shade600),
-            ),
+            child: Text('حذف', style: TextStyle(color: Colors.red.shade600)),
           ),
         ],
       ),
@@ -136,10 +132,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطا: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -161,10 +154,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('خطا: $e'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
         );
       }
     }
@@ -190,8 +180,9 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
-                borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -244,10 +235,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
             Expanded(
               child: TabBarView(
                 controller: _tabController,
-                children: [
-                  _buildAssignmentsTab(),
-                  _buildExamsTab(),
-                ],
+                children: [_buildAssignmentsTab(), _buildExamsTab()],
               ),
             ),
           ],
@@ -266,8 +254,9 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
 
         final assignments = snapshot.data ?? [];
         final courseAssignments = assignments
-            .where((a) =>
-        a['courseId'].toString() == widget.course['id'].toString())
+            .where(
+              (a) => a['courseId'].toString() == widget.course['id'].toString(),
+            )
             .toList();
 
         if (courseAssignments.isEmpty) {
@@ -275,8 +264,11 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.assignment_outlined,
-                    size: 64, color: AppColor.lightGray),
+                Icon(
+                  Icons.assignment_outlined,
+                  size: 64,
+                  color: AppColor.lightGray,
+                ),
                 const SizedBox(height: 16),
                 const Text('تمرینی وجود ندارد'),
               ],
@@ -291,8 +283,9 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
 
         for (var assignment in courseAssignments) {
           try {
-            final dueDate =
-            DateFormatManager.convertToDateTime(assignment['dueDate']);
+            final dueDate = DateFormatManager.convertToDateTime(
+              assignment['dueDate'],
+            );
             if (dueDate.isAfter(now)) {
               activeAssignments.add(assignment);
             } else {
@@ -329,8 +322,13 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     );
   }
 
-  Widget _buildAssignmentSection(String title, List<dynamic> items,
-      Color color, String key, bool isActive) {
+  Widget _buildAssignmentSection(
+    String title,
+    List<dynamic> items,
+    Color color,
+    String key,
+    bool isActive,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -387,6 +385,7 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
                 onDelete: () =>
                     _showDeleteDialog('assignment', assignment['id']),
                 isActive: isActive,
+                userId: widget.userId,
               ),
             );
           }),
@@ -435,7 +434,9 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
 
         final exams = snapshot.data ?? [];
         final courseExams = exams
-            .where((e) => e.courseId.toString() == widget.course['id'].toString())
+            .where(
+              (e) => e.courseId.toString() == widget.course['id'].toString(),
+            )
             .toList();
 
         if (courseExams.isEmpty) {
@@ -443,8 +444,11 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.description_outlined,
-                    size: 64, color: AppColor.lightGray),
+                Icon(
+                  Icons.description_outlined,
+                  size: 64,
+                  color: AppColor.lightGray,
+                ),
                 const SizedBox(height: 16),
                 const Text('امتحانی وجود ندارد'),
               ],
@@ -453,10 +457,12 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
         }
 
         // Separate into upcoming and completed
-        final upcomingExams =
-        courseExams.where((e) => e.status == 'upcoming').toList();
-        final completedExams =
-        courseExams.where((e) => e.status == 'completed').toList();
+        final upcomingExams = courseExams
+            .where((e) => e.status == 'upcoming')
+            .toList();
+        final completedExams = courseExams
+            .where((e) => e.status == 'completed')
+            .toList();
 
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -484,8 +490,13 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     );
   }
 
-  Widget _buildExamSection(String title, List<ExamModelT> items, Color color,
-      String key, bool isActive) {
+  Widget _buildExamSection(
+    String title,
+    List<ExamModelT> items,
+    Color color,
+    String key,
+    bool isActive,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

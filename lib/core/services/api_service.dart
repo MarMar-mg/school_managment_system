@@ -1,19 +1,21 @@
 import 'dart:convert';
+import 'dart:html' as html;
 import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+
 import '../../applications/role.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
-import 'package:file_picker/file_picker.dart';
-import 'package:path_provider/path_provider.dart';
-import 'dart:html' as html;
 
 class ApiService {
   // Update this based on your testing environment
@@ -1592,14 +1594,20 @@ class ApiService {
   }
 
   /// Download assignment question file (from Exercise.File field)
-  static Future<Uint8List> downloadAssignmentQuestionFile(int assignmentId) async {
-    final url = Uri.parse('$baseUrl/student/download/assignment-question/$assignmentId');
+  static Future<Uint8List> downloadAssignmentQuestionFile(
+    int assignmentId,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/student/download/assignment-question/$assignmentId',
+    );
 
     try {
       final response = await http.get(url).timeout(_timeout);
 
       print('Download Assignment Question Status: ${response.statusCode}');
-      print('Download Assignment Question Body Length: ${response.bodyBytes.length}');
+      print(
+        'Download Assignment Question Body Length: ${response.bodyBytes.length}',
+      );
 
       if (response.statusCode == 200 && response.bodyBytes.isNotEmpty) {
         return response.bodyBytes;
@@ -1616,23 +1624,19 @@ class ApiService {
     }
   }
 
-// ========================= CREATE EXAM SCORE FOR STUDENT (NO SUBMISSION) =============================
+  // ========================= CREATE EXAM SCORE FOR STUDENT (NO SUBMISSION) =============================
   static Future<Map<String, dynamic>> createExamScoreForStudent(
-      int examId,
-      int studentId,
-      double score,
-      ) async {
+    int examId,
+    int studentId,
+    double score,
+  ) async {
     final url = Uri.parse(
       '$baseUrl/teacher/exams/$examId/students/$studentId/score',
     );
 
     try {
       final response = await http
-          .post(
-        url,
-        headers: _headers,
-        body: json.encode({'score': score}),
-      )
+          .post(url, headers: _headers, body: json.encode({'score': score}))
           .timeout(_timeout);
 
       print('Create Exam Score Status: ${response.statusCode}');
@@ -1649,23 +1653,19 @@ class ApiService {
     }
   }
 
-// ========================= CREATE EXERCISE SCORE FOR STUDENT (NO SUBMISSION) =============================
+  // ========================= CREATE EXERCISE SCORE FOR STUDENT (NO SUBMISSION) =============================
   static Future<Map<String, dynamic>> createExerciseScoreForStudent(
-      int exerciseId,
-      int studentId,
-      double score,
-      ) async {
+    int exerciseId,
+    int studentId,
+    double score,
+  ) async {
     final url = Uri.parse(
       '$baseUrl/teacher/exercises/$exerciseId/students/$studentId/score',
     );
 
     try {
       final response = await http
-          .post(
-        url,
-        headers: _headers,
-        body: json.encode({'score': score}),
-      )
+          .post(url, headers: _headers, body: json.encode({'score': score}))
           .timeout(_timeout);
 
       print('Create Exercise Score Status: ${response.statusCode}');
@@ -1684,14 +1684,14 @@ class ApiService {
 
   //================================= SUBMIT EXERCISES ======================
   static Future<void> submitAssignment(
-      int userId,
-      int assignmentId,
-      bool isFile,
-      String description,
-      PlatformFile? platformFile, {
-        required String customFileName,
-        bool isUpdate = false,
-      }) async {
+    int userId,
+    int assignmentId,
+    bool isFile,
+    String description,
+    PlatformFile? platformFile, {
+    required String customFileName,
+    bool isUpdate = false,
+  }) async {
     final endpoint = isUpdate
         ? '$baseUrl/student/update/assignment/$userId/$assignmentId/$isFile'
         : '$baseUrl/student/submit/assignment/$userId/$assignmentId';
@@ -1749,17 +1749,19 @@ class ApiService {
     }
   }
 
-//================================= SUBMIT EXAM ==========================
+  //================================= SUBMIT EXAM ==========================
   static Future<void> submitExam(
-      int userId,
-      int examId,
-      bool isFile,
-      String description,
-      PlatformFile? platformFile, {
-        required String customFileName,
-        bool isUpdate = false,
-      }) async {
-    final url = Uri.parse('$baseUrl/student/submit/exam/$userId/$examId/$isFile');
+    int userId,
+    int examId,
+    bool isFile,
+    String description,
+    PlatformFile? platformFile, {
+    required String customFileName,
+    bool isUpdate = false,
+  }) async {
+    final url = Uri.parse(
+      '$baseUrl/student/submit/exam/$userId/$examId/$isFile',
+    );
 
     try {
       var request = http.MultipartRequest('POST', url);
@@ -1819,6 +1821,29 @@ class ApiService {
       throw Exception('خطا در ارسال: $e');
     }
   }
+
+  static Future<Map<String, dynamic>> getAssignmentStats(
+    int assignmentId,
+  ) async {
+    final url = Uri.parse('$baseUrl/assignments/$assignmentId/stats');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Assignment Stats Status: ${response.statusCode}');
+      print('Assignment Stats Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در دریافت آمار تکلیف: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
 
   ///////////////////////////////////////////
 

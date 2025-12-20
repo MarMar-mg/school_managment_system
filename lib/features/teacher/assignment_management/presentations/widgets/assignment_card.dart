@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import '../../../../../applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
+import 'assignment_score_management_widget.dart';
 
 class TeacherAssignmentCard extends StatefulWidget {
   final dynamic data;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final bool isActive;
+  final int userId;
 
   const TeacherAssignmentCard({
     super.key,
     required this.data,
     required this.onEdit,
     required this.onDelete,
-    required this.isActive,
+    required this.isActive, required this.userId,
   });
 
   @override
@@ -279,18 +281,28 @@ class _TeacherAssignmentCardState extends State<TeacherAssignmentCard>
                       Expanded(
                         child: ElevatedButton.icon(
                           onPressed: () {
-                            debugPrint('View submissions: ${widget.data['title']}');
+                            showAssignmentScoreManagementDialog(
+                              context,
+                              assignmentId: widget.data['id'],
+                              assignmentTitle: widget.data['title'],
+                              possibleScore:
+                              int.tryParse(
+                                widget.data['score']?.toString() ?? '100',
+                              ) ??
+                                  100,
+                              userId: widget.userId,
+                            );
                           },
-                          icon: const Icon(Icons.visibility_outlined, size: 16),
-                          label: const Text('مشاهده'),
+                          icon: const Icon(Icons.score, size: 16),
+                          label: const Text('مدیریت نمرات'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: color.withOpacity(0.1),
-                            foregroundColor: color,
+                            backgroundColor: Colors.blue.shade50,
+                            foregroundColor: Colors.blue,
                             elevation: 0,
                             padding: const EdgeInsets.symmetric(vertical: 10),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
-                              side: BorderSide(color: color.withOpacity(0.3)),
+                              side: BorderSide(color: Colors.blue.shade300),
                             ),
                           ),
                         ),

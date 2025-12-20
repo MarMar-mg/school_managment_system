@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-import '../../../../../applications/role.dart';
-import '../../../../../commons/utils/manager/date_manager.dart';
-import '../../../../../core/services/api_service.dart';
+
 import '../../../../../applications/colors.dart';
+import '../../../../../applications/role.dart';
 import '../../../../../commons/responsive_container.dart';
+import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../../../../commons/widgets/section_divider.dart';
+import '../../../../../core/services/api_service.dart';
 import '../widgets/add_edit_dialog.dart';
 import '../widgets/assignment_section.dart';
 import '../widgets/header_section.dart';
-import '../../../../../commons/widgets/section_divider.dart';
 import '../widgets/stat_card.dart';
 
 class AssignmentManagementPage extends StatefulWidget {
@@ -17,7 +18,8 @@ class AssignmentManagementPage extends StatefulWidget {
   const AssignmentManagementPage({super.key, required this.userId});
 
   @override
-  State<AssignmentManagementPage> createState() => _AssignmentManagementPageState();
+  State<AssignmentManagementPage> createState() =>
+      _AssignmentManagementPageState();
 }
 
 class _AssignmentManagementPageState extends State<AssignmentManagementPage>
@@ -32,10 +34,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
   bool _isLoading = true;
   String _error = '';
 
-  final Map<String, bool> _expanded = {
-    'active': false,
-    'inactive': false,
-  };
+  final Map<String, bool> _expanded = {'active': false, 'inactive': false};
 
   @override
   void initState() {
@@ -99,7 +98,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
     final totalCount = _activeAssignments.length + _inactiveAssignments.length;
     _animations = List.generate(
       totalCount + 2, // +2 for header and stats
-          (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
+      (i) => Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
           parent: _controller,
           curve: Interval(0.06 + i * 0.04, 1.0, curve: Curves.easeOutCubic),
@@ -112,7 +111,6 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
   void _toggle(String key) {
     setState(() => _expanded[key] = !_expanded[key]!);
   }
-
 
   void _showDeleteDialog(int exID) {
     showDialog(
@@ -267,7 +265,11 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.assignment_outlined, size: 80, color: AppColor.lightGray),
+            Icon(
+              Icons.assignment_outlined,
+              size: 80,
+              color: AppColor.lightGray,
+            ),
             const SizedBox(height: 16),
             const Text('تمرینی وجود ندارد', style: TextStyle(fontSize: 16)),
             const SizedBox(height: 24),
@@ -373,6 +375,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
                 addData: _fetchData,
               ),
               onDelete: (data) => _showDeleteDialog(data['id']),
+              userId: widget.userId,
             ),
             const SizedBox(height: 24),
 
@@ -395,6 +398,7 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
                 addData: _fetchData,
               ),
               onDelete: (data) => _showDeleteDialog(data['id']),
+              userId: widget.userId,
             ),
             const SizedBox(height: 100),
           ],

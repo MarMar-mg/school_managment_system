@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:line_icons/line_icon.dart';
 import 'assignment_card.dart';
 
 class AssignmentTeacherSection extends StatelessWidget {
@@ -12,6 +13,7 @@ class AssignmentTeacherSection extends StatelessWidget {
   final List<Animation<double>> animations;
   final Function(dynamic) onEdit;
   final Function(dynamic) onDelete;
+  final int userId;
 
   const AssignmentTeacherSection({
     super.key,
@@ -25,6 +27,7 @@ class AssignmentTeacherSection extends StatelessWidget {
     required this.animations,
     required this.onEdit,
     required this.onDelete,
+    required this.userId,
   });
 
   @override
@@ -78,7 +81,9 @@ class AssignmentTeacherSection extends StatelessWidget {
                     ? animations[globalIndex]
                     : AlwaysStoppedAnimation(1.0),
                 onEdit: () => onEdit(item),
-                onDelete: () => onDelete(item), isActive: sectionKey == 'active',
+                onDelete: () => onDelete(item),
+                isActive: sectionKey == 'active',
+                userId: userId,
               ),
             );
           }),
@@ -136,14 +141,16 @@ class AnimatedAssignmentTeacherCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final bool isActive;
+  final int userId;
 
   const AnimatedAssignmentTeacherCard({
     super.key,
     required this.data,
     required this.animation,
     required this.onEdit,
-    required this.onDelete, 
+    required this.onDelete,
     required this.isActive,
+    required this.userId,
   });
 
   @override
@@ -163,7 +170,9 @@ class AnimatedAssignmentTeacherCard extends StatelessWidget {
       child: TeacherAssignmentCard(
         data: data,
         onEdit: onEdit,
-        onDelete: onDelete, isActive: isActive,
+        onDelete: onDelete,
+        isActive: isActive,
+        userId: userId,
       ),
     );
   }
