@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../../../applications/colors.dart';
 import 'item_dialog_student.dart';
 import 'item_dialog_teacher.dart';
@@ -312,13 +311,13 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
   void _showCourseDialog() {
     if (widget.isTeacher) {
       // CALL TEACHER DIALOG: Show assignments and exams dialog
-      showCourseItemsDialog(
+
+      showTeacherCourseDialog(
         context,
         course: widget.course,
         userId: widget.userId,
         courseId: widget.course['id'] ?? 0,
         onRefresh: () => setState(() {}),
-        isTeacher: true,
       );
     } else {
       // CALL STUDENT DIALOG

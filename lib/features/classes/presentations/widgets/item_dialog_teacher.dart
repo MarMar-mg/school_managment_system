@@ -1,60 +1,62 @@
-// Teacher Course Dialog - Full Functionality
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
+import 'package:school_management_system/features/teacher/assignment_management/presentations/widgets/add_edit_dialog.dart';
+import 'package:school_management_system/features/teacher/exam_management/presentations/widgets/add_edit_dialog.dart';
+import '../../../../applications/role.dart';
+import '../../../../commons/utils/manager/date_manager.dart';
+import '../../../teacher/assignment_management/presentations/widgets/assignment_card.dart';
+import '../../../teacher/exam_management/presentations/widgets/exam_card.dart';
+import '../../../teacher/exam_management/data/models/exam_model.dart';
 
-void showCourseItemsDialog(
+void showTeacherCourseDialog(
     BuildContext context, {
       required Map<String, dynamic> course,
       required int userId,
       required int courseId,
       required VoidCallback onRefresh,
-      required bool isTeacher,
     }) {
   showDialog(
     context: context,
-    builder: (context) => CourseItemsDialog(
+    builder: (context) => TeacherCourseDialog(
       course: course,
       userId: userId,
       courseId: courseId,
       onRefresh: onRefresh,
-      isTeacher: isTeacher,
     ),
   );
 }
 
-class CourseItemsDialog extends StatefulWidget {
+class TeacherCourseDialog extends StatefulWidget {
   final Map<String, dynamic> course;
   final int userId;
   final int courseId;
   final VoidCallback onRefresh;
-  final bool isTeacher;
 
-  const CourseItemsDialog({
+  const TeacherCourseDialog({
     super.key,
     required this.course,
     required this.userId,
     required this.courseId,
     required this.onRefresh,
-    required this.isTeacher,
   });
 
   @override
-  State<CourseItemsDialog> createState() => _CourseItemsDialogState();
+  State<TeacherCourseDialog> createState() => _TeacherCourseDialogState();
 }
 
-class _CourseItemsDialogState extends State<CourseItemsDialog>
+class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     with TickerProviderStateMixin {
   late TabController _tabController;
   late Future<List<dynamic>> _assignmentsFuture;
-  late Future<List<dynamic>> _examsFuture;
+  late Future<List<ExamModelT>> _examsFuture;
+  late Future<List<Map<String, dynamic>>> _coursesFuture;
 
   final Map<String, bool> _expandedSections = {
-    'pending': false,
-    'submitted': false,
-    'graded': false,
-    'upcoming': false,
-    'completed': false,
+    'active_assignments': false,
+    'inactive_assignments': false,
+    'upcoming_exams': false,
+    'completed_exams': false,
   };
 
   @override
@@ -67,6 +69,10 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
   void _loadData() {
     _assignmentsFuture = ApiService.getTeacherAssignments(widget.userId);
     _examsFuture = ApiService.getTeacherExams(widget.userId);
+    _coursesFuture =
+        ApiService.getCourses(Role.teacher, widget.userId).then((_) async {
+          return await ApiService.getCourses(Role.teacher, widget.userId);
+        });
   }
 
   @override
@@ -79,6 +85,39 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
     setState(() {
       _expandedSections[key] = !_expandedSections[key]!;
     });
+  }
+
+  void _showDeleteDialog(String type, int id) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('حذف ${type == 'assignment' ? 'تمرین' : 'امتحان'}'),
+        content: Text(
+          'آیا مطمئن هستید؟',
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('لغو'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              if (type == 'assignment') {
+                _deleteAssignment(id);
+              } else {
+                _deleteExam(id);
+              }
+            },
+            child: Text(
+              'حذف',
+              style: TextStyle(color: Colors.red.shade600),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _deleteAssignment(int assignmentId) async {
@@ -131,86 +170,66 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
     }
   }
 
-  void _showDeleteConfirmation(String type, int id) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('حذف ${type == 'assignment' ? 'تمرین' : 'امتحان'}'),
-        content: Text(
-          'آیا مطمئن هستید؟',
-          textDirection: TextDirection.rtl,
-        ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('لغو')),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              if (type == 'assignment') {
-                _deleteAssignment(id);
-              } else {
-                _deleteExam(id);
-              }
-            },
-            child: Text('حذف', style: TextStyle(color: Colors.red.shade600)),
-          ),
-        ],
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      backgroundColor: Colors.white,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColor.purple, AppColor.lightPurple],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+      insetPadding: const EdgeInsets.all(10),
+      child: SizedBox(
+        width: MediaQuery.of(context).size.width - 20,
+        height: MediaQuery.of(context).size.height * 0.8,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColor.purple, AppColor.lightPurple],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.course['name'] ?? 'نامشخص',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.course['name'] ?? 'نام درس',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          textDirection: TextDirection.rtl,
                         ),
-                        textDirection: TextDirection.rtl,
-                      ),
-                    ],
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.course['code'] ?? '',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.white70,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
-                ),
-              ],
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
             ),
-          ),
 
-          // Tabs
-          Container(
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: Colors.grey.shade200)),
-            ),
-            child: TabBar(
+            // Tabs
+            TabBar(
               controller: _tabController,
               labelColor: AppColor.purple,
               unselectedLabelColor: AppColor.lightGray,
@@ -220,19 +239,19 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
                 Tab(text: 'امتحانات'),
               ],
             ),
-          ),
 
-          // Content
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildAssignmentsTab(),
-                _buildExamsTab(),
-              ],
+            // Content
+            Expanded(
+              child: TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildAssignmentsTab(),
+                  _buildExamsTab(),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -247,7 +266,8 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
 
         final assignments = snapshot.data ?? [];
         final courseAssignments = assignments
-            .where((a) => a['courseId'].toString() == widget.course['id'].toString())
+            .where((a) =>
+        a['courseId'].toString() == widget.course['id'].toString())
             .toList();
 
         if (courseAssignments.isEmpty) {
@@ -255,7 +275,8 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.assignment_outlined, size: 64, color: AppColor.lightGray),
+                Icon(Icons.assignment_outlined,
+                    size: 64, color: AppColor.lightGray),
                 const SizedBox(height: 16),
                 const Text('تمرینی وجود ندارد'),
               ],
@@ -263,135 +284,149 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
           );
         }
 
+        // Separate into active and inactive
+        final now = DateTime.now();
+        final activeAssignments = <dynamic>[];
+        final inactiveAssignments = <dynamic>[];
+
+        for (var assignment in courseAssignments) {
+          try {
+            final dueDate =
+            DateFormatManager.convertToDateTime(assignment['dueDate']);
+            if (dueDate.isAfter(now)) {
+              activeAssignments.add(assignment);
+            } else {
+              inactiveAssignments.add(assignment);
+            }
+          } catch (e) {
+            inactiveAssignments.add(assignment);
+          }
+        }
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
-            children: courseAssignments.map((assignment) {
-              return _buildAssignmentCard(assignment);
-            }).toList(),
+            children: [
+              _buildAssignmentSection(
+                'فعال',
+                activeAssignments,
+                Colors.orange,
+                'active_assignments',
+                true,
+              ),
+              const SizedBox(height: 16),
+              _buildAssignmentSection(
+                'غیر فعال',
+                inactiveAssignments,
+                Colors.grey,
+                'inactive_assignments',
+                false,
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildAssignmentCard(dynamic assignment) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.orange.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+  Widget _buildAssignmentSection(String title, List<dynamic> items,
+      Color color, String key, bool isActive) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _toggleSection(key),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _expandedSections[key]!
+                      ? Icons.expand_less
+                      : Icons.expand_more,
+                  color: color,
                 ),
-                child: const Icon(Icons.assignment_rounded, color: Colors.orange, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      assignment['title'] ?? 'بدون عنوان',
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
+                const SizedBox(width: 12),
+                Text(
+                  '$title (${items.length})',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                    fontSize: 15,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
+        ),
+        if (_expandedSections[key]!) ...[
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'تاریخ: ${assignment['dueDate'] ?? 'نامشخص'}',
-                style: const TextStyle(fontSize: 11),
+          ...items.map((assignment) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: TeacherAssignmentCard(
+                data: assignment,
+                onEdit: () {
+                  Navigator.pop(context);
+                  showAddEditDialog(
+                    context,
+                    assignment: assignment,
+                    isAdd: false,
+                    courses: [],
+                    userId: widget.userId,
+                    addData: () {
+                      _loadData();
+                      widget.onRefresh();
+                    },
+                  );
+                },
+                onDelete: () =>
+                    _showDeleteDialog('assignment', assignment['id']),
+                isActive: isActive,
               ),
-              Text(
-                'ارسال: ${assignment['submissions'] ?? '-'}',
-                style: const TextStyle(fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => _showDeleteConfirmation('assignment', assignment['id']),
-                  borderRadius: BorderRadius.circular(10),
-                  child: Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.red.shade50,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 18),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    debugPrint('Edit assignment: ${assignment['title']}');
-                  },
-                  icon: const Icon(Icons.edit_outlined, size: 16),
-                  label: const Text('ویرایش'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey.shade50,
-                    foregroundColor: AppColor.darkText,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.grey.shade300),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    debugPrint('View submissions: ${assignment['title']}');
-                  },
-                  icon: const Icon(Icons.visibility_outlined, size: 16),
-                  label: const Text('مشاهده'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange.withOpacity(0.1),
-                    foregroundColor: Colors.orange,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.orange.withOpacity(0.3)),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          }),
         ],
-      ),
+        if (_expandedSections[key]! && items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.assignment_late_outlined,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'تمرینی یافت نشد',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 
   Widget _buildExamsTab() {
-    return FutureBuilder<List<dynamic>>(
+    return FutureBuilder<List<ExamModelT>>(
       future: _examsFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -399,17 +434,17 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
         }
 
         final exams = snapshot.data ?? [];
-        final courseExams = exams.where((e) {
-          final courseId = e is Map ? e['courseId'] : e.courseId;
-          return courseId.toString() == widget.course['id'].toString();
-        }).toList();
+        final courseExams = exams
+            .where((e) => e.courseId.toString() == widget.course['id'].toString())
+            .toList();
 
         if (courseExams.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.description_outlined, size: 64, color: AppColor.lightGray),
+                Icon(Icons.description_outlined,
+                    size: 64, color: AppColor.lightGray),
                 const SizedBox(height: 16),
                 const Text('امتحانی وجود ندارد'),
               ],
@@ -417,147 +452,143 @@ class _CourseItemsDialogState extends State<CourseItemsDialog>
           );
         }
 
+        // Separate into upcoming and completed
+        final upcomingExams =
+        courseExams.where((e) => e.status == 'upcoming').toList();
+        final completedExams =
+        courseExams.where((e) => e.status == 'completed').toList();
+
         return SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: Column(
-            children: courseExams.map((exam) {
-              return _buildExamCard(exam);
-            }).toList(),
+            children: [
+              _buildExamSection(
+                'پیش رو',
+                upcomingExams,
+                Colors.orange,
+                'upcoming_exams',
+                true,
+              ),
+              const SizedBox(height: 16),
+              _buildExamSection(
+                'برگزار شده',
+                completedExams,
+                Colors.green,
+                'completed_exams',
+                false,
+              ),
+            ],
           ),
         );
       },
     );
   }
 
-  Widget _buildExamCard(dynamic exam) {
-    final isPassed = exam is Map ? exam['status'] == 'completed' : exam.status == 'completed';
-    final examId = exam is Map ? exam['id'] : exam.id;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 14),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 8)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.blue.withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(12),
+  Widget _buildExamSection(String title, List<ExamModelT> items, Color color,
+      String key, bool isActive) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => _toggleSection(key),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  _expandedSections[key]!
+                      ? Icons.expand_less
+                      : Icons.expand_more,
+                  color: color,
                 ),
-                child: const Icon(Icons.description_rounded, color: Colors.blue, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      exam is Map ? exam['title'] ?? 'بدون عنوان' : exam.title,
-                      style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
-                ),
-              ),
-              if (isPassed)
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: Colors.green.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: const Text(
-                    'برگزار شده',
-                    style: TextStyle(fontSize: 10, color: Colors.green, fontWeight: FontWeight.w600),
+                const SizedBox(width: 12),
+                Text(
+                  '$title (${items.length})',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                    fontSize: 15,
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
+        ),
+        if (_expandedSections[key]!) ...[
           const SizedBox(height: 12),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'تاریخ: ${exam is Map ? exam['date'] ?? 'نامشخص' : exam.date}',
-                style: const TextStyle(fontSize: 11),
-              ),
-              Text(
-                'ثبت‌نام: ${exam is Map ? exam['filledCapacity'] ?? '-' : '${exam.students}/${exam.capacity}'}',
-                style: const TextStyle(fontSize: 11),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              if (!isPassed)
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () => _showDeleteConfirmation('exam', examId),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Icon(Icons.delete_outline, color: Colors.red.shade600, size: 18),
-                    ),
-                  ),
-                ),
-              if (!isPassed) const SizedBox(width: 8),
-              if (!isPassed)
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      debugPrint('Edit exam: ${exam is Map ? exam['title'] : exam.title}');
+          ...items.map((exam) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: TeacherExamCard(
+                exam: exam,
+                onEdit: () {
+                  Navigator.pop(context);
+                  final examMap = {
+                    'id': exam.id,
+                    'title': exam.title,
+                    'description': exam.description,
+                    'date': exam.date,
+                    'classTime': exam.classTime,
+                    'duration': exam.duration,
+                    'possibleScore': exam.possibleScore,
+                    'courseId': exam.courseId,
+                    'filename': exam.filename,
+                  };
+                  showAddEditExamDialog(
+                    context,
+                    exam: examMap,
+                    userId: widget.userId,
+                    onSuccess: () {
+                      _loadData();
+                      widget.onRefresh();
                     },
-                    icon: const Icon(Icons.edit_outlined, size: 16),
-                    label: const Text('ویرایش'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade50,
-                      foregroundColor: AppColor.darkText,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        side: BorderSide(color: Colors.grey.shade300),
-                      ),
-                    ),
-                  ),
-                ),
-              if (!isPassed) const SizedBox(width: 8),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {
-                    debugPrint('View scores: ${exam is Map ? exam['title'] : exam.title}');
-                  },
-                  icon: Icon(isPassed ? Icons.visibility_outlined : Icons.score, size: 16),
-                  label: Text(isPassed ? 'مشاهده' : 'مدیریت نمرات'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue.withOpacity(0.1),
-                    foregroundColor: Colors.blue,
-                    elevation: 0,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(color: Colors.blue.withOpacity(0.3)),
-                    ),
-                  ),
-                ),
+                    isAdd: false,
+                    courses: [],
+                    isNeeded: false,
+                    courseId: widget.courseId,
+                  );
+                },
+                onDelete: () => _showDeleteDialog('exam', exam.id),
+                isActive: isActive,
               ),
-            ],
-          ),
+            );
+          }),
         ],
-      ),
+        if (_expandedSections[key]! && items.isEmpty)
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 32),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: Colors.grey.shade200),
+            ),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(
+                    Icons.assignment_late_outlined,
+                    size: 48,
+                    color: Colors.grey[400],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'امتحانی یافت نشد',
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.grey[500],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
