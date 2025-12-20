@@ -1062,7 +1062,7 @@ namespace SchoolPortalAPI.Controllers
                 var filePath = Path.Combine(
                     Directory.GetCurrentDirectory(),
                     "wwwroot", "uploads", "assignments",
-                    submission.Filename);
+                    submission.Answerimage);
 
                 // Check if file exists
                 if (!System.IO.File.Exists(filePath))
