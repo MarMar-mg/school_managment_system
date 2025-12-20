@@ -32,8 +32,8 @@ class DashboardData {
 class SubjectGrade {
   final String name;
   final int percent;
-  final int avgExam;
-  final int avgExercise;
+  final double avgExam;
+  final double avgExercise;
   final String letter;
   final Color color;
   final bool isTop;

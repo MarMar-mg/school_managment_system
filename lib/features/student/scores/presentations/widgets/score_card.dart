@@ -188,7 +188,7 @@ class ScoreCard extends StatelessWidget {
 
 // === Model ===
 class SubScore {
-  final int percent;
+  final double percent;
   final String label;
   SubScore({required this.percent, required this.label});
 }

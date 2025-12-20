@@ -118,7 +118,7 @@ class _MyScorePageState extends State<MyScorePage> {
   }
 
   // Generate realistic sub‑scores
-  List<SubScore> _generateSubScores(int avgexam, int avgexercise) {
+  List<SubScore> _generateSubScores(double avgexam, double avgexercise) {
     return [
       SubScore(percent: avgexercise, label: 'تکالیف'),
       SubScore(percent: avgexam, label: 'آزمون‌ها'),

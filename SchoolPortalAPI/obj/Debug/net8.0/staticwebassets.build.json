@@ -1,6 +1,6 @@
 {
   "Version": 1,
-  "Hash": "yGf0ldWjuDQCsauE0zhzqNXs+w2yt7YT6h5f5b/DTEY=",
+  "Hash": "wMzQOzvOIgb5K1sdTmfsdq8it8g3wG4HkbWV9y9VNAY=",
   "Source": "SchoolPortalAPI",
   "BasePath": "_content/SchoolPortalAPI",
   "Mode": "Default",
@@ -34,6 +34,25 @@
       "CopyToOutputDirectory": "Never",
       "CopyToPublishDirectory": "PreserveNewest",
       "OriginalItemSpec": "wwwroot\\uploads\\assignments\\1560ab94-c508-4927-91d5-abf24bc27a1e_MicroLab Exp3 Instructions.pdf"
+    },
+    {
+      "Identity": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf",
+      "SourceId": "SchoolPortalAPI",
+      "SourceType": "Discovered",
+      "ContentRoot": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\",
+      "BasePath": "_content/SchoolPortalAPI",
+      "RelativePath": "uploads/assignments/2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf",
+      "AssetKind": "All",
+      "AssetMode": "All",
+      "AssetRole": "Primary",
+      "AssetMergeBehavior": "PreferTarget",
+      "AssetMergeSource": "",
+      "RelatedAsset": "",
+      "AssetTraitName": "",
+      "AssetTraitValue": "",
+      "CopyToOutputDirectory": "Never",
+      "CopyToPublishDirectory": "PreserveNewest",
+      "OriginalItemSpec": "wwwroot\\uploads\\assignments\\2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf"
     },
     {
       "Identity": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\wwwroot\\uploads\\assignments\\6c7ea3b2-89e5-4362-9345-ad316b30c12b_5998917656142531916 (1).jpg",
