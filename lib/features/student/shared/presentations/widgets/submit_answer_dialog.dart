@@ -49,6 +49,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
   bool _isLoading = false;
   String? _examTimeStatus;
   int? _remainingMinutes;
+  bool isEmpty = false;
 
   @override
   void initState() {
@@ -115,10 +116,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       }
     }
 
-    if (_fileNameController.text.isEmpty) {
-      _showError('لطفا فایلی انتخاب کنید');
-      return;
-    }
+
 
     setState(() => _isLoading = true);
 
@@ -127,18 +125,20 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
         await ApiService.submitExam(
           widget.userId,
           widget.id,
+          !isEmpty,
           _descriptionController.text,
-          _selectedFile,
-          customFileName: _fileNameController.text,
+          isEmpty? null: _selectedFile,
+          customFileName: isEmpty? '':_fileNameController.text,
           isUpdate: widget.isEditing,
         );
       } else {
         await ApiService.submitAssignment(
           widget.userId,
           widget.id,
+          !isEmpty,
           _descriptionController.text,
-          _selectedFile,
-          customFileName: _fileNameController.text,
+          isEmpty? null: _selectedFile,
+          customFileName: isEmpty? '':_fileNameController.text,
           isUpdate: widget.isEditing,
         );
       }
@@ -355,6 +355,7 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
                         onTap: () => setState(() {
                           _selectedFile = null;
                           _fileNameController.clear();
+                          isEmpty = true;
                         }),
                         child: Icon(
                           Icons.close,

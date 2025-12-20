@@ -1,5 +1,21 @@
 ﻿<Project>
   <ItemGroup>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\06bbb18c-0be5-4a3c-aaa3-f84545fff293_8-9-10 correct.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/06bbb18c-0be5-4a3c-aaa3-f84545fff293_8-9-10 correct.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\06bbb18c-0be5-4a3c-aaa3-f84545fff293_8-9-10 correct.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\1560ab94-c508-4927-91d5-abf24bc27a1e_MicroLab Exp3 Instructions.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
@@ -16,12 +32,12 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\1560ab94-c508-4927-91d5-abf24bc27a1e_MicroLab Exp3 Instructions.pdf))</OriginalItemSpec>
     </StaticWebAsset>
-    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf))">
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\353b32cf-95aa-44a7-b495-7fcd36781aa6_8-9-10 correct.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
       <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
       <BasePath>_content/SchoolPortalAPI</BasePath>
-      <RelativePath>uploads/assignments/2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf</RelativePath>
+      <RelativePath>uploads/assignments/353b32cf-95aa-44a7-b495-7fcd36781aa6_8-9-10 correct.pdf</RelativePath>
       <AssetKind>All</AssetKind>
       <AssetMode>All</AssetMode>
       <AssetRole>Primary</AssetRole>
@@ -30,7 +46,7 @@
       <AssetTraitValue></AssetTraitValue>
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\2e3522ba-499d-46af-82b5-a13e7adbffa0_1-5.pdf))</OriginalItemSpec>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\353b32cf-95aa-44a7-b495-7fcd36781aa6_8-9-10 correct.pdf))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\6c7ea3b2-89e5-4362-9345-ad316b30c12b_5998917656142531916 (1).jpg))">
       <SourceType>Package</SourceType>
@@ -48,6 +64,70 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\6c7ea3b2-89e5-4362-9345-ad316b30c12b_5998917656142531916 (1).jpg))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\6ded1295-46ba-45d3-bd1e-2bb85e8c1f7d_63613883005.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/6ded1295-46ba-45d3-bd1e-2bb85e8c1f7d_63613883005.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\6ded1295-46ba-45d3-bd1e-2bb85e8c1f7d_63613883005.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\76cc6fde-9182-4fc4-98ac-3bce1f7c8c1f_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/76cc6fde-9182-4fc4-98ac-3bce1f7c8c1f_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\76cc6fde-9182-4fc4-98ac-3bce1f7c8c1f_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\8047cf09-06de-456b-b785-039a37cbe39f_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/8047cf09-06de-456b-b785-039a37cbe39f_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\8047cf09-06de-456b-b785-039a37cbe39f_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\9bd138e5-bb75-4960-beee-c6be6a9ad0eb_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/9bd138e5-bb75-4960-beee-c6be6a9ad0eb_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\9bd138e5-bb75-4960-beee-c6be6a9ad0eb_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\9f05e562-146d-4d6d-9235-390cb56ab5ea_1-5.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
@@ -64,6 +144,22 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\9f05e562-146d-4d6d-9235-390cb56ab5ea_1-5.pdf))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\a6bf4b62-66eb-4f06-b6a2-280b9515ace4_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/a6bf4b62-66eb-4f06-b6a2-280b9515ace4_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\a6bf4b62-66eb-4f06-b6a2-280b9515ace4_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\aa298064-99c0-4550-bcbf-7de4ada60cc5_CamScanner 09-28-2024 19.58.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
@@ -79,6 +175,38 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\aa298064-99c0-4550-bcbf-7de4ada60cc5_CamScanner 09-28-2024 19.58.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\ba1d3cd1-d3f7-485c-a662-21ec2c974740_8-9-10 correct.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/ba1d3cd1-d3f7-485c-a662-21ec2c974740_8-9-10 correct.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\ba1d3cd1-d3f7-485c-a662-21ec2c974740_8-9-10 correct.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\d114574f-7bb4-43c2-910f-6a880e692fbf_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/assignments/d114574f-7bb4-43c2-910f-6a880e692fbf_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\d114574f-7bb4-43c2-910f-6a880e692fbf_1-5.pdf))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\assignments\d88ad204-8852-448d-a375-37b0bfab49f3_1-5.pdf))">
       <SourceType>Package</SourceType>
@@ -176,6 +304,22 @@
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\22c83a16-77a1-4fda-9f9f-404977c1d33a_1-5.pdf))</OriginalItemSpec>
     </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\3e4582c1-3b13-42b7-983a-2b812e86371f_1-5.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exams/3e4582c1-3b13-42b7-983a-2b812e86371f_1-5.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\3e4582c1-3b13-42b7-983a-2b812e86371f_1-5.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\4020ac5e-ca49-4196-9eb8-5407f5b6f321_1-5.pdf))">
       <SourceType>Package</SourceType>
       <SourceId>SchoolPortalAPI</SourceId>
@@ -239,6 +383,22 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\7d19c001-d691-4750-b2ee-bc8ff6f44b42_63613883005.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\932a82d4-ea8b-4ce8-8485-d1a3b6c4e55a_63613883005.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exams/932a82d4-ea8b-4ce8-8485-d1a3b6c4e55a_63613883005.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\932a82d4-ea8b-4ce8-8485-d1a3b6c4e55a_63613883005.pdf))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\95e9fabf-27de-4aff-a3ee-1dcd891e8de5_1-5.pdf))">
       <SourceType>Package</SourceType>
@@ -319,6 +479,22 @@
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
       <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\e735f129-35fb-4d79-80a3-eb891379d75d_8-9-10 correct.pdf))</OriginalItemSpec>
+    </StaticWebAsset>
+    <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\edf17b27-da1d-4f96-afbe-69dc8cfdefe1_S1-12 com at SBU.pdf))">
+      <SourceType>Package</SourceType>
+      <SourceId>SchoolPortalAPI</SourceId>
+      <ContentRoot>$(MSBuildThisFileDirectory)..\staticwebassets\</ContentRoot>
+      <BasePath>_content/SchoolPortalAPI</BasePath>
+      <RelativePath>uploads/exams/edf17b27-da1d-4f96-afbe-69dc8cfdefe1_S1-12 com at SBU.pdf</RelativePath>
+      <AssetKind>All</AssetKind>
+      <AssetMode>All</AssetMode>
+      <AssetRole>Primary</AssetRole>
+      <RelatedAsset></RelatedAsset>
+      <AssetTraitName></AssetTraitName>
+      <AssetTraitValue></AssetTraitValue>
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+      <OriginalItemSpec>$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\edf17b27-da1d-4f96-afbe-69dc8cfdefe1_S1-12 com at SBU.pdf))</OriginalItemSpec>
     </StaticWebAsset>
     <StaticWebAsset Include="$([System.IO.Path]::GetFullPath($(MSBuildThisFileDirectory)..\staticwebassets\uploads\exams\f3f05996-700a-4150-ad39-6a003862be1e_chapter 1 S1_S5 (1).pdf))">
       <SourceType>Package</SourceType>

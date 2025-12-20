@@ -51,6 +51,7 @@ class ExamItem {
 
   factory ExamItem.fromJson(Map<String, dynamic> json) {
     final statusStr = json['status'] as String? ?? 'pending';
+    final isAnswered = json['submittedDate'];
     ExamStatus parsedStatus;
     switch (statusStr.toLowerCase()) {
       case 'pending':
@@ -65,8 +66,14 @@ class ExamItem {
         parsedStatus = ExamStatus.scored;
         break;
       default:
-        parsedStatus = ExamStatus.pending;
+        parsedStatus = isAnswered == null
+            ? ExamStatus.pending
+            : ExamStatus.answered;
     }
+
+    parsedStatus = isAnswered == null
+        ? ExamStatus.pending
+        : ExamStatus.answered;
 
     return ExamItem(
       title: json['title'] ?? 'بدون عنوان',

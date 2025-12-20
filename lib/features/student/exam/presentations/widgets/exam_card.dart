@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/commons/untils.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+
 import '../../../../../commons/utils/manager/date_manager.dart';
 import '../../../../../core/services/api_service.dart';
 import '../../../../../core/services/exam_time_validator.dart';
@@ -28,7 +29,7 @@ class ExamCard extends StatelessWidget {
     final submittedD = item.submittedDate != null
         ? _formatJalali(item.submittedDate!)
         : 'بدون پاسخ';
-    final submittedT = item.submittedTime != null ? item.submittedTime : '';
+    final submittedT = item.submittedTime ?? '';
 
     // Check exam status for time validation
     final examStatus = ExamTimeValidator.getExamStatus(
@@ -119,7 +120,7 @@ class ExamCard extends StatelessWidget {
             if (item.description?.isNotEmpty == true) ...[
               const SizedBox(height: 16),
               Text(
-                'توضبحات: ${item.description!}',
+                'توضیحات: ${item.description!}',
                 style: TextStyle(
                   fontSize: 14,
                   color: Colors.grey[700],
@@ -148,6 +149,32 @@ class ExamCard extends StatelessWidget {
 
             // Action Button
             _buildActionButton(context, examStatus),
+            const SizedBox(height: 8),
+            ((item.status == ExamStatus.pending ||
+                        item.status == ExamStatus.answered) &&
+                    item.submittedDate != null)
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: () async {
+                            await _downloadQuestionFile(context, 'exam');
+                          },
+                          icon: const Icon(Icons.download_rounded, size: 18),
+                          label: const Text("دانلود سوال"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.purple.shade50,
+                            foregroundColor: Colors.purple,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : const SizedBox(),
           ],
         ),
       ),
@@ -595,7 +622,7 @@ class ExamCard extends StatelessWidget {
     final isDownloadAllowed = examStatus != 'before_start';
 
     // Pending: Show "ارسال پاسخ"
-    if (item.status == ExamStatus.pending && item.answerImage == null) {
+    if (item.status == ExamStatus.pending && item.submittedDate == null) {
       final isTimeValid = examStatus == 'during';
 
       return Row(
@@ -645,10 +672,10 @@ class ExamCard extends StatelessWidget {
       );
     }
 
-    // Answered/Pending with answer: Show "تغییر پاسخ" and "دانلود"
+    // ✅ Answered/Pending with answer: Show "تغییر پاسخ" and "دانلود"
     if ((item.status == ExamStatus.pending ||
             item.status == ExamStatus.answered) &&
-        item.answerImage != null) {
+        item.submittedDate != null) {
       final isTimeValid = examStatus == 'during';
 
       return Row(
@@ -672,43 +699,44 @@ class ExamCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          // Edit Button
-          (item.status != ExamStatus.answered && isTimeValid)
-              ? Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      print(
-                        'DEBUG: Opening edit dialog with examId=${item.examId}',
-                      );
-                      showDialog(
-                        context: context,
-                        builder: (BuildContext ctx) => SubmitAnswerDialog(
-                          type: 'exam',
-                          id: item.examId,
-                          userId: userId,
-                          onSubmitted: onRefresh,
-                          isEditing: true,
-                          previousDescription: item.submittedDescription,
-                          previousFileName: item.filename,
-                          examDate: item.dueDate,
-                          examStartTime: item.startTime,
-                          examEndTime: item.endTime,
-                        ),
-                      );
-                    },
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    label: const Text("تغییر"),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+          // ✅ CHANGE ANSWER BUTTON - Only if exam is still active
+          if (item.status != ExamStatus.answered && isTimeValid)
+            Expanded(
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  print(
+                    'DEBUG: Opening edit dialog with examId=${item.examId}',
+                  );
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext ctx) => SubmitAnswerDialog(
+                      type: 'exam',
+                      id: item.examId,
+                      userId: userId,
+                      onSubmitted: onRefresh,
+                      isEditing: true,
+                      previousDescription: item.submittedDescription,
+                      previousFileName: item.filename,
+                      examDate: item.dueDate,
+                      examStartTime: item.startTime,
+                      examEndTime: item.endTime,
                     ),
+                  );
+                },
+                icon: const Icon(Icons.edit_outlined, size: 18),
+                label: const Text("تغییر پاسخ"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                )
-              : Expanded(child: _buildShowButton(context)),
+                ),
+              ),
+            )
+          else
+            Expanded(child: _buildShowButton(context)),
         ],
       );
     }
