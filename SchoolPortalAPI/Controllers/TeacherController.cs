@@ -647,35 +647,35 @@ namespace SchoolPortalAPI.Controllers
             return Ok(submissions);
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // 15. Update Exams Score
-        // ──────────────────────────────────────────────────────────────
-        [HttpPut("exams/submissions/{submissionId}/score")]
-        public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
-        {
-            if (request.Score < 0)
-                return BadRequest("Score cannot be negative");
-
-            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
-
-            if (submission == null)
-                return NotFound("Submission not found");
-
-            submission.Score = (int)request.Score;
-
-            _context.ExamStuTeaches.Update(submission);
-            await _context.SaveChangesAsync();
-
-            return Ok(new {
-                message = "Score updated successfully",
-                submission = new
-                {
-                    submissionId = submission.Estid,
-                    studentId = submission.Studentid,
-                    score = submission.Score
-                }
-            });
-        }
+//        // ──────────────────────────────────────────────────────────────
+//        // 15. Update Exams Score
+//        // ──────────────────────────────────────────────────────────────
+//        [HttpPut("exams/submissions/{submissionId}/score")]
+//        public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
+//        {
+//            if (request.Score < 0)
+//                return BadRequest("Score cannot be negative");
+//
+//            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
+//
+//            if (submission == null)
+//                return NotFound("Submission not found");
+//
+//            submission.Score = (int)request.Score;
+//
+//            _context.ExamStuTeaches.Update(submission);
+//            await _context.SaveChangesAsync();
+//
+//            return Ok(new {
+//                message = "Score updated successfully",
+//                submission = new
+//                {
+//                    submissionId = submission.Estid,
+//                    studentId = submission.Studentid,
+//                    score = submission.Score
+//                }
+//            });
+//        }
 
         // ──────────────────────────────────────────────────────────────
         // 16. Update Exams Score(group)
@@ -997,8 +997,112 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
+//        // ──────────────────────────────────────────────────────────────
+//        // Get all students for an exam with submission status
+//        // ──────────────────────────────────────────────────────────────
+//        [HttpGet("exams/{examId}/students")]
+//        public async Task<IActionResult> GetExamStudents(long examId)
+//        {
+//            var exam = await _context.Exams
+//                .Include(e => e.Class)
+//                .FirstOrDefaultAsync(e => e.Examid == examId);
+//
+//            if (exam == null)
+//                return NotFound("Exam not found");
+//
+//            // Get all students in the exam's class
+//            var allStudents = await _context.Students
+//                .Where(s => s.Classeid == exam.Classid)
+//                .Select(s => new { s.Studentid, s.Name, s.StuCode })
+//                .ToListAsync();
+//
+//            // Get exam submissions
+//            var submissions = await _context.ExamStuTeaches
+//                .Where(est => est.Examid == examId)
+//                .ToListAsync();
+//
+//            var result = allStudents.Select(student =>
+//            {
+//                var submission = submissions.FirstOrDefault(s => s.Studentid == student.Studentid);
+//
+//                return new
+//                {
+//                    studentId = student.Studentid,
+//                    stuCode = student.StuCode,
+//                    studentName = student.Name,
+//                    score = submission?.Score,
+//                    submissionId = submission?.Estid,
+//                    examId = submission?.Examid,
+//                    hasSubmitted = submission != null,
+//                    submittedAt = submission?.Date,
+//                    submittedTime = submission?.Time,
+//                    answerFile = submission?.Filename ?? ""
+//                };
+//            }).OrderBy(s => s.studentName).ToList();
+//
+//            return Ok(result);
+//        }
+
+//        // ──────────────────────────────────────────────────────────────
+//        // Get all students for an assignment with submission status
+//        // ──────────────────────────────────────────────────────────────
+//        [HttpGet("exercises/{exerciseId}/students")]
+//        public async Task<IActionResult> GetExerciseStudents(long exerciseId)
+//        {
+//            var exercise = await _context.Exercises
+//                .Include(e => e.Course)
+//                .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
+//
+//            if (exercise == null)
+//                return NotFound("Exercise not found");
+//
+//            // Get the class from the course or directly from exercise
+//            var classId = exercise.Classid;
+//            if (classId == null && exercise.Courseid.HasValue)
+//            {
+//                var course = await _context.Courses.FindAsync(exercise.Courseid);
+//                classId = course?.Classid;
+//            }
+//
+//            if (classId == null)
+//                return BadRequest("Class information not available");
+//
+//            // Get all students in the exercise's class
+//            var allStudents = await _context.Students
+//                .Where(s => s.Classeid == classId)
+//                .Select(s => new { s.Studentid, s.Name, s.StuCode })
+//                .ToListAsync();
+//
+//            // Get exercise submissions
+//            var submissions = await _context.ExerciseStuTeaches
+//                .Where(est => est.Exerciseid == exerciseId)
+//                .ToListAsync();
+//
+//            var result = allStudents.Select(student =>
+//            {
+//                var submission = submissions
+//                .FirstOrDefault(s => s.Studentid == student.Studentid);
+//
+//                return new
+//                {
+//                    studentId = student.Studentid,
+//                    stuCode = student.StuCode,
+//                    studentName = student.Name,
+//                    score = submission?.Score,
+//                    submissionId = submission?.Exstid,
+//                    exerciseId = submission?.Exerciseid,
+//                    hasSubmitted = submission != null,
+//                    submittedAt = submission?.Date ?? "",
+//                    submittedTime = submission?.Time ?? "",
+//                    answerFile = submission?.Filename ?? ""
+//                };
+//            }).OrderBy(s => s.studentName).ToList();
+//
+//            return Ok(result);
+//        }
+
         // ──────────────────────────────────────────────────────────────
-        // Get all students for an exam with submission status
+        // Get all students for an exam (including those without submission)
         // ──────────────────────────────────────────────────────────────
         [HttpGet("exams/{examId}/students")]
         public async Task<IActionResult> GetExamStudents(long examId)
@@ -1008,7 +1112,7 @@ namespace SchoolPortalAPI.Controllers
                 .FirstOrDefaultAsync(e => e.Examid == examId);
 
             if (exam == null)
-                return NotFound("Exam not found");
+                return NotFound(new { message = "Exam not found" });
 
             // Get all students in the exam's class
             var allStudents = await _context.Students
@@ -1027,16 +1131,16 @@ namespace SchoolPortalAPI.Controllers
 
                 return new
                 {
+                    submissionId = submission?.Estid ?? 0,
                     studentId = student.Studentid,
                     stuCode = student.StuCode,
                     studentName = student.Name,
                     score = submission?.Score,
-                    submissionId = submission?.Estid,
-                    examId = submission?.Examid,
-                    hasSubmitted = submission != null,
-                    submittedAt = submission?.Date,
-                    submittedTime = submission?.Time,
-                    answerFile = submission?.Filename ?? ""
+                    hasSubmitted = !(submission?.Description == "Score given by teacher without submission" || submission?.Description == null) ,
+                    submittedAt = submission?.Date ?? "",
+                    submittedTime = submission?.Time ?? "",
+                    answerFile = submission?.Filename ?? "",
+                    examId = examId,
                 };
             }).OrderBy(s => s.studentName).ToList();
 
@@ -1044,7 +1148,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // Get all students for an assignment with submission status
+        // Get all students for an assignment (including those without submission)
         // ──────────────────────────────────────────────────────────────
         [HttpGet("exercises/{exerciseId}/students")]
         public async Task<IActionResult> GetExerciseStudents(long exerciseId)
@@ -1054,9 +1158,9 @@ namespace SchoolPortalAPI.Controllers
                 .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
 
             if (exercise == null)
-                return NotFound("Exercise not found");
+                return NotFound(new { message = "Exercise not found" });
 
-            // Get the class from the course or directly from exercise
+            // Get the class from the course
             var classId = exercise.Classid;
             if (classId == null && exercise.Courseid.HasValue)
             {
@@ -1065,7 +1169,7 @@ namespace SchoolPortalAPI.Controllers
             }
 
             if (classId == null)
-                return BadRequest("Class information not available");
+                return BadRequest(new { message = "Class information not available" });
 
             // Get all students in the exercise's class
             var allStudents = await _context.Students
@@ -1081,24 +1185,178 @@ namespace SchoolPortalAPI.Controllers
             var result = allStudents.Select(student =>
             {
                 var submission = submissions
-                .FirstOrDefault(s => s.Studentid == student.Studentid);
+                    .FirstOrDefault(s => s.Studentid == student.Studentid);
 
                 return new
                 {
+                    submissionId = submission?.Exstid ?? 0,
                     studentId = student.Studentid,
                     stuCode = student.StuCode,
                     studentName = student.Name,
                     score = submission?.Score,
-                    submissionId = submission?.Exstid,
-                    exerciseId = submission?.Exerciseid,
-                    hasSubmitted = submission != null,
+                    hasSubmitted =  submission?.Date != null,
                     submittedAt = submission?.Date ?? "",
                     submittedTime = submission?.Time ?? "",
-                    answerFile = submission?.Filename ?? ""
+                    answerFile = submission?.Filename ?? "",
+                    exerciseId = exerciseId,
                 };
             }).OrderBy(s => s.studentName).ToList();
 
             return Ok(result);
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Update submission score (creates record if it doesn't exist)
+        // ──────────────────────────────────────────────────────────────
+        [HttpPut("exams/submissions/{submissionId}/score")]
+        public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
+        {
+            if (request.Score < 0)
+                return BadRequest(new { message = "Score cannot be negative" });
+
+            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
+
+            if (submission == null)
+                return NotFound(new { message = "Submission not found" });
+
+            submission.Score = (int)request.Score;
+            _context.ExamStuTeaches.Update(submission);
+            await _context.SaveChangesAsync();
+
+            return Ok(new {
+                message = "Score updated successfully",
+                submission = new
+                {
+                    submissionId = submission.Estid,
+                    studentId = submission.Studentid,
+                    score = submission.Score
+                }
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Update submission score (creates record if it doesn't exist)
+        // ──────────────────────────────────────────────────────────────
+        [HttpPut("exercises/submissions/{submissionId}/score")]
+        public async Task<IActionResult> UpdateSubmissionScoreEx(long submissionId, [FromBody] UpdateScoreRequest request)
+        {
+            if (request.Score < 0)
+                return BadRequest(new { message = "Score cannot be negative" });
+
+            var submission = await _context.ExerciseStuTeaches.FirstOrDefaultAsync(est => est.Exstid == submissionId);
+
+            if (submission == null)
+                return NotFound(new { message = "Submission not found" });
+
+            submission.Score = (int)request.Score;
+            _context.ExerciseStuTeaches.Update(submission);
+            await _context.SaveChangesAsync();
+
+            return Ok(new {
+                message = "Score updated successfully",
+                submission = new
+                {
+                    submissionId = submission.Exstid,
+                    studentId = submission.Studentid,
+                    score = submission.Score
+                }
+            });
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Create empty submission for student without submission + score
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("exams/{examId}/students/{studentId}/score")]
+        public async Task<IActionResult> CreateExamScoreForStudent(long examId, long studentId, [FromBody] UpdateScoreRequest request)
+        {
+            if (request.Score < 0)
+                return BadRequest(new { message = "Score cannot be negative" });
+
+            var exam = await _context.Exams.FindAsync(examId);
+            if (exam == null)
+                return NotFound(new { message = "Exam not found" });
+
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null)
+                return NotFound(new { message = "Student not found" });
+
+            var course = await _context.Courses.FindAsync(exam.Courseid);
+            if (course == null)
+                return BadRequest(new { message = "Course not found" });
+
+            // Check if submission already exists
+            var existingSubmission = await _context.ExamStuTeaches
+                .FirstOrDefaultAsync(est => est.Examid == examId && est.Studentid == studentId);
+
+            if (existingSubmission != null)
+            {
+                existingSubmission.Score = (int)request.Score;
+                _context.ExamStuTeaches.Update(existingSubmission);
+            }
+            else
+            {
+                // Create new submission with score (no answer)
+                var newSubmission = new ExamStuTeach
+                {
+                    Examid = examId,
+                    Studentid = studentId,
+                    Courseid = exam.Courseid ?? 0,
+                    Teacherid = course.Teacherid ?? 0,
+                    Score = (int)request.Score,
+                    Answerimage = null,
+                    Description = "Score given by teacher without submission"
+                };
+                _context.ExamStuTeaches.Add(newSubmission);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Score saved successfully" });
+        }
+
+        // Similar for exercises/assignments
+        [HttpPost("exercises/{exerciseId}/students/{studentId}/score")]
+        public async Task<IActionResult> CreateExerciseScoreForStudent(long exerciseId, long studentId, [FromBody] UpdateScoreRequest request)
+        {
+            if (request.Score < 0)
+                return BadRequest(new { message = "Score cannot be negative" });
+
+            var exercise = await _context.Exercises.FindAsync(exerciseId);
+            if (exercise == null)
+                return NotFound(new { message = "Exercise not found" });
+
+            var student = await _context.Students.FindAsync(studentId);
+            if (student == null)
+                return NotFound(new { message = "Student not found" });
+
+            // Check if submission already exists
+            var existingSubmission = await _context.ExerciseStuTeaches
+                .FirstOrDefaultAsync(est => est.Exerciseid == exerciseId && est.Studentid == studentId);
+
+            if (existingSubmission != null)
+            {
+                existingSubmission.Score = (int)request.Score;
+                _context.ExerciseStuTeaches.Update(existingSubmission);
+            }
+            else
+            {
+                // Create new submission with score (no answer)
+                var newSubmission = new ExerciseStuTeach
+                {
+                    Exerciseid = exerciseId,
+                    Studentid = studentId,
+                    Courseid = exercise.Courseid ?? 0,
+                    Teacherid = 0,
+                    Score = (int)request.Score,
+                    Answerimage = null,
+                    Description = "Score given by teacher without submission"
+                };
+                _context.ExerciseStuTeaches.Add(newSubmission);
+            }
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Score saved successfully" });
         }
 ////////////////////////////////////////////////////////////////////////////
         private string GetContentType(string path)

@@ -916,6 +916,33 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> updateSubmissionScoreEx(
+    int submissionId,
+    double score,
+  ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exercises/submissions/$submissionId/score',
+    );
+
+    try {
+      final response = await http
+          .put(url, headers: _headers, body: json.encode({'score': score}))
+          .timeout(_timeout);
+
+      print('Update Score Status: ${response.statusCode}');
+      print('Update Score Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در به‌روزرسانی نمره: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating score: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
   // Update multiple students' scores at once
   static Future<Map<String, dynamic>> batchUpdateScores(
     int examId,
@@ -1586,6 +1613,72 @@ class ApiService {
     } catch (e) {
       print('Download Assignment Question Error: $e');
       throw Exception('خطا در دانلود فایل: $e');
+    }
+  }
+
+// ========================= CREATE EXAM SCORE FOR STUDENT (NO SUBMISSION) =============================
+  static Future<Map<String, dynamic>> createExamScoreForStudent(
+      int examId,
+      int studentId,
+      double score,
+      ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exams/$examId/students/$studentId/score',
+    );
+
+    try {
+      final response = await http
+          .post(
+        url,
+        headers: _headers,
+        body: json.encode({'score': score}),
+      )
+          .timeout(_timeout);
+
+      print('Create Exam Score Status: ${response.statusCode}');
+      print('Create Exam Score Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در ذخیره نمره: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating exam score: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+// ========================= CREATE EXERCISE SCORE FOR STUDENT (NO SUBMISSION) =============================
+  static Future<Map<String, dynamic>> createExerciseScoreForStudent(
+      int exerciseId,
+      int studentId,
+      double score,
+      ) async {
+    final url = Uri.parse(
+      '$baseUrl/teacher/exercises/$exerciseId/students/$studentId/score',
+    );
+
+    try {
+      final response = await http
+          .post(
+        url,
+        headers: _headers,
+        body: json.encode({'score': score}),
+      )
+          .timeout(_timeout);
+
+      print('Create Exercise Score Status: ${response.statusCode}');
+      print('Create Exercise Score Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در ذخیره نمره: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating exercise score: $e');
+      throw Exception('خطا: $e');
     }
   }
 
