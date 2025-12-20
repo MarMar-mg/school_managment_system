@@ -256,7 +256,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 8. Add new exercise
+        // 8. Add new exercise (with optional file)
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exercises")]
         public async Task<IActionResult> AddExercise([FromForm] AddExerciseDto model, IFormFile? file)
@@ -308,8 +308,8 @@ namespace SchoolPortalAPI.Controllers
                 Score = model.Score,
                 Courseid = model.Courseid,
                 Classid = course.Classid,
-                Filename = file.FileName,  // ✓ SAVE FILENAME
-                File = fileName       // ✓ SAVE FILE PATH
+                Filename = file?.FileName,  // ✓ CHANGED - can be null
+                File = fileName              // ✓ Can be null
             };
 
             _context.Exercises.Add(exercise);
@@ -378,7 +378,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 10. Update exercise
+        // 10. Update exercise (with optional file)
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exercises/{exerciseId}")]
         public async Task<IActionResult> UpdateExercise(long exerciseId, [FromForm] UpdateExerciseDto model, IFormFile? file)
@@ -403,22 +403,22 @@ namespace SchoolPortalAPI.Controllers
             }
 
             // Handle file upload
-            string? fileName = exercise.Filename; // Keep old filename by default
+            string? fileName = exercise.File; // Keep old filename by default
 
             if (file != null && file.Length > 0)
             {
                 // Delete old file if exists
-                if (!string.IsNullOrEmpty(exercise.Filename))
+                if (!string.IsNullOrEmpty(exercise.File))
                 {
                     var oldFilePath = Path.Combine(
                         Directory.GetCurrentDirectory(),
                         "wwwroot", "uploads", "exercises",
-                        exercise.Filename);
+                        exercise.File);
 
                     if (System.IO.File.Exists(oldFilePath))
                     {
                         System.IO.File.Delete(oldFilePath);
-                        Console.WriteLine($"[UPDATE EXERCISE] Deleted old file: {exercise.Filename}");
+                        Console.WriteLine($"[UPDATE EXERCISE] Deleted old file: {exercise.File}");
                     }
                 }
 
@@ -442,8 +442,8 @@ namespace SchoolPortalAPI.Controllers
             exercise.Enddate = model.Enddate ?? exercise.Enddate;
             exercise.Endtime = model.Endtime ?? exercise.Endtime;
             exercise.Score = model.Score ?? exercise.Score;
-            exercise.Filename = file.FileName;  // ✓ UPDATE FILENAME
-            exercise.File = fileName;       // ✓ UPDATE FILE PATH
+            exercise.Filename = file?.FileName;  // ✓ CHANGED - can be null
+            exercise.File = fileName;            // ✓ Can be null
 
             await _context.SaveChangesAsync();
 
@@ -739,7 +739,7 @@ namespace SchoolPortalAPI.Controllers
 
 
         // ──────────────────────────────────────────────────────────────
-        // 18. Add New Exams
+        // 18. Add New Exams (with optional file)
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exams")]
         public async Task<IActionResult> CreateExam([FromForm] AddExamDto model, IFormFile? file)
@@ -792,8 +792,8 @@ namespace SchoolPortalAPI.Controllers
                 Classid = course.Classid,
                 Description = model.Description,
                 Duration = model.Duration,
-                Filename = file.FileName,  // ✓ SAVE FILENAME
-                File = fileName       // ✓ SAVE FILE PATH
+                Filename = file?.FileName,  // ✓ CHANGED - can be null
+                File = fileName              // ✓ Can be null
             };
 
             _context.Exams.Add(exam);
@@ -803,7 +803,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 19. Update Exam
+        // 19. Update Exam (with optional file)
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/{examId}")]
         public async Task<IActionResult> UpdateExam(long examId, [FromForm] UpdateExamDto model, IFormFile? file)
@@ -828,22 +828,22 @@ namespace SchoolPortalAPI.Controllers
             }
 
             // Handle file upload
-            string? fileName = exam.Filename; // Keep old filename by default
+            string? fileName = exam.File; // Keep old filename by default
 
             if (file != null && file.Length > 0)
             {
                 // Delete old file if exists
-                if (!string.IsNullOrEmpty(exam.Filename))
+                if (!string.IsNullOrEmpty(exam.File))
                 {
                     var oldFilePath = Path.Combine(
                         Directory.GetCurrentDirectory(),
                         "wwwroot", "uploads", "exams",
-                        exam.Filename);
+                        exam.File);
 
                     if (System.IO.File.Exists(oldFilePath))
                     {
                         System.IO.File.Delete(oldFilePath);
-                        Console.WriteLine($"[UPDATE EXAM] Deleted old file: {exam.Filename}");
+                        Console.WriteLine($"[UPDATE EXAM] Deleted old file: {exam.File}");
                     }
                 }
 
@@ -868,8 +868,8 @@ namespace SchoolPortalAPI.Controllers
             exam.Endtime = model.Endtime ?? exam.Endtime;
             exam.PossibleScore = model.PossibleScore ?? exam.PossibleScore;
             exam.Duration = model.Duration ?? exam.Duration;
-            exam.Filename = file.FileName;  // ✓ UPDATE FILENAME
-            exam.File = fileName;       // ✓ UPDATE FILE PATH
+            exam.Filename = file?.FileName;  // ✓ CHANGED - can be null
+            exam.File = fileName;            // ✓ Can be null
 
             await _context.SaveChangesAsync();
 
