@@ -3,11 +3,11 @@ import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 
 void showExamScoreManagementDialog(
-    BuildContext context, {
-      required int examId,
-      required String examTitle,
-      required int possibleScore,
-    }) {
+  BuildContext context, {
+  required int examId,
+  required String examTitle,
+  required int possibleScore,
+}) {
   showDialog(
     context: context,
     builder: (context) => ExamScoreManagementDialog(
@@ -139,9 +139,9 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
                   ),
                   const SizedBox(height: 24),
 
-                  // Submissions Title
+                  // Submissions List
                   const Text(
-                    'ارسال‌های دانش‌آموزان',
+                    'پاسخ‌های دانش‌آموزان',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
@@ -151,98 +151,40 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Submissions List
                   FutureBuilder<List<dynamic>>(
                     future: _submissionsFuture,
                     builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(),
-                          ),
+                      if (snapshot.hasData) {
+                        final submissions = snapshot.data!;
+                        if (submissions.isEmpty) {
+                          return const Center(
+                            child: Text(
+                              'هیچ پاسخی یافت نشد',
+                              style: TextStyle(color: Colors.grey),
+                              textDirection: TextDirection.rtl,
+                            ),
+                          );
+                        }
+                        return Column(
+                          children: submissions.map((submission) {
+                            return _buildSubmissionCard(submission);
+                          }).toList(),
                         );
                       }
-
                       if (snapshot.hasError) {
                         return Center(
-                          child: Text('خطا: ${snapshot.error}'),
-                        );
-                      }
-
-                      final submissions = snapshot.data ?? [];
-
-                      if (submissions.isEmpty) {
-                        return Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(20),
-                            child: Column(
-                              children: [
-                                Icon(
-                                  Icons.assignment_outlined,
-                                  size: 48,
-                                  color: AppColor.lightGray,
-                                ),
-                                const SizedBox(height: 12),
-                                const Text(
-                                  'ارسالی یافت نشد',
-                                  style: TextStyle(color: AppColor.lightGray),
-                                ),
-                              ],
-                            ),
+                          child: Text(
+                            'خطا: ${snapshot.error}',
+                            style: const TextStyle(color: Colors.red),
+                            textDirection: TextDirection.rtl,
                           ),
                         );
                       }
-
-                      return Column(
-                        children: List.generate(
-                          submissions.length,
-                              (index) => _buildSubmissionCard(submissions[index]),
-                        ),
-                      );
+                      return const Center(child: CircularProgressIndicator());
                     },
                   ),
                 ],
               ),
-            ),
-          ),
-
-          // Footer Actions
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Expanded(
-                  child: ElevatedButton.icon(
-                    onPressed: _loadData,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.grey.shade200,
-                      foregroundColor: AppColor.darkText,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(Icons.refresh, size: 18),
-                    label: const Text('تازه کردن'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.pop(context),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColor.purple,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    child: const Text('بستن'),
-                  ),
-                ),
-              ],
             ),
           ),
         ],
@@ -254,75 +196,65 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColor.purple, AppColor.lightPurple],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: AppColor.purple.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 6),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatItem(
-                'کل رسال ها',
-                '${stats['totalSubmissions']}',
-              ),
-              _buildStatItem(
-                'نمره‌دار',
-                '${stats['gradedSubmissions']}',
-              ),
-              _buildStatItem(
-                'درانتظار',
-                '${stats['pendingSubmissions']}',
-              ),
-            ],
+          _buildStatItem(
+            'میانگین نمره',
+            '${stats['averageScore']?.toStringAsFixed(1) ?? '0.0'}',
+            Icons.bar_chart,
+            AppColor.purple,
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildStatItem(
-                'میانگین',
-                '${stats['averageScore']}',
-              ),
-              _buildStatItem(
-                'قبول شدگان',
-                '${stats['passPercentage']}%',
-              ),
-            ],
+          _buildStatItem(
+            'تعداد پاسخ',
+            '${stats['submissionCount'] ?? 0}',
+            Icons.people_outline,
+            Colors.blue,
+          ),
+          _buildStatItem(
+            'بالاترین نمره',
+            '${stats['highestScore'] ?? 0}',
+            Icons.arrow_upward,
+            Colors.green,
           ),
         ],
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value) {
+  Widget _buildStatItem(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: const TextStyle(fontSize: 11, color: Colors.white70),
-        ),
+        Icon(icon, color: color, size: 24),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.bold,
-            color: Colors.white,
+            color: color,
           ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColor.lightGray),
+          textDirection: TextDirection.rtl,
         ),
       ],
     );
@@ -330,22 +262,15 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
 
   Widget _buildSubmissionCard(dynamic submission) {
     final hasScore = submission['score'] != null;
-    final score = submission['score'] ?? 0;
+    final score = hasScore ? submission['score'].toStringAsFixed(1) : null;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
-          ),
-        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -354,62 +279,50 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      submission['studentName'],
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.darkText,
-                      ),
-                      textDirection: TextDirection.rtl,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'ارسال: ${submission['submittedAt']}',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColor.lightGray,
-                      ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                  ],
+                child: Text(
+                  submission['studentName'] ?? 'نامشخص',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColor.darkText,
+                  ),
+                  textDirection: TextDirection.rtl,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ),
               if (hasScore)
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
-                    color: _getScoreColor(score).withOpacity(0.15),
+                    color: _getScoreColor(
+                      submission['score'],
+                    ).withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: _getScoreColor(score).withOpacity(0.3),
-                    ),
                   ),
                   child: Text(
-                    '$score/${widget.possibleScore}',
+                    score!,
                     style: TextStyle(
-                      fontSize: 12,
+                      fontSize: 14,
+                      color: _getScoreColor(submission['score']),
                       fontWeight: FontWeight.bold,
-                      color: _getScoreColor(score),
                     ),
                   ),
                 )
               else
                 Container(
-                  padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.orange.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: const Text(
-                    'درانتظار',
+                    'در انتظار',
                     style: TextStyle(
                       fontSize: 11,
                       color: Colors.orange,
@@ -433,8 +346,10 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
                 ),
               ),
               icon: const Icon(Icons.edit, size: 16),
-              label: Text(hasScore ? 'ویرایش نمره' : 'اضافه کردن نمره',
-                  style: const TextStyle(fontSize: 12)),
+              label: Text(
+                hasScore ? 'ویرایش نمره' : 'اضافه کردن نمره',
+                style: const TextStyle(fontSize: 12),
+              ),
             ),
           ),
         ],
@@ -446,31 +361,101 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
     final scoreController = TextEditingController(
       text: submission['score']?.toString() ?? '',
     );
+    final submittedDescription =
+        submission['submittedDescription'] ?? 'بدون توضیح';
+    final filename = submission['answerFile'];
+    final estId = submission['estId'] ?? submission['submissionId'];
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'نمره: ${submission['studentName']}',
+          'نمره: ${submission['studentName'] ?? 'نامشخص'}',
           textDirection: TextDirection.rtl,
         ),
-        content: TextField(
-          controller: scoreController,
-          keyboardType:
-          const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: 'نمره (0-${widget.possibleScore})',
-            hintTextDirection: TextDirection.rtl,
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColor.purple, width: 2),
-            ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Submitted Description
+              const Text(
+                'پاسخ ارسال شده:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                submittedDescription,
+                style: const TextStyle(color: Colors.black87),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 16),
+
+              // Submitted File (if exists)
+              if (filename != null) ...[
+                const Text(
+                  'فایل ارسال شده:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        filename,
+                        style: const TextStyle(color: Colors.blue),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      _downloadFile(context, 'exam', estId, filename),
+                  icon: const Icon(Icons.download),
+                  label: const Text('دانلود'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Score Input
+              const Text(
+                'نمره:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: scoreController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'نمره (0-${widget.possibleScore})',
+                  hintTextDirection: TextDirection.rtl,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: AppColor.purple,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+              ),
+            ],
           ),
-          textAlign: TextAlign.right,
-          textDirection: TextDirection.rtl,
         ),
         actions: [
           TextButton(
@@ -480,9 +465,7 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
           ElevatedButton(
             onPressed: () async {
               final score = double.tryParse(scoreController.text);
-              if (score == null ||
-                  score < 0 ||
-                  score > widget.possibleScore) {
+              if (score == null || score < 0 || score > widget.possibleScore) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text(
@@ -519,14 +502,63 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
                 );
               }
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColor.purple,
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
             child: const Text('ذخیره'),
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _downloadFile(
+    BuildContext context,
+    String type,
+    int submissionId,
+    String filename,
+  ) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('در حال دانلود...'),
+            ],
+          ),
+        ),
+      );
+
+      final filePath = await ApiService.downloadAndSaveFile(
+        type: type,
+        submissionId: submissionId,
+        fileName: filename,
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل دانلود شد: $filePath'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Color _getScoreColor(double score) {

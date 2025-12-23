@@ -369,28 +369,102 @@ class _AssignmentScoreManagementDialogState
     final scoreController = TextEditingController(
       text: submission['score']?.toString() ?? '',
     );
+    final submittedDescription =
+        submission['submittedDescription'] ?? 'بدون توضیح';
+    final filename = submission['filename'];
+    final estId = submission['estId'] ?? submission['submissionId'];
 
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(
-          'نمره: ${submission['studentName']}',
+          'نمره: ${submission['studentName'] ?? 'نامشخص'}',
           textDirection: TextDirection.rtl,
         ),
-        content: TextField(
-          controller: scoreController,
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          decoration: InputDecoration(
-            hintText: 'نمره (0-${widget.possibleScore})',
-            hintTextDirection: TextDirection.rtl,
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-              borderSide: const BorderSide(color: AppColor.purple, width: 2),
-            ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Submitted Description
+              const Text(
+                'پاسخ ارسال شده:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 8),
+              Text(
+                submittedDescription,
+                style: const TextStyle(color: Colors.black87),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 16),
+
+              // Submitted File (if exists)
+              if (filename != null) ...[
+                const Text(
+                  'فایل ارسال شده:',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        filename,
+                        style: const TextStyle(color: Colors.blue),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+
+                ElevatedButton.icon(
+                  onPressed: () =>
+                      _downloadFile(context, 'assignment', estId, filename),
+                  icon: const Icon(Icons.download),
+                  label: Text('دانلود: '),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                  ),
+                ),
+                const SizedBox(height: 16),
+              ],
+
+              // Score Input
+              const Text(
+                'نمره:',
+                style: TextStyle(fontWeight: FontWeight.bold),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: scoreController,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                decoration: InputDecoration(
+                  hintText: 'نمره (0-${widget.possibleScore})',
+                  hintTextDirection: TextDirection.rtl,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(10),
+                    borderSide: const BorderSide(
+                      color: AppColor.purple,
+                      width: 2,
+                    ),
+                  ),
+                ),
+                textAlign: TextAlign.right,
+                textDirection: TextDirection.rtl,
+              ),
+            ],
           ),
-          textAlign: TextAlign.right,
-          textDirection: TextDirection.rtl,
         ),
         actions: [
           TextButton(
@@ -443,6 +517,57 @@ class _AssignmentScoreManagementDialogState
         ],
       ),
     );
+  }
+
+  Future<void> _downloadFile(
+    BuildContext context,
+    String type,
+    int submissionId,
+    String filename,
+  ) async {
+    try {
+      // Show loading
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => const AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('در حال دانلود...'),
+            ],
+          ),
+        ),
+      );
+
+      final filePath = await ApiService.downloadAndSaveFile(
+        type: type,
+        submissionId: submissionId,
+        fileName: filename,
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل دانلود شد: $filePath'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Color _getScoreColor(double score) {

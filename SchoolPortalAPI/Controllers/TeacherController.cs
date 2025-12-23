@@ -483,9 +483,9 @@ namespace SchoolPortalAPI.Controllers
         public async Task<IActionResult> GetSubmissions(long exerciseId, [FromQuery] long teacherId)
         {
             var teacherIdd = await _context.Teachers
-                                        .Where(t => t.Userid == teacherId)
-                                        .Select(t => t.Teacherid)
-                                        .FirstOrDefaultAsync();
+                .Where(t => t.Userid == teacherId)
+                .Select(t => t.Teacherid)
+                .FirstOrDefaultAsync();
 
             var exercise = await _context.Exercises.FindAsync(exerciseId);
             if (exercise == null) return NotFound("تمرین یافت نشد");
@@ -507,6 +507,7 @@ namespace SchoolPortalAPI.Controllers
                                          score = est.Score,
                                          answerImage = est.Answerimage,
                                          filename = est.Filename,
+                                         submittedDescription = est.Description,
                                          date = est.Date
                                      }).ToListAsync();
 
@@ -640,7 +641,8 @@ namespace SchoolPortalAPI.Controllers
                     studentName = est.Student != null ? est.Student.Name : "نامشخص",
                     score = est.Score,
                     submittedAt = est.Date ?? DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                    answerFile = est.Filename ?? ""
+                    answerFile = est.Filename,
+                    submittedDescription = est.Description
                 })
                 .ToListAsync();
 
@@ -1176,7 +1178,7 @@ namespace SchoolPortalAPI.Controllers
                     Teacherid = course.Teacherid ?? 0,
                     Score = (int)request.Score,
                     Answerimage = null,
-                    Description = "Score given by teacher without submission"
+                    Description = "نمره توسط استاد و بدون پاسخ داده شده!"
                 };
                 _context.ExamStuTeaches.Add(newSubmission);
             }
@@ -1221,7 +1223,7 @@ namespace SchoolPortalAPI.Controllers
                     Teacherid = 0,
                     Score = (int)request.Score,
                     Answerimage = null,
-                    Description = "Score given by teacher without submission"
+                    Description = "نمره توسط استاد و بدون پاسخ داده شده!"
                 };
                 _context.ExerciseStuTeaches.Add(newSubmission);
             }

@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "jEoJ2xvP4M8=",
+  "dgSpecHash": "bwp94drMVpU=",
   "success": true,
-  "projectFilePath": "F:\\flutter_project\\school_managment_system\\schoolportalapi\\SchoolPortalAPI.csproj",
+  "projectFilePath": "F:\\maryam\\flutter_project\\school_managment_system\\schoolportalapi\\SchoolPortalAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Samar\\.nuget\\packages\\azure.core\\1.47.1\\azure.core.1.47.1.nupkg.sha512",
     "C:\\Users\\Samar\\.nuget\\packages\\azure.identity\\1.14.2\\azure.identity.1.14.2.nupkg.sha512",
