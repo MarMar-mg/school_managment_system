@@ -8,13 +8,13 @@ namespace SchoolPortalAPI.Models
         [Key]
         public long Courseid { get; set; }
 
-        public string Name { get; set; } = null!;
+        public string? Name { get; set; }
         public string? Finalexamdate { get; set; }
         public string? Classtime { get; set; }
         public long? Classid { get; set; }
         public long? Teacherid { get; set; }
-        public string? Code { get; set; }        // مثال: MATH202
-        public string? Location { get; set; }    // مثال: کلاس 203
+        public string? Code { get; set; }
+        public string? Location { get; set; }
         public string? Time { get; set; }
 
         [ForeignKey("Classid")]

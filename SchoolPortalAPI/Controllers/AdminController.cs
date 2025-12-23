@@ -1,4 +1,3 @@
-// Controllers/AdminController.cs
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
@@ -23,47 +22,58 @@ namespace SchoolPortalAPI.Controllers
         [HttpGet("progress")]
         public async Task<IActionResult> GetAdminProgress()
         {
-            var progress = await _context.Scores
-                .Include(s => s.Course)
-                .Include(s => s.Class)
-                .GroupBy(s => new { s.Classid, s.Courseid })
-                .Select(g => new
-                {
-                    className = g.First().Class != null ? g.First().Class.Name : "نامشخص",
-                    courseName = g.First().Course != null ? g.First().Course.Name : "نامشخص",
-                    average = g.Average(s => (double?)s.ScoreValue) ?? 0.0
-                })
-                .OrderBy(x => x.className)
-                .ThenBy(x => x.courseName)
-                .ToListAsync();
+            try
+            {
+                var progress = await _context.Scores
+                    .Include(s => s.Course)
+                    .Include(s => s.Class)
+                    .Where(s => s.Course != null && s.Class != null)
+                    .GroupBy(s => new { s.Classid, s.Courseid })
+                    .Select(g => new
+                    {
+                        className = g.First().Class != null ? g.First().Class.Name : "نامشخص",
+                        courseName = g.First().Course != null ? g.First().Course.Name : "نامشخص",
+                        average = g.Average(s => (double?)s.ScoreValue) ?? 0.0
+                    })
+                    .OrderBy(x => x.className)
+                    .ThenBy(x => x.courseName)
+                    .ToListAsync();
 
-            return Ok(progress);
+                return Ok(progress);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت پیشرفت", error = ex.Message });
+            }
         }
 
         // ──────────────────────────────────────────────────────────────
         // Get system-wide statistics for admin dashboard cards
-        // - Total students
-        // - Total teachers
-        // - Total classes
-        // - Total courses
         // ──────────────────────────────────────────────────────────────
         [HttpGet("stats")]
         public async Task<IActionResult> GetAdminStats()
         {
-            var totalStudents = await _context.Students.CountAsync();
-            var totalTeachers = await _context.Teachers.CountAsync();
-            var totalClasses  = await _context.Classes.CountAsync();
-            var totalCourses  = await _context.Courses.CountAsync();
-
-            var stats = new[]
+            try
             {
-                new { label = "کل دانش‌آموزان",   value = totalStudents.ToString(),  subtitle = "فعال",        icon = "person",     color = "blue"    },
-                new { label = "کل معلمان",       value = totalTeachers.ToString(),  subtitle = "فعال",        icon = "school",     color = "green"   },
-                new { label = "کل کلاس‌ها",      value = totalClasses.ToString(),   subtitle = "تشکیل‌شده",   icon = "class",      color = "purple"  },
-                new { label = "کل دروس",         value = totalCourses.ToString(),   subtitle = "تعریف‌شده",   icon = "menu_book",  color = "orange"  }
-            };
+                var totalStudents = await _context.Students.CountAsync();
+                var totalTeachers = await _context.Teachers.CountAsync();
+                var totalClasses = await _context.Classes.CountAsync();
+                var totalCourses = await _context.Courses.CountAsync();
 
-            return Ok(stats);
+                var stats = new[]
+                {
+                    new { label = "کل دانش‌آموزان",   value = totalStudents.ToString(),  subtitle = "فعال",        icon = "person",     color = "blue"    },
+                    new { label = "کل معلمان",       value = totalTeachers.ToString(),  subtitle = "فعال",        icon = "school",     color = "green"   },
+                    new { label = "کل کلاس‌ها",      value = totalClasses.ToString(),   subtitle = "تشکیل‌شده",   icon = "class",      color = "purple"  },
+                    new { label = "کل دروس",         value = totalCourses.ToString(),   subtitle = "تعریف‌شده",   icon = "menu_book",  color = "orange"  }
+                };
+
+                return Ok(stats);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت آمار", error = ex.Message });
+            }
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -72,12 +82,19 @@ namespace SchoolPortalAPI.Controllers
         [HttpGet("name/{userId}")]
         public async Task<IActionResult> GetAdminName(long userId)
         {
-            var name = await _context.Managers
-                .Where(m => m.Userid == userId)
-                .Select(m => m.Name)
-                .FirstOrDefaultAsync();
+            try
+            {
+                var name = await _context.Managers
+                    .Where(m => m.Userid == userId)
+                    .Select(m => m.Name)
+                    .FirstOrDefaultAsync();
 
-            return Ok(new { name = name ?? "مدیر" });
+                return Ok(new { name = name ?? "مدیر" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت نام", error = ex.Message });
+            }
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -88,32 +105,123 @@ namespace SchoolPortalAPI.Controllers
         {
             try
             {
-                var classes = await _context.Classes
+                // Fetch all data first (separate queries) - select only what we need
+                var allClasses = await _context.Classes
+                    .Select(c => new { c.Classid, c.Name, c.Grade, c.Capacity })
+                    .ToListAsync();
+
+                var allStudents = await _context.Students
+                    .Select(s => new { s.Studentid, s.Classeid })
+                    .ToListAsync();
+
+                var allScores = await _context.Scores
+                    .Select(sc => new { sc.Classid, sc.ScoreValue })
+                    .ToListAsync();
+
+                // Process in memory - handle null values
+                var classes = allClasses
                     .Select(c => new
                     {
                         id = c.Classid,
-                        name = c.Name,
-                        grade = c.Grade,
+                        name = c.Name ?? $"کلاس {c.Classid}",
+                        grade = c.Grade ?? "نامشخص",
                         capacity = c.Capacity,
-                        studentCount = _context.Students.Count(s => s.Classeid == c.Classid),
-                        avgScore = _context.Scores
+                        studentCount = allStudents.Count(s => s.Classeid == c.Classid),
+                        avgScore = allScores
                             .Where(sc => sc.Classid == c.Classid)
-                            .Average(sc => (double?)sc.ScoreValue) ?? 0,
-                        passPercentage = _context.Scores.Where(sc => sc.Classid == c.Classid).Count() > 0 ?
-                            (int)System.Math.Round(
-                                (double)_context.Scores
+                            .Count() > 0
+                            ? allScores
+                                .Where(sc => sc.Classid == c.Classid)
+                                .Average(sc => (double)sc.ScoreValue)
+                            : 0.0,
+                        passPercentage = allScores
+                            .Where(sc => sc.Classid == c.Classid)
+                            .Count() > 0
+                            ? (int)System.Math.Round(
+                                (double)allScores
                                     .Count(sc => sc.Classid == c.Classid && sc.ScoreValue >= 12) /
-                                _context.Scores.Where(sc => sc.Classid == c.Classid).Count() * 100
-                            ) : 0,
+                                allScores
+                                    .Where(sc => sc.Classid == c.Classid)
+                                    .Count() * 100
+                            )
+                            : 0,
                     })
                     .OrderBy(c => c.name)
-                    .ToListAsync();
+                    .ToList();
 
                 return Ok(classes);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] GetAllClasses: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "خطا در دریافت کلاس‌ها", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get overview statistics for all classes
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("overview")]
+        public async Task<IActionResult> GetOverviewStatistics()
+        {
+            try
+            {
+                // Fetch all data first - select only what we need
+                var allClasses = await _context.Classes
+                    .Select(c => new { c.Classid, c.Name, c.Grade })
+                    .ToListAsync();
+
+                var allStudents = await _context.Students
+                    .Select(s => new { s.Studentid, s.Classeid })
+                    .ToListAsync();
+
+                var allScores = await _context.Scores
+                    .Select(sc => new { sc.Classid, sc.ScoreValue })
+                    .ToListAsync();
+
+                var allCourses = await _context.Courses
+                    .Select(c => new { c.Courseid, c.Classid })
+                    .ToListAsync();
+
+                // Process in memory - handle null values
+                var classesOverview = allClasses
+                    .Select(c => new
+                    {
+                        id = c.Classid,
+                        name = c.Name ?? $"کلاس {c.Classid}",
+                        grade = c.Grade ?? "نامشخص",
+                        studentCount = allStudents.Count(s => s.Classeid == c.Classid),
+                        avgScore = System.Math.Round(
+                            allScores
+                                .Where(s => s.Classid == c.Classid)
+                                .Count() > 0
+                                ? allScores
+                                    .Where(s => s.Classid == c.Classid)
+                                    .Average(s => (double)s.ScoreValue)
+                                : 0.0, 1
+                        ),
+                        passPercentage = allScores
+                            .Where(s => s.Classid == c.Classid)
+                            .Count() > 0
+                            ? (int)System.Math.Round(
+                                (double)allScores
+                                    .Count(s => s.Classid == c.Classid && s.ScoreValue >= 12) /
+                                allScores
+                                    .Where(s => s.Classid == c.Classid)
+                                    .Count() * 100
+                            )
+                            : 0,
+                        totalLessons = allCourses.Count(c2 => c2.Classid == c.Classid),
+                    })
+                    .OrderBy(c => c.name)
+                    .ToList();
+
+                return Ok(classesOverview);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] GetOverviewStatistics: {ex.Message}\n{ex.StackTrace}");
+                return StatusCode(500, new { message = "خطا در دریافت آمار کلی", error = ex.Message });
             }
         }
 
@@ -125,56 +233,63 @@ namespace SchoolPortalAPI.Controllers
         {
             try
             {
-                var classObj = await _context.Classes.FindAsync(classId);
+                var classObj = await _context.Classes
+                    .FirstOrDefaultAsync(c => c.Classid == classId);
+
                 if (classObj == null)
                     return NotFound(new { message = "کلاس یافت نشد" });
 
-                // Get all students in this class
+                var safeClassName = classObj.Name ?? $"کلاس {classId}";
+                var safeGrade = classObj.Grade ?? "نامشخص";
+
+                // Fetch all related data
                 var students = await _context.Students
                     .Where(s => s.Classeid == classId)
-                    .Select(s => s.Studentid)
                     .ToListAsync();
+
+                var allScores = await _context.Scores
+                    .Include(s => s.Course)
+                    .Where(s => s.Classid == classId)
+                    .ToListAsync();
+
+                var studentIds = students.Select(s => s.Studentid).ToList();
 
                 if (!students.Any())
                     return Ok(new
                     {
-                        name = classObj.Name,
-                        grade = classObj.Grade,
+                        id = classObj.Classid,
+                        name = safeClassName,
+                        grade = safeGrade,
+                        capacity = classObj.Capacity,
                         totalStudents = 0,
-                        avgScore = 0,
+                        avgScore = 0.0,
                         passPercentage = 0,
                         scoreRanges = new List<object>(),
                         subjectScores = new List<object>(),
                         topPerformers = new List<object>(),
                     });
-
-                // Get all scores for students in this class
-                var allScores = await _context.Scores
-                    .Where(s => students.Contains(s.Studentid ?? 0) && s.Classid == classId)
-                    .Include(s => s.Course)
-                    .ToListAsync();
 
                 if (!allScores.Any())
                     return Ok(new
                     {
+                        id = classObj.Classid,
                         name = classObj.Name,
                         grade = classObj.Grade,
+                        capacity = classObj.Capacity,
                         totalStudents = students.Count,
-                        avgScore = 0,
+                        avgScore = 0.0,
                         passPercentage = 0,
                         scoreRanges = new List<object>(),
                         subjectScores = new List<object>(),
                         topPerformers = new List<object>(),
                     });
 
-                // Calculate average score
-                double avgScore = allScores.Average(s => s.ScoreValue);
-
-                // Calculate pass percentage (score >= 12)
+                // Calculate in memory
+                double avgScore = allScores.Average(s => (double)s.ScoreValue);
                 int passCount = allScores.Count(s => s.ScoreValue >= 12);
                 int passPercentage = (int)System.Math.Round((double)passCount / allScores.Count * 100);
 
-                // Get score distribution
+                // Score distribution
                 var scoreRanges = new List<dynamic>
                 {
                     new { range = "18-20", count = allScores.Count(s => s.ScoreValue >= 18), percentage = 0 },
@@ -184,14 +299,13 @@ namespace SchoolPortalAPI.Controllers
                     new { range = "<12", count = allScores.Count(s => s.ScoreValue < 12), percentage = 0 },
                 };
 
-                // Calculate percentages for score ranges
                 int totalScores = allScores.Count;
                 foreach (var range in scoreRanges)
                 {
                     range.percentage = totalScores > 0 ? (int)System.Math.Round((double)range.count / totalScores * 100) : 0;
                 }
 
-                // Get subject scores
+                // Subject scores
                 var subjectScores = allScores
                     .GroupBy(s => new { s.Courseid, CourseName = s.Course != null ? s.Course.Name : "نامشخص" })
                     .Select(g => new
@@ -203,9 +317,8 @@ namespace SchoolPortalAPI.Controllers
                     .OrderByDescending(s => s.avgScore)
                     .ToList();
 
-                // Get top performers - using raw student IDs and calculating averages
-                var topPerformersQuery = await _context.Scores
-                    .Where(s => students.Contains(s.Studentid ?? 0) && s.Classid == classId)
+                // Top performers
+                var topPerformersQuery = allScores
                     .GroupBy(s => s.Studentid)
                     .Select(g => new
                     {
@@ -214,14 +327,13 @@ namespace SchoolPortalAPI.Controllers
                     })
                     .OrderByDescending(s => s.avgScore)
                     .Take(3)
-                    .ToListAsync();
+                    .ToList();
 
-                // Now get the student names
                 var topPerformers = new List<dynamic>();
                 int rank = 1;
                 foreach (var perf in topPerformersQuery)
                 {
-                    var student = await _context.Students.FindAsync(perf.studentId);
+                    var student = students.FirstOrDefault(s => s.Studentid == perf.studentId);
                     topPerformers.Add(new
                     {
                         studentId = perf.studentId,
@@ -235,8 +347,8 @@ namespace SchoolPortalAPI.Controllers
                 return Ok(new
                 {
                     id = classObj.Classid,
-                    name = classObj.Name,
-                    grade = classObj.Grade,
+                    name = safeClassName,
+                    grade = safeGrade,
                     capacity = classObj.Capacity,
                     totalStudents = students.Count,
                     avgScore = System.Math.Round(avgScore, 1),
@@ -248,47 +360,8 @@ namespace SchoolPortalAPI.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] GetClassStatistics: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "خطا در دریافت آمار کلاس", error = ex.Message });
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // Get overview statistics for all classes
-        // ──────────────────────────────────────────────────────────────
-        [HttpGet("overview")]
-        public async Task<IActionResult> GetOverviewStatistics()
-        {
-            try
-            {
-                var classesOverview = await _context.Classes
-                    .Select(c => new
-                    {
-                        id = c.Classid,
-                        name = c.Name,
-                        grade = c.Grade,
-                        capacity = c.Capacity,
-                        studentCount = _context.Students.Count(s => s.Classeid == c.Classid),
-                        avgScore = System.Math.Round(
-                            _context.Scores
-                                .Where(s => s.Classid == c.Classid)
-                                .Average(s => (double?)s.ScoreValue) ?? 0, 1
-                        ),
-                        passPercentage = _context.Scores.Where(s => s.Classid == c.Classid).Count() > 0 ?
-                            (int)System.Math.Round(
-                                (double)_context.Scores
-                                    .Count(s => s.Classid == c.Classid && s.ScoreValue >= 12) /
-                                _context.Scores.Where(s => s.Classid == c.Classid).Count() * 100
-                            ) : 0,
-                        totalLessons = _context.Courses.Count(c2 => c2.Classid == c.Classid),
-                    })
-                    .OrderBy(c => c.name)
-                    .ToListAsync();
-
-                return Ok(classesOverview);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "خطا در دریافت آمار کلی", error = ex.Message });
             }
         }
 
@@ -300,8 +373,11 @@ namespace SchoolPortalAPI.Controllers
         {
             try
             {
-                var monthlyData = await _context.Scores
+                var allScores = await _context.Scores
                     .Where(s => s.Classid == classId)
+                    .ToListAsync();
+
+                var monthlyData = allScores
                     .GroupBy(s => s.Score_month ?? "نامشخص")
                     .Select(g => new
                     {
@@ -310,12 +386,13 @@ namespace SchoolPortalAPI.Controllers
                         count = g.Count(),
                     })
                     .OrderBy(m => m.month)
-                    .ToListAsync();
+                    .ToList();
 
                 return Ok(monthlyData);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] GetMonthlyTrend: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "خطا در دریافت روند ماهانه", error = ex.Message });
             }
         }
@@ -328,32 +405,46 @@ namespace SchoolPortalAPI.Controllers
         {
             try
             {
-                var comparison = await _context.Classes
+                var allClasses = await _context.Classes.ToListAsync();
+                var allStudents = await _context.Students.ToListAsync();
+                var allScores = await _context.Scores.ToListAsync();
+
+                var comparison = allClasses
                     .Select(c => new
                     {
                         id = c.Classid,
-                        name = c.Name,
-                        grade = c.Grade,
-                        studentCount = _context.Students.Count(s => s.Classeid == c.Classid),
+                        name = c.Name ?? $"کلاس {c.Classid}",
+                        grade = c.Grade ?? "نامشخص",
+                        studentCount = allStudents.Count(s => s.Classeid == c.Classid),
                         avgScore = System.Math.Round(
-                            _context.Scores
+                            allScores
                                 .Where(s => s.Classid == c.Classid)
-                                .Average(s => (double?)s.ScoreValue) ?? 0, 1
+                                .Count() > 0
+                                ? allScores
+                                    .Where(s => s.Classid == c.Classid)
+                                    .Average(s => (double)s.ScoreValue)
+                                : 0.0, 1
                         ),
-                        passPercentage = _context.Scores.Where(s => s.Classid == c.Classid).Count() > 0 ?
-                            (int)System.Math.Round(
-                                (double)_context.Scores
+                        passPercentage = allScores
+                            .Where(s => s.Classid == c.Classid)
+                            .Count() > 0
+                            ? (int)System.Math.Round(
+                                (double)allScores
                                     .Count(s => s.Classid == c.Classid && s.ScoreValue >= 12) /
-                                _context.Scores.Where(s => s.Classid == c.Classid).Count() * 100
-                            ) : 0,
+                                allScores
+                                    .Where(s => s.Classid == c.Classid)
+                                    .Count() * 100
+                            )
+                            : 0,
                     })
                     .OrderBy(c => c.name)
-                    .ToListAsync();
+                    .ToList();
 
                 return Ok(comparison);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] GetClassesComparison: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "خطا در مقایسه کلاس‌ها", error = ex.Message });
             }
         }
@@ -368,26 +459,37 @@ namespace SchoolPortalAPI.Controllers
             {
                 var students = await _context.Students
                     .Where(s => s.Classeid == classId)
+                    .ToListAsync();
+
+                var allScores = await _context.Scores
+                    .Where(s => s.Classid == classId)
+                    .ToListAsync();
+
+                var result = students
                     .Select(s => new
                     {
                         id = s.Studentid,
                         name = s.Name,
                         stuCode = s.StuCode,
                         avgScore = System.Math.Round(
-                            _context.Scores
-                                .Where(sc => sc.Studentid == s.Studentid && sc.Classid == classId)
-                                .Average(sc => (double?)sc.ScoreValue) ?? 0, 1
+                            allScores
+                                .Where(sc => sc.Studentid == s.Studentid)
+                                .Count() > 0
+                                ? allScores
+                                    .Where(sc => sc.Studentid == s.Studentid)
+                                    .Average(sc => (double)sc.ScoreValue)
+                                : 0.0, 1
                         ),
-                        scoreCount = _context.Scores
-                            .Count(sc => sc.Studentid == s.Studentid && sc.Classid == classId),
+                        scoreCount = allScores.Count(sc => sc.Studentid == s.Studentid),
                     })
                     .OrderByDescending(s => s.avgScore)
-                    .ToListAsync();
+                    .ToList();
 
-                return Ok(students);
+                return Ok(result);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"[ERROR] GetClassStudents: {ex.Message}\n{ex.StackTrace}");
                 return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
             }
         }
