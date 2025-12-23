@@ -1271,140 +1271,6 @@ class ApiService {
     }
   }
 
-  // //================================= SUBMIT EXERCISES ======================
-  // static Future<void> submitAssignment(
-  //   int userId,
-  //   int assignmentId,
-  //   String description,
-  //   PlatformFile? platformFile, {
-  //   required String customFileName,
-  //   bool isUpdate = false,
-  // }) async {
-  //   final endpoint = isUpdate
-  //       ? '$baseUrl/student/update/assignment/$userId/$assignmentId'
-  //       : '$baseUrl/student/submit/assignment/$userId/$assignmentId';
-  //
-  //   final url = Uri.parse(endpoint);
-  //
-  //   try {
-  //     var request = http.MultipartRequest('POST', url);
-  //
-  //     if (description.isNotEmpty) {
-  //       request.fields['description'] = description;
-  //     }
-  //
-  //     // Only add file if provided
-  //     if (platformFile != null) {
-  //       http.MultipartFile multipartFile;
-  //       if (platformFile.bytes != null) {
-  //         // For web or bytes-based
-  //         multipartFile = http.MultipartFile.fromBytes(
-  //           'file',
-  //           platformFile.bytes!,
-  //           filename: customFileName,
-  //         );
-  //       } else if (platformFile.path != null) {
-  //         // For mobile/desktop
-  //         multipartFile = await http.MultipartFile.fromPath(
-  //           'file',
-  //           platformFile.path!,
-  //           filename: customFileName,
-  //         );
-  //       } else {
-  //         throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
-  //       }
-  //
-  //       request.files.add(multipartFile);
-  //     }
-  //
-  //     final response = await request.send().timeout(_timeout);
-  //
-  //     print('Submit Assignment Status: ${response.statusCode}');
-  //
-  //     if (response.statusCode == 200) {
-  //       return;
-  //     } else {
-  //       final errorBody = await response.stream.bytesToString();
-  //       print('Error Body: $errorBody');
-  //       throw Exception(
-  //         'خطا در ارسال تکلیف: ${response.statusCode} - $errorBody',
-  //       );
-  //     }
-  //   } catch (e) {
-  //     print('Submit Assignment Error: $e');
-  //     throw Exception('خطا در ارسال: $e');
-  //   }
-  // }
-
-  // //================================= SUBMIT EXAM ==========================
-  // static Future<void> submitExam(
-  //   int userId,
-  //   int examId,
-  //   String description,
-  //   PlatformFile? platformFile, {
-  //   required String customFileName,
-  //   bool isUpdate = false,
-  // }) async {
-  //   final url = Uri.parse('$baseUrl/student/submit/exam/$userId/$examId');
-  //
-  //   try {
-  //     var request = http.MultipartRequest('POST', url);
-  //
-  //     // Add the isUpdate flag as form field
-  //     request.fields['isUpdate'] = isUpdate.toString().toLowerCase();
-  //
-  //     if (description.isNotEmpty) {
-  //       request.fields['description'] = description;
-  //     }
-  //
-  //     // Only add file if provided
-  //     if (platformFile != null) {
-  //       http.MultipartFile multipartFile;
-  //       if (platformFile.bytes != null) {
-  //         multipartFile = http.MultipartFile.fromBytes(
-  //           'file',
-  //           platformFile.bytes!,
-  //           filename: customFileName,
-  //         );
-  //       } else if (platformFile.path != null) {
-  //         multipartFile = await http.MultipartFile.fromPath(
-  //           'file',
-  //           platformFile.path!,
-  //           filename: customFileName,
-  //         );
-  //       } else {
-  //         throw Exception('فایل معتبر نیست: بدون مسیر یا بایت');
-  //       }
-  //
-  //       request.files.add(multipartFile);
-  //     }
-  //
-  //     print('=== SUBMIT EXAM REQUEST ===');
-  //     print('URL: ${request.url}');
-  //     print('isUpdate field: ${request.fields['isUpdate']}');
-  //     print('File: ${platformFile?.name ?? "NO FILE"}');
-  //
-  //     final response = await request.send().timeout(_timeout);
-  //
-  //     print('Submit Exam Status: ${response.statusCode}');
-  //
-  //     if (response.statusCode == 200 || response.statusCode == 201) {
-  //       final responseBody = await response.stream.bytesToString();
-  //       print('Response Body: $responseBody');
-  //       return;
-  //     } else {
-  //       final errorBody = await response.stream.bytesToString();
-  //       print('Error Body: $errorBody');
-  //       throw Exception(
-  //         'خطا در ارسال آزمون: ${response.statusCode} - $errorBody',
-  //       );
-  //     }
-  //   } catch (e) {
-  //     print('Submit Exam Error: $e');
-  //     throw Exception('خطا در ارسال: $e');
-  //   }
-  // }
-
   //================================= DOWNLOAD ASSIGNMENT FILE ======================
   static Future<Uint8List> downloadAssignmentFile(int submissionId) async {
     final url = Uri.parse('$baseUrl/student/download/assignment/$submissionId');
@@ -1844,6 +1710,149 @@ class ApiService {
     }
   }
 
+  // ==================== ADMIN CLASS SCORES ====================
+
+  /// Get all classes with basic statistics
+  static Future<List<dynamic>> getAdminClasses() async {
+    final url = Uri.parse('$baseUrl/admin/classes');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Admin Classes Status: ${response.statusCode}');
+      print('Admin Classes Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت کلاس‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching admin classes: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get overview statistics for all classes
+  static Future<List<dynamic>> getAdminOverview() async {
+    final url = Uri.parse('$baseUrl/admin/overview');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Admin Overview Status: ${response.statusCode}');
+      print('Admin Overview Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت آمار کلی: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching admin overview: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get detailed statistics for a specific class
+  /// Returns: {
+  ///   id, name, grade, capacity, totalStudents, avgScore, passPercentage,
+  ///   scoreRanges: [{range, count, percentage}, ...],
+  ///   subjectScores: [{name, avgScore, totalCount}, ...],
+  ///   topPerformers: [{studentId, name, avgScore, rank}, ...]
+  /// }
+  static Future<Map<String, dynamic>> getClassStatistics(int classId) async {
+    final url = Uri.parse('$baseUrl/admin/class/$classId/statistics');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Class Statistics Status: ${response.statusCode}');
+      print('Class Statistics Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        return data;
+      } else if (response.statusCode == 404) {
+        throw Exception('کلاس یافت نشد');
+      } else {
+        throw Exception('خطا: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching class statistics: $e');
+      throw Exception('خطا در دریافت آمار کلاس: $e');
+    }
+  }
+
+  /// Get monthly trend for a class
+  /// Returns: [{month, avgScore, count}, ...]
+  static Future<List<dynamic>> getClassMonthlyTrend(int classId) async {
+    final url = Uri.parse('$baseUrl/admin/class/$classId/monthly-trend');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Monthly Trend Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت روند ماهانه: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching monthly trend: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get comparison data for all classes
+  /// Returns: [{id, name, grade, studentCount, avgScore, passPercentage}, ...]
+  static Future<List<dynamic>> getClassesComparison() async {
+    final url = Uri.parse('$baseUrl/admin/classes-comparison');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Classes Comparison Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در مقایسه کلاس‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching classes comparison: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get detailed student list for a class
+  /// Returns: [{id, name, stuCode, avgScore, scoreCount}, ...]
+  static Future<List<dynamic>> getClassStudents(int classId) async {
+    final url = Uri.parse('$baseUrl/admin/class/$classId/students');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Class Students Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت دانش‌آموزان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching class students: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ==================== END ADMIN CLASS SCORES ====================
 
   ///////////////////////////////////////////
 
