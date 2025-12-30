@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SchoolPortalAPI.Data;
 
@@ -10,9 +11,11 @@ using SchoolPortalAPI.Data;
 namespace SchoolPortalAPI.Migrations
 {
     [DbContext(typeof(SchoolDbContext))]
-    partial class SchoolDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251230132222_SyncStudentidColumn")]
+    partial class SyncStudentidColumn
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -428,10 +431,6 @@ namespace SchoolPortalAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("StuCode")
-                        .HasColumnType("nvarchar(max)")
-                        .HasColumnName("StuCode");
-
                     b.Property<long?>("Studentid")
                         .HasColumnType("bigint");
 
@@ -440,8 +439,6 @@ namespace SchoolPortalAPI.Migrations
                     b.HasIndex("Classid");
 
                     b.HasIndex("Courseid");
-
-                    b.HasIndex("Studentid");
 
                     b.ToTable("Scores");
                 });
@@ -633,15 +630,9 @@ namespace SchoolPortalAPI.Migrations
                         .WithMany()
                         .HasForeignKey("Courseid");
 
-                    b.HasOne("SchoolPortalAPI.Models.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("Studentid");
-
                     b.Navigation("Class");
 
                     b.Navigation("Course");
-
-                    b.Navigation("Student");
                 });
 
             modelBuilder.Entity("SchoolPortalAPI.Models.Exam", b =>
