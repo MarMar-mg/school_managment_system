@@ -228,9 +228,6 @@ namespace SchoolPortalAPI.Controllers
         // ──────────────────────────────────────────────────────────────
         // Get detailed statistics for a specific class
         // ──────────────────────────────────────────────────────────────
-        // SchoolPortalAPI/Controllers/AdminController.cs
-        // GetClassStatistics - FIXED version
-
         [HttpGet("class/{classId}/statistics")]
         public async Task<IActionResult> GetClassStatistics(string classId)
         {
@@ -244,20 +241,18 @@ namespace SchoolPortalAPI.Controllers
 
                 // Get class
                 var classObj = await _context.Classes
-                    .AsNoTracking()
                     .FirstOrDefaultAsync(c => c.Classid == parsedClassId);
 
                 if (classObj == null)
                     return NotFound(new { message = "کلاس یافت نشد" });
 
-                // Get all students in this class
-                var students = await _context.Students
-                    .AsNoTracking()
+                // Get all students in this class with their IDs
+                var studentsInClass = await _context.Students
                     .Where(s => s.Classeid == parsedClassId)
-                    .Select(s => s.Studentid)
+                    .Select(s => new { s.Studentid, s.Name, s.StuCode })
                     .ToListAsync();
 
-                if (!students.Any())
+                if (!studentsInClass.Any())
                     return Ok(new
                     {
                         id = classObj.Classid,
@@ -272,13 +267,15 @@ namespace SchoolPortalAPI.Controllers
                         topPerformers = new List<object>(),
                     });
 
-                // Get scores using Studentid
+                // Get all scores for these students in this class
+                var studentIds = studentsInClass.Select(s => s.Studentid).ToList();
+
                 var allScores = await _context.Scores
-                    .AsNoTracking()
-                    .Where(s => students.Contains(s.Studentid ?? 0) && s.Classid == parsedClassId)
+                    .Where(s => studentIds.Contains(s.Studentid ?? 0) && s.Classid == parsedClassId)
                     .Include(s => s.Course)
-                    .Include(s => s.Student)
                     .ToListAsync();
+
+                Console.WriteLine($"[DEBUG] Class: {parsedClassId}, Students: {studentsInClass.Count}, Scores: {allScores.Count}");
 
                 if (!allScores.Any())
                 {
@@ -288,7 +285,7 @@ namespace SchoolPortalAPI.Controllers
                         name = classObj.Name ?? "نامشخص",
                         grade = classObj.Grade ?? "نامشخص",
                         capacity = classObj.Capacity,
-                        totalStudents = students.Count,
+                        totalStudents = studentsInClass.Count,
                         avgScore = 0.0,
                         passPercentage = 0,
                         scoreRanges = new List<object>
@@ -309,7 +306,7 @@ namespace SchoolPortalAPI.Controllers
                 int passCount = allScores.Count(s => s.ScoreValue >= 12);
                 int passPercentage = (int)System.Math.Round((double)passCount / allScores.Count * 100);
 
-                // ✅ FIXED: Use proper class instead of anonymous type
+                // Score ranges
                 var scoreRanges = new List<ScoreRangeDto>
                 {
                     new ScoreRangeDto { Range = "18-20", Count = allScores.Count(s => s.ScoreValue >= 18) },
@@ -319,7 +316,6 @@ namespace SchoolPortalAPI.Controllers
                     new ScoreRangeDto { Range = "<12", Count = allScores.Count(s => s.ScoreValue < 12) },
                 };
 
-                // Calculate percentages
                 int totalScores = allScores.Count;
                 foreach (var range in scoreRanges)
                 {
@@ -338,28 +334,40 @@ namespace SchoolPortalAPI.Controllers
                     .OrderByDescending(s => s.avgScore)
                     .ToList();
 
-                // Top performers
-                var topPerformersQuery = allScores
-                    .GroupBy(s => s.Studentid)
+                // ✅ TOP PERFORMERS - Group by Studentid and calculate average
+                var groupedScores = allScores
+                    .GroupBy(s => s.Studentid ?? 0)
                     .Select(g => new
                     {
                         studentId = g.Key,
-                        studentName = g.First().Student != null ? g.First().Student.Name : "نامشخص",
                         avgScore = System.Math.Round(g.Average(s => (double)s.ScoreValue), 2),
                     })
                     .OrderByDescending(s => s.avgScore)
                     .Take(3)
                     .ToList();
 
+                Console.WriteLine($"[DEBUG] Grouped Scores: {groupedScores.Count}");
+                foreach (var gs in groupedScores)
+                {
+                    Console.WriteLine($"[DEBUG] StudentId: {gs.studentId}, AvgScore: {gs.avgScore}");
+                }
+
                 var topPerformers = new List<object>();
                 int rank = 1;
 
-                foreach (var perf in topPerformersQuery)
+                foreach (var perf in groupedScores)
                 {
+                    // Find student in our list
+                    var studentInfo = studentsInClass.FirstOrDefault(s => s.Studentid == perf.studentId);
+                    var studentName = studentInfo?.Name ?? "نامشخص";
+
+                    Console.WriteLine($"[DEBUG] Rank {rank}: StudentId={perf.studentId}, Name={studentName}");
+
                     topPerformers.Add(new
                     {
                         studentId = perf.studentId,
-                        studentName = perf.studentName,
+                        studentName = studentName,
+                        stuCode = studentInfo?.StuCode ?? "نامشخص",
                         avgScore = perf.avgScore,
                         rank = rank,
                     });
@@ -372,7 +380,7 @@ namespace SchoolPortalAPI.Controllers
                     name = classObj.Name ?? "نامشخص",
                     grade = classObj.Grade ?? "نامشخص",
                     capacity = classObj.Capacity,
-                    totalStudents = students.Count,
+                    totalStudents = studentsInClass.Count,
                     avgScore = System.Math.Round(avgScore, 1),
                     passPercentage = passPercentage,
                     scoreRanges = scoreRanges,

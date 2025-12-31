@@ -744,7 +744,7 @@ class _AdminClassScoreDashboardState extends State<AdminClassScoreDashboard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    performer['name'] ?? 'نامشخص',
+                    performer['studentName'] ?? 'نامشخص',
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
