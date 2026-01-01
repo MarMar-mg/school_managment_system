@@ -521,6 +521,330 @@ namespace SchoolPortalAPI.Controllers
                 return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
             }
         }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get all students with pagination
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students")]
+        public async Task<IActionResult> GetAllStudents(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var skip = (page - 1) * pageSize;
+
+                var students = await _context.Students
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .Select(s => new
+                    {
+                        id = s.Studentid,
+                        name = s.Name ?? "نامشخص",
+                        studentCode = s.StuCode,
+                        classs = s.Classeid,
+                        phone = s.ParentNum1,
+                        parentPhone = s.ParentNum2,
+                        birthDate = s.Birthdate,
+                        address = s.Address,
+                        debt = s.Debt ?? 0,
+                        registerDate = s.Registerdate,
+                        userId = s.UserID,
+                    })
+                    .OrderByDescending(s => s.registerDate)
+                    .ToListAsync();
+
+                var totalCount = await _context.Students.CountAsync();
+
+                return Ok(new
+                {
+                    data = students,
+                    pagination = new
+                    {
+                        page,
+                        pageSize,
+                        totalCount,
+                        totalPages = (totalCount + pageSize - 1) / pageSize,
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get student by ID
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students/{studentId}")]
+        public async Task<IActionResult> GetStudentById(long studentId)
+        {
+            try
+            {
+                var student = await _context.Students.FindAsync(studentId);
+
+                if (student == null)
+                    return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                return Ok(new
+                {
+                    id = student.Studentid,
+                    name = student.Name,
+                    studentCode = student.StuCode,
+                    classs = student.Classeid,
+                    phone = student.ParentNum1,
+                    parentPhone = student.ParentNum2,
+                    birthDate = student.Birthdate,
+                    address = student.Address,
+                    debt = student.Debt ?? 0,
+                    registerDate = student.Registerdate,
+                    userId = student.UserID,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت اطلاعات", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Create new student
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("students")]
+        public async Task<IActionResult> CreateStudent([FromBody] CreateStudentDto model)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.StudentCode))
+                    return BadRequest(new { message = "نام و کد دانش‌آموز الزامی است" });
+
+                // Check if student code already exists
+                var existingStudent = await _context.Students
+                    .FirstOrDefaultAsync(s => s.StuCode == model.StudentCode);
+
+                if (existingStudent != null)
+                    return BadRequest(new { message = "این کد دانش‌آموز قبلا ثبت شده است" });
+
+                var student = new Student
+                {
+                    Name = model.Name,
+                    StuCode = model.StudentCode,
+                    Classeid = model.ClassId,
+                    ParentNum1 = model.Phone,
+                    ParentNum2 = model.ParentPhone,
+                    Address = model.Address,
+                    Debt = model.Debt,
+                    Registerdate = DateTime.Now.ToShamsi(),
+                    Birthdate = model.BirthDate,
+                };
+
+                _context.Students.Add(student);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[CREATE STUDENT] New student created: {student.Studentid}");
+
+                return Ok(new
+                {
+                    message = "دانش‌آموز با موفقیت ایجاد شد",
+                    id = student.Studentid,
+                    name = student.Name,
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[CREATE STUDENT] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطا در ایجاد دانش‌آموز", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Update student
+        // ──────────────────────────────────────────────────────────────
+        [HttpPut("students/{studentId}")]
+        public async Task<IActionResult> UpdateStudent(
+            long studentId,
+            [FromBody] UpdateStudentDto model)
+        {
+            try
+            {
+                var student = await _context.Students.FindAsync(studentId);
+
+                if (student == null)
+                    return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                // Check if new code is unique (if changed)
+                if (model.StudentCode != student.StuCode)
+                {
+                    var existingStudent = await _context.Students
+                        .FirstOrDefaultAsync(s => s.StuCode == model.StudentCode);
+
+                    if (existingStudent != null)
+                        return BadRequest(new { message = "این کد دانش‌آموز قبلا ثبت شده است" });
+                }
+
+                // Update fields
+                if (!string.IsNullOrEmpty(model.Name))
+                    student.Name = model.Name;
+                if (!string.IsNullOrEmpty(model.StudentCode))
+                    student.StuCode = model.StudentCode;
+                if (model.ClassId.HasValue)
+                    student.Classeid = model.ClassId;
+                if (!string.IsNullOrEmpty(model.Phone))
+                    student.ParentNum1 = model.Phone;
+                if (!string.IsNullOrEmpty(model.ParentPhone))
+                    student.ParentNum2 = model.ParentPhone;
+                if (!string.IsNullOrEmpty(model.Address))
+                    student.Address = model.Address;
+                if (model.Debt.HasValue)
+                    student.Debt = model.Debt;
+                if (!string.IsNullOrEmpty(model.BirthDate))
+                    student.Birthdate = model.BirthDate;
+
+                _context.Students.Update(student);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[UPDATE STUDENT] Student updated: {studentId}");
+
+                return Ok(new
+                {
+                    message = "دانش‌آموز با موفقیت به‌روزرسانی شد",
+                    id = student.Studentid,
+                });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[UPDATE STUDENT] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطا در به‌روزرسانی", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Delete student
+        // ──────────────────────────────────────────────────────────────
+        [HttpDelete("students/{studentId}")]
+        public async Task<IActionResult> DeleteStudent(long studentId)
+        {
+            try
+            {
+                var student = await _context.Students.FindAsync(studentId);
+
+                if (student == null)
+                    return NotFound(new { message = "دانش‌آموز یافت نشد" });
+
+                _context.Students.Remove(student);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[DELETE STUDENT] Student deleted: {studentId}");
+
+                return Ok(new { message = "دانش‌آموز با موفقیت حذف شد" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DELETE STUDENT] Error: {ex.Message}");
+                return StatusCode(500, new { message = "خطا در حذف دانش‌آموز", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Search students
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students/search")]
+        public async Task<IActionResult> SearchStudents([FromQuery] string query)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(query))
+                    return await GetAllStudents();
+
+                var students = await _context.Students
+                    .Where(s =>
+                        s.Name.Contains(query) ||
+                        s.StuCode.Contains(query) ||
+                        s.ParentNum1.Contains(query))
+                    .Select(s => new
+                    {
+                        id = s.Studentid,
+                        name = s.Name,
+                        studentCode = s.StuCode,
+                        classs = s.Classeid,
+                        phone = s.ParentNum1,
+                        parentPhone = s.ParentNum2,
+                        birthDate = s.Birthdate,
+                        address = s.Address,
+                        debt = s.Debt ?? 0,
+                        registerDate = s.Registerdate,
+                    })
+                    .ToListAsync();
+
+                return Ok(students);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در جستجو", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Get student statistics
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students-stats")]
+        public async Task<IActionResult> GetStudentStats()
+        {
+            try
+            {
+                var totalStudents = await _context.Students.CountAsync();
+                var studentsWithDebt = await _context.Students
+                    .Where(s => s.Debt > 0)
+                    .CountAsync();
+                var totalDebt = await _context.Students
+                    .SumAsync(s => s.Debt ?? 0);
+
+                return Ok(new
+                {
+                    totalStudents,
+                    studentsWithDebt,
+                    studentsWithoutDebt = totalStudents - studentsWithDebt,
+                    totalDebt,
+                    avgDebt = totalStudents > 0 ? totalDebt / totalStudents : 0,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت آمار", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Bulk delete students
+        // ──────────────────────────────────────────────────────────────
+        [HttpPost("students/bulk-delete")]
+        public async Task<IActionResult> BulkDeleteStudents([FromBody] List<long> studentIds)
+        {
+            try
+            {
+                var students = await _context.Students
+                    .Where(s => studentIds.Contains(s.Studentid))
+                    .ToListAsync();
+
+                if (!students.Any())
+                    return NotFound(new { message = "دانش‌آموزی یافت نشد" });
+
+                _context.Students.RemoveRange(students);
+                await _context.SaveChangesAsync();
+
+                return Ok(new
+                {
+                    message = $"{students.Count} دانش‌آموز با موفقیت حذف شدند",
+                    deletedCount = students.Count,
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در حذف", error = ex.Message });
+            }
+        }
+
     }
 
     public class ScoreRangeDto
@@ -529,4 +853,41 @@ namespace SchoolPortalAPI.Controllers
         public int Count { get; set; }
         public int Percentage { get; set; }
     }
+
+    public static class DateTimeExtensions
+    {
+        public static string ToShamsi(this DateTime date)
+        {
+            var pc = new System.Globalization.PersianCalendar();
+            return $"{pc.GetYear(date)}-{pc.GetMonth(date):D2}-{pc.GetDayOfMonth(date):D2}";
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // DTOs
+    // ──────────────────────────────────────────────────────────────
+    public class CreateStudentDto
+    {
+        public string Name { get; set; } = null!;
+        public string StudentCode { get; set; } = null!;
+        public long? ClassId { get; set; }
+        public string Phone { get; set; } = null!;
+        public string ParentPhone { get; set; } = null!;
+        public string BirthDate { get; set; } = null!;
+        public string Address { get; set; } = null!;
+        public long Debt { get; set; } = 0;
+    }
+
+    public class UpdateStudentDto
+    {
+        public string? Name { get; set; }
+        public string? StudentCode { get; set; }
+        public long? ClassId { get; set; }
+        public string? Phone { get; set; }
+        public string? ParentPhone { get; set; }
+        public string? BirthDate { get; set; }
+        public string? Address { get; set; }
+        public long? Debt { get; set; }
+    }
 }
+

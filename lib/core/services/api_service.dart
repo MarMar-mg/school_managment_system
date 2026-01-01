@@ -1852,7 +1852,210 @@ class ApiService {
     }
   }
 
-  // ==================== END ADMIN CLASS SCORES ====================
+  // ==================== STUDENTS ====================
+
+  /// Get all students
+  static Future<List<dynamic>> getAllStudents() async {
+    final url = Uri.parse('$baseUrl/admin/students');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Get All Students Status: ${response.statusCode}');
+      print('Get All Students Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت دانش‌آموزان: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching students: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get student by ID
+  static Future<Map<String, dynamic>> getStudentById(int studentId) async {
+    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Get Student Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 404) {
+        throw Exception('دانش‌آموز یافت نشد');
+      } else {
+        throw Exception('خطا: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching student: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Create new student
+  static Future<Map<String, dynamic>> createStudent({
+    required String name,
+    required String studentCode,
+    required String stuClass,
+    required String phone,
+    required String parentPhone,
+    required String birthDate,
+    required String address,
+    required int debt,
+  }) async {
+    final url = Uri.parse('$baseUrl/admin/students');
+
+    try {
+      final response = await http
+          .post(
+        url,
+        headers: _headers,
+        body: json.encode({
+          'name': name,
+          'studentCode': studentCode,
+          'class': stuClass,
+          'phone': phone,
+          'parentPhone': parentPhone,
+          'birthDate': birthDate,
+          'address': address,
+          'debt': debt,
+        }),
+      )
+          .timeout(_timeout);
+
+      print('Create Student Status: ${response.statusCode}');
+      print('Create Student Body: ${response.body}');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در ایجاد دانش‌آموز: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error creating student: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Update student
+  static Future<Map<String, dynamic>> updateStudent({
+    required int studentId,
+    required String name,
+    required String studentCode,
+    required String stuClass,
+    required String phone,
+    required String parentPhone,
+    required String birthDate,
+    required String address,
+    required int debt,
+  }) async {
+    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+
+    try {
+      final response = await http
+          .put(
+        url,
+        headers: _headers,
+        body: json.encode({
+          'name': name,
+          'studentCode': studentCode,
+          'class': stuClass,
+          'phone': phone,
+          'parentPhone': parentPhone,
+          'birthDate': birthDate,
+          'address': address,
+          'debt': debt,
+        }),
+      )
+          .timeout(_timeout);
+
+      print('Update Student Status: ${response.statusCode}');
+      print('Update Student Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 404) {
+        throw Exception('دانش‌آموز یافت نشد');
+      } else {
+        throw Exception('خطا در به‌روزرسانی: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating student: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Delete student
+  static Future<Map<String, dynamic>> deleteStudent(int studentId) async {
+    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+
+    try {
+      final response = await http
+          .delete(url, headers: _headers)
+          .timeout(_timeout);
+
+      print('Delete Student Status: ${response.statusCode}');
+      print('Delete Student Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 404) {
+        throw Exception('دانش‌آموز یافت نشد');
+      } else {
+        throw Exception('خطا در حذف: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting student: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Get student stats
+  static Future<Map<String, dynamic>> getStudentStats() async {
+    final url = Uri.parse('$baseUrl/admin/students-stats');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Get Student Stats Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else {
+        throw Exception('خطا در دریافت آمار: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching student stats: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  /// Search students
+  static Future<List<dynamic>> searchStudents(String query) async {
+    final url = Uri.parse('$baseUrl/admin/students/search?query=$query');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Search Students Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در جستجو: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error searching students: $e');
+      throw Exception('خطا: $e');
+    }
+  }
 
   ///////////////////////////////////////////
 
