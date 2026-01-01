@@ -619,6 +619,13 @@ namespace SchoolPortalAPI.Controllers
                 if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.StudentCode))
                     return BadRequest(new { message = "نام و کد دانش‌آموز الزامی است" });
 
+                long? classId = null;
+                if (!string.IsNullOrEmpty(model.ClassId) &&
+                    long.TryParse(model.ClassId, out var parsedClassId))
+                {
+                    classId = parsedClassId;
+                }
+
                 // Check if student code already exists
                 var existingStudent = await _context.Students
                     .FirstOrDefaultAsync(s => s.StuCode == model.StudentCode);
@@ -630,7 +637,7 @@ namespace SchoolPortalAPI.Controllers
                 {
                     Name = model.Name,
                     StuCode = model.StudentCode,
-                    Classeid = model.ClassId,
+                    Classeid = classId,
                     ParentNum1 = model.Phone,
                     ParentNum2 = model.ParentPhone,
                     Address = model.Address,
@@ -674,7 +681,7 @@ namespace SchoolPortalAPI.Controllers
                     return NotFound(new { message = "دانش‌آموز یافت نشد" });
 
                 // Check if new code is unique (if changed)
-                if (model.StudentCode != student.StuCode)
+                if (!string.IsNullOrEmpty(model.StudentCode) && model.StudentCode != student.StuCode)
                 {
                     var existingStudent = await _context.Students
                         .FirstOrDefaultAsync(s => s.StuCode == model.StudentCode);
@@ -683,13 +690,19 @@ namespace SchoolPortalAPI.Controllers
                         return BadRequest(new { message = "این کد دانش‌آموز قبلا ثبت شده است" });
                 }
 
+                if (!string.IsNullOrEmpty(model.ClassId))
+                {
+                    if (long.TryParse(model.ClassId, out var parsedClassId))
+                    {
+                        student.Classeid = parsedClassId;
+                    }
+                }
+
                 // Update fields
                 if (!string.IsNullOrEmpty(model.Name))
                     student.Name = model.Name;
                 if (!string.IsNullOrEmpty(model.StudentCode))
                     student.StuCode = model.StudentCode;
-                if (model.ClassId.HasValue)
-                    student.Classeid = model.ClassId;
                 if (!string.IsNullOrEmpty(model.Phone))
                     student.ParentNum1 = model.Phone;
                 if (!string.IsNullOrEmpty(model.ParentPhone))
@@ -870,7 +883,7 @@ namespace SchoolPortalAPI.Controllers
     {
         public string Name { get; set; } = null!;
         public string StudentCode { get; set; } = null!;
-        public long? ClassId { get; set; }
+        public string? ClassId { get; set; }
         public string Phone { get; set; } = null!;
         public string ParentPhone { get; set; } = null!;
         public string BirthDate { get; set; } = null!;
@@ -882,7 +895,7 @@ namespace SchoolPortalAPI.Controllers
     {
         public string? Name { get; set; }
         public string? StudentCode { get; set; }
-        public long? ClassId { get; set; }
+        public string? ClassId { get; set; }
         public string? Phone { get; set; }
         public string? ParentPhone { get; set; }
         public string? BirthDate { get; set; }

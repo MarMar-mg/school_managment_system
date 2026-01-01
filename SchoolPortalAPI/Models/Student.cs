@@ -10,8 +10,8 @@ namespace SchoolPortalAPI.Models
         public string Name { get; set; } = null!;
         public int? Score { get; set; }
         public string? Address { get; set; }
-        public long? Birthdate { get; set; }
-        public long? Registerdate { get; set; }
+        public string? Birthdate { get; set; }
+        public string? Registerdate { get; set; }
         public string? ParentNum1 { get; set; }
         public string? ParentNum2 { get; set; }
         public long? Debt { get; set; }

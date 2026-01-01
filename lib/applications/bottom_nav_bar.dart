@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
-
 import '../features/admin/score_review/presentations/pages/score_review.dart';
+import '../features/admin/student_management/presentations/pages/student_management_page.dart';
 import '../features/classes/presentations/pages/classes_page.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/profile/presentations/pages/profile_page.dart';
@@ -107,9 +107,10 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userIdi,
     ),
-    // Placeholder for Students page (e.g., from TeacherController getStudents or custom)
-    const Center(
-      child: Text('صفحه دانش‌آموزان', style: TextStyle(fontSize: 20)),
+    StudentManagementPage(
+      role: widget.role,
+      userName: widget.userName,
+      userId: widget.userIdi,
     ),
     // Placeholder for News page (e.g., from ApiService getNews)
     const Center(child: Text('صفحه اخبار', style: TextStyle(fontSize: 20))),
