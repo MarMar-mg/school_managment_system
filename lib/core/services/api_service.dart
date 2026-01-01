@@ -1915,11 +1915,11 @@ class ApiService {
     }
   }
 
-  /// Create new student
+  // Around line 1750-1780
   static Future<Map<String, dynamic>> createStudent({
     required String name,
     required String studentCode,
-    required String stuClass,
+    required String stuClass,  // This parameter name is fine
     required String phone,
     required String parentPhone,
     required String birthDate,
@@ -1931,19 +1931,19 @@ class ApiService {
     try {
       final response = await http
           .post(
-            url,
-            headers: _headers,
-            body: json.encode({
-              'name': name,
-              'studentCode': studentCode,
-              'classId': stuClass, // ✅ Changed from 'class' to 'classId'
-              'phone': phone,
-              'parentPhone': parentPhone,
-              'birthDate': birthDate,
-              'address': address,
-              'debt': debt,
-            }),
-          )
+        url,
+        headers: _headers,
+        body: json.encode({
+          'name': name,
+          'studentCode': studentCode,
+          'classId': stuClass,  // ✅ FIXED: Changed from 'class' to 'classId'
+          'phone': phone,
+          'parentPhone': parentPhone,
+          'birthDate': birthDate,
+          'address': address,
+          'debt': debt,
+        }),
+      )
           .timeout(_timeout);
 
       print('Create Student Status: ${response.statusCode}');
@@ -1982,7 +1982,7 @@ class ApiService {
             body: json.encode({
               'name': name,
               'studentCode': studentCode,
-              'classId': stuClass, // ✅ Changed from 'class' to 'classId'
+              'classId': stuClass,
               'phone': phone,
               'parentPhone': parentPhone,
               'birthDate': birthDate,

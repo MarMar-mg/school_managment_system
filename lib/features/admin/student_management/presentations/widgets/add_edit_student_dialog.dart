@@ -107,6 +107,9 @@ class _AddEditStudentDialogState extends State<AddEditStudentDialog> {
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
+        constraints: const BoxConstraints(
+          maxWidth: 420,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
