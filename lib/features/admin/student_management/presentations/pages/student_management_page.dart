@@ -25,7 +25,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   final TextEditingController _searchController = TextEditingController();
   String _searchTerm = '';
   bool _isLoading = false;
-  String _error = '';
+  final Map<int, String> _classNameCache = {}; // Cache for class IDs to names
 
   @override
   void initState() {
@@ -35,6 +35,59 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
 
   void _loadStudents() {
     _studentsFuture = ApiService.getAllStudents();
+  }
+
+  // Fetch all classes and cache them
+  Future<void> _loadClassNames(List<dynamic> students) async {
+    try {
+      // Get unique class IDs from students
+      final classIds = students
+          .map((s) => s['classs'] as int?)
+          .where((id) => id != null)
+          .cast<int>()
+          .toSet();
+
+      if (classIds.isEmpty) return;
+
+      // Fetch all classes from API
+      final allClasses = await ApiService.getAllClasses();
+
+      // Create a map of classId -> className
+      for (var classData in allClasses) {
+        final classId = classData['id'] as int;
+        final className = classData['name'] ?? 'نامشخص';
+
+        _classNameCache[classId] = className;
+      }
+
+      // Update UI with new cached data
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('Error loading class names: $e');
+      // Fallback: use class IDs as labels
+      final classIds = students
+          .map((s) => s['classs'] as int?)
+          .where((id) => id != null)
+          .cast<int>()
+          .toSet();
+
+      for (var classId in classIds) {
+        if (!_classNameCache.containsKey(classId)) {
+          _classNameCache[classId] = 'کلاس $classId';
+        }
+      }
+
+      if (mounted) {
+        setState(() {});
+      }
+    }
+  }
+
+  String _getClassName(int? classId) {
+    if (classId == null) return 'نامشخص';
+    return _classNameCache[classId] ?? 'در حال بارگذاری...';
   }
 
   Future<void> _addOrEditStudent({
@@ -148,6 +201,13 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     ) ?? false;
   }
 
+  String _formatNumber(int number) {
+    return number.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+          (match) => '${match.group(1)},',
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -184,6 +244,10 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                         }
 
                         final students = snapshot.data ?? [];
+
+                        // Load class names when data is available
+                        _loadClassNames(students);
+
                         final filtered = students.where((s) {
                           final name = s['name'] ?? '';
                           final code = s['studentCode'] ?? '';
@@ -367,6 +431,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     return students.map((student) {
       final debt = student['debt'] ?? 0;
       final hasDept = debt > 0;
+      final classId = student['classs'] as int?;
 
       return Padding(
         padding: const EdgeInsets.only(bottom: 16),
@@ -454,7 +519,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                       ),
                       child: Text(
                         hasDept
-                            ? '${debt.toLocaleString()} تومان'
+                            ? '${_formatNumber(debt)} تومان'
                             : 'بدون بدهی',
                         style: TextStyle(
                           fontSize: 11,
@@ -476,7 +541,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                   children: [
                     _buildDetailChip(
                       icon: Icons.class_rounded,
-                      label: student['class'] ?? 'نامشخص',
+                      label: _getClassName(classId),
                     ),
                     _buildDetailChip(
                       icon: Icons.phone_rounded,
@@ -561,7 +626,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   void _showViewDialog(dynamic student) {
     showDialog(
       context: context,
-      builder: (ctx) => StudentDetailDialog(student: student),
+      builder: (ctx) => StudentDetailDialog(student: student, classNameCache: _classNameCache),
     );
   }
 
@@ -633,7 +698,7 @@ class _StudentFormDialogState extends State<StudentFormDialog> {
     super.initState();
     nameController = TextEditingController(text: widget.student?['name'] ?? '');
     codeController = TextEditingController(text: widget.student?['studentCode'] ?? '');
-    classController = TextEditingController(text: widget.student?['class'] ?? '');
+    classController = TextEditingController(text: widget.student?['classs']?.toString() ?? '');
     phoneController = TextEditingController(text: widget.student?['phone'] ?? '');
     parentPhoneController = TextEditingController(text: widget.student?['parentPhone'] ?? '');
     birthDateController = TextEditingController(text: widget.student?['birthDate'] ?? '');
@@ -799,8 +864,18 @@ class _StudentFormDialogState extends State<StudentFormDialog> {
 // Student Detail Dialog
 class StudentDetailDialog extends StatelessWidget {
   final dynamic student;
+  final Map<int, String> classNameCache;
 
-  const StudentDetailDialog({super.key, required this.student});
+  const StudentDetailDialog({
+    super.key,
+    required this.student,
+    required this.classNameCache,
+  });
+
+  String _getClassName(int? classId) {
+    if (classId == null) return 'نامشخص';
+    return classNameCache[classId] ?? 'کلاس $classId';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -887,11 +962,10 @@ class StudentDetailDialog extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  _buildDetailRow('کلاس', student['class'] ?? 'نامشخص'),
+                  _buildDetailRow('کلاس', _getClassName(student['classs'] as int?)),
                   _buildDetailRow('تاریخ تولد', student['birthDate'] ?? 'N/A'),
                   _buildDetailRow('شماره تلفن', student['phone'] ?? 'N/A'),
                   _buildDetailRow('شماره ولی', student['parentPhone'] ?? 'N/A'),
-                  _buildDetailRow('آدرس', student['address'] ?? 'N/A'),
                   _buildDetailRow(
                     'بدهی',
                     (student['debt'] ?? 0) == 0

@@ -2074,6 +2074,50 @@ class ApiService {
     }
   }
 
+  // ==================== GET ALL CLASSES ====================
+  static Future<List<dynamic>> getAllClasses() async {
+    final url = Uri.parse('$baseUrl/admin/classes');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Get All Classes Status: ${response.statusCode}');
+      print('Get All Classes Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        return data;
+      } else {
+        throw Exception('خطا در دریافت کلاس‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching classes: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
+  // ==================== GET CLASS BY ID ====================
+  static Future<Map<String, dynamic>> getClassById(int classId) async {
+    final url = Uri.parse('$baseUrl/admin/classes/$classId');
+
+    try {
+      final response = await http.get(url, headers: _headers).timeout(_timeout);
+
+      print('Get Class Status: ${response.statusCode}');
+
+      if (response.statusCode == 200) {
+        return json.decode(response.body) as Map<String, dynamic>;
+      } else if (response.statusCode == 404) {
+        throw Exception('کلاس یافت نشد');
+      } else {
+        throw Exception('خطا: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching class: $e');
+      throw Exception('خطا: $e');
+    }
+  }
+
   ///////////////////////////////////////////
 
   // تبدیل DateTime میلادی به رشته شمسی (14030825)
