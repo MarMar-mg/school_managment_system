@@ -1865,8 +1865,25 @@ class ApiService {
       print('Get All Students Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(response.body);
-        return data;
+        // ✅ FIX: Handle both array and object responses
+        final dynamic decoded = json.decode(response.body);
+
+        // If response is already a list, return it directly
+        if (decoded is List) {
+          return decoded as List<dynamic>;
+        }
+
+        // If response is an object with 'data' field (paginated)
+        if (decoded is Map<String, dynamic>) {
+          final data = decoded['data'];
+          if (data is List) {
+            return data as List<dynamic>;
+          }
+        }
+
+        // Fallback: empty list if format is unexpected
+        print('Unexpected response format: ${decoded.runtimeType}');
+        return [];
       } else {
         throw Exception('خطا در دریافت دانش‌آموزان: ${response.statusCode}');
       }
@@ -1914,19 +1931,19 @@ class ApiService {
     try {
       final response = await http
           .post(
-        url,
-        headers: _headers,
-        body: json.encode({
-          'name': name,
-          'studentCode': studentCode,
-          'class': stuClass,
-          'phone': phone,
-          'parentPhone': parentPhone,
-          'birthDate': birthDate,
-          'address': address,
-          'debt': debt,
-        }),
-      )
+            url,
+            headers: _headers,
+            body: json.encode({
+              'name': name,
+              'studentCode': studentCode,
+              'classId': stuClass, // ✅ Changed from 'class' to 'classId'
+              'phone': phone,
+              'parentPhone': parentPhone,
+              'birthDate': birthDate,
+              'address': address,
+              'debt': debt,
+            }),
+          )
           .timeout(_timeout);
 
       print('Create Student Status: ${response.statusCode}');
@@ -1960,19 +1977,19 @@ class ApiService {
     try {
       final response = await http
           .put(
-        url,
-        headers: _headers,
-        body: json.encode({
-          'name': name,
-          'studentCode': studentCode,
-          'class': stuClass,
-          'phone': phone,
-          'parentPhone': parentPhone,
-          'birthDate': birthDate,
-          'address': address,
-          'debt': debt,
-        }),
-      )
+            url,
+            headers: _headers,
+            body: json.encode({
+              'name': name,
+              'studentCode': studentCode,
+              'classId': stuClass, // ✅ Changed from 'class' to 'classId'
+              'phone': phone,
+              'parentPhone': parentPhone,
+              'birthDate': birthDate,
+              'address': address,
+              'debt': debt,
+            }),
+          )
           .timeout(_timeout);
 
       print('Update Student Status: ${response.statusCode}');

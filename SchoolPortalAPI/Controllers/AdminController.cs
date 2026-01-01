@@ -554,11 +554,52 @@ namespace SchoolPortalAPI.Controllers
                     .OrderByDescending(s => s.registerDate)
                     .ToListAsync();
 
+                // ✅ RETURN ARRAY DIRECTLY - NOT wrapped in pagination object
+                return Ok(students);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Alternative: If you want pagination info, use different endpoint
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students/paginated")]
+        public async Task<IActionResult> GetAllStudentsPaginated(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var skip = (page - 1) * pageSize;
+
+                var students = await _context.Students
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .Select(s => new
+                    {
+                        id = s.Studentid,
+                        name = s.Name ?? "نامشخص",
+                        studentCode = s.StuCode,
+                        classs = s.Classeid,
+                        phone = s.ParentNum1,
+                        parentPhone = s.ParentNum2,
+                        birthDate = s.Birthdate,
+                        address = s.Address,
+                        debt = s.Debt ?? 0,
+                        registerDate = s.Registerdate,
+                        userId = s.UserID,
+                    })
+                    .OrderByDescending(s => s.registerDate)
+                    .ToListAsync();
+
                 var totalCount = await _context.Students.CountAsync();
 
                 return Ok(new
                 {
-                    data = students,
+                    data = students,  // ✅ Array of students
                     pagination = new
                     {
                         page,
