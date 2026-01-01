@@ -12,28 +12,43 @@ class StudentDetailsDialog extends StatelessWidget {
     required this.getClassName,
   });
 
-  Widget _buildDetailRow(String label, String value) {
+  Widget _buildDetailRow(String label, String value, IconData icon) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColor.darkText,
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: AppColor.purple.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(8),
             ),
-            textDirection: TextDirection.rtl,
+            child: Icon(icon, color: AppColor.purple, size: 18),
           ),
-          Text(
-            value,
-            style: const TextStyle(
-              fontSize: 14,
-              color: AppColor.lightGray,
-            ),
-            textDirection: TextDirection.rtl,
+          const SizedBox(width: 12),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: AppColor.lightGray,
+                  fontWeight: FontWeight.w500,
+                ),
+                textDirection: TextDirection.rtl,
+              ),
+              const SizedBox(height: 3),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColor.darkText,
+                ),
+                textDirection: TextDirection.rtl,
+              ),
+            ],
           ),
         ],
       ),
@@ -42,57 +57,153 @@ class StudentDetailsDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('جزئیات دانش‌آموز'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          CircleAvatar(
-            radius: 40,
-            backgroundColor: AppColor.primary,
-            child: Text(
-              student.name.substring(0, 1),
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 32,
-              ),
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      elevation: 0,
+      backgroundColor: Colors.transparent,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            student.name,
-            style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColor.darkText,
-            ),
-          ),
-          Text(
-            'کد: ${student.studentCode}',
-            style: const TextStyle(
-              fontSize: 12,
-              color: AppColor.lightGray,
-            ),
-          ),
-          const SizedBox(height: 24),
-          _buildDetailRow('کلاس', getClassName(student.stuClass)),
-          _buildDetailRow('تاریخ تولد', student.birthDate ?? 'N/A'),
-          _buildDetailRow('شماره تلفن', student.phone ?? 'N/A'),
-          _buildDetailRow('شماره ولی', student.parentPhone ?? 'N/A'),
-          _buildDetailRow(
-            'بدهی',
-            student.debt == 0 ? 'بدون بدهی' : '${student.debt} تومان',
-          ),
-        ],
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('بستن'),
+          ],
         ),
-      ],
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Avatar
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColor.purple.withOpacity(0.8),
+                        AppColor.purple.withOpacity(0.6),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColor.purple.withOpacity(0.3),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 32,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Name
+                Text(
+                  student.name,
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColor.darkText,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'کد: ${student.studentCode}',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: AppColor.lightGray,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 20),
+
+                // Divider
+                Container(
+                  height: 1,
+                  color: Colors.grey.shade100,
+                ),
+                const SizedBox(height: 20),
+
+                // Details
+                _buildDetailRow(
+                  'کلاس',
+                  getClassName(student.stuClass),
+                  Icons.class_rounded,
+                ),
+                _buildDetailRow(
+                  'تاریخ تولد',
+                  student.birthDate ?? 'نامشخص',
+                  Icons.cake_rounded,
+                ),
+                _buildDetailRow(
+                  'شماره تلفن',
+                  student.phone ?? 'نامشخص',
+                  Icons.phone_rounded,
+                ),
+                _buildDetailRow(
+                  'شماره ولی',
+                  student.parentPhone ?? 'نامشخص',
+                  Icons.phone_android_rounded,
+                ),
+                _buildDetailRow(
+                  'آدرس',
+                  student.address ?? 'نامشخص',
+                  Icons.location_on_rounded,
+                ),
+                _buildDetailRow(
+                  'بدهی',
+                  student.debt == 0 ? 'بدون بدهی' : '${student.debt} تومان',
+                  student.debt > 0 ? Icons.warning_rounded : Icons.check_circle_rounded,
+                ),
+
+                const SizedBox(height: 24),
+
+                // Close Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.purple,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'بستن',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }
