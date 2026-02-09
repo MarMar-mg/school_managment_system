@@ -457,8 +457,8 @@ namespace SchoolPortalAPI.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("Birthdate")
-                        .HasColumnType("bigint");
+                    b.Property<string>("Birthdate")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<long?>("Classeid")
                         .HasColumnType("bigint");
@@ -476,8 +476,8 @@ namespace SchoolPortalAPI.Migrations
                     b.Property<string>("ParentNum2")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<long?>("Registerdate")
-                        .HasColumnType("bigint");
+                    b.Property<string>("Registerdate")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("Score")
                         .HasColumnType("int");
