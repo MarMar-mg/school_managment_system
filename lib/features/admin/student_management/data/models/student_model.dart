@@ -8,6 +8,8 @@ class StudentModel {
   final String? birthDate;
   final String? address;
   final int debt;
+  final String? username;
+  final String? password;
 
   StudentModel({
     required this.studentId,
@@ -19,6 +21,8 @@ class StudentModel {
     this.birthDate,
     this.address,
     required this.debt,
+    this.username,
+    this.password
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,8 @@ class StudentModel {
       birthDate: json['birthDate'] as String?,
       address: json['address'] as String?,
       debt: (json['debt'] as num? ?? 0).toInt(),
+      username: json['username'] as String?,
+      password: json['password'] as String?,
     );
   }
 
@@ -39,11 +45,11 @@ class StudentModel {
     return {
       'name': name,
       'studentCode': studentCode,
-      'classId': stuClass,
-      'phone': phone,
-      'parentPhone': parentPhone,
-      'birthDate': birthDate,
-      'address': address,
+      'classId': stuClass?.toString() ?? '',
+      'phone': phone ?? '',
+      'parentPhone': parentPhone ?? '',
+      'birthDate': birthDate ?? '',
+      'address': address ?? '',
       'debt': debt,
     };
   }

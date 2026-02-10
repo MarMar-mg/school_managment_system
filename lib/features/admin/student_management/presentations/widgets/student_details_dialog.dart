@@ -1,18 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:school_management_system/applications/colors.dart';
 import '../../data/models/student_model.dart';
 
 class StudentDetailsDialog extends StatelessWidget {
   final StudentModel student;
   final String Function(int?) getClassName;
+  final String? username;
+  final String? password;
 
   const StudentDetailsDialog({
     super.key,
     required this.student,
     required this.getClassName,
+    this.username,
+    this.password,
   });
 
-  Widget _buildDetailRow(String label, String value, IconData icon) {
+  Widget _buildDetailRow(String label, String value, IconData icon, {bool canCopy = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -26,31 +31,65 @@ class StudentDetailsDialog extends StatelessWidget {
             child: Icon(icon, color: AppColor.purple, size: 18),
           ),
           const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColor.lightGray,
-                  fontWeight: FontWeight.w500,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColor.lightGray,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  textDirection: TextDirection.rtl,
                 ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 3),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColor.darkText,
+                const SizedBox(height: 3),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        value,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColor.darkText,
+                        ),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ),
+                    if (canCopy)
+                      _buildCopyButton(value),
+                  ],
                 ),
-                textDirection: TextDirection.rtl,
-              ),
-            ],
+              ],
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildCopyButton(String text) {
+    return Builder(
+      builder: (context) => IconButton(
+        icon: const Icon(Icons.copy_rounded, size: 16),
+        color: AppColor.purple,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        onPressed: () {
+          Clipboard.setData(ClipboardData(text: text));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'کپی شد',
+                textDirection: TextDirection.rtl,
+              ),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 1),
+            ),
+          );
+        },
       ),
     );
   }
@@ -62,6 +101,7 @@ class StudentDetailsDialog extends StatelessWidget {
       elevation: 0,
       backgroundColor: Colors.transparent,
       child: Container(
+        constraints: const BoxConstraints(maxHeight: 700),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -127,12 +167,75 @@ class StudentDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 4),
                 Text(
                   'کد: ${student.studentCode}',
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 12,
                     color: AppColor.lightGray,
                   ),
                   textDirection: TextDirection.rtl,
                 ),
+
+                // Login Credentials Section
+                if (username != null && password != null) ...[
+                  const SizedBox(height: 16),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.green.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      children: [
+                        const Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.vpn_key_rounded, color: Colors.green, size: 16),
+                            SizedBox(width: 6),
+                            Text(
+                              'اطلاعات ورود',
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'نام کاربری: $username',
+                                style: const TextStyle(fontSize: 11),
+                                textDirection: TextDirection.rtl,
+                              ),
+                            ),
+                            _buildCopyButton(username!),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                'رمز عبور: $password',
+                                style: const TextStyle(fontSize: 11),
+                                textDirection: TextDirection.rtl,
+                              ),
+                            ),
+                            _buildCopyButton(password!),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 const SizedBox(height: 20),
 
                 // Divider
@@ -157,11 +260,13 @@ class StudentDetailsDialog extends StatelessWidget {
                   'شماره تلفن',
                   student.phone ?? 'نامشخص',
                   Icons.phone_rounded,
+                  canCopy: student.phone != null,
                 ),
                 _buildDetailRow(
                   'شماره ولی',
                   student.parentPhone ?? 'نامشخص',
                   Icons.phone_android_rounded,
+                  canCopy: student.parentPhone != null,
                 ),
                 _buildDetailRow(
                   'آدرس',

@@ -55,19 +55,23 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     setState(() {
       _isLoading = true;
     });
-    _studentsFuture = ApiService.getAllStudents().then((data) {
-      _allStudents = data.map((json) => StudentModel.fromJson(json)).toList();
-      _loadClassNames();
-      setState(() {
-        _isLoading = false;
-      });
-      return _allStudents;
-    }).catchError((error) {
-      setState(() {
-        _isLoading = false;
-      });
-      throw error;
-    });
+    _studentsFuture = ApiService.getAllStudents()
+        .then((data) {
+          _allStudents = data
+              .map((json) => StudentModel.fromJson(json))
+              .toList();
+          _loadClassNames();
+          setState(() {
+            _isLoading = false;
+          });
+          return _allStudents;
+        })
+        .catchError((error) {
+          setState(() {
+            _isLoading = false;
+          });
+          throw error;
+        });
   }
 
   Future<void> _loadClassNames() async {
@@ -94,7 +98,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
     } catch (e) {
       print('Error loading class names: $e');
       for (var student in _allStudents) {
-        if (student.stuClass != null && !_classNameCache.containsKey(student.stuClass)) {
+        if (student.stuClass != null &&
+            !_classNameCache.containsKey(student.stuClass)) {
           _classNameCache[student.stuClass!] = 'کلاس ${student.stuClass}';
         }
       }
@@ -113,10 +118,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
   }) async {
     final result = await showDialog<StudentModel?>(
       context: context,
-      builder: (context) => AddEditStudentDialog(
-        isEdit: isEdit,
-        student: student,
-      ),
+      builder: (context) =>
+          AddEditStudentDialog(isEdit: isEdit, student: student),
     );
 
     if (result != null) {
@@ -137,8 +140,18 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
             address: result.address ?? '',
             debt: result.debt,
           );
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('دانش‌آموز به‌روزرسانی شد'),
+                backgroundColor: Colors.green,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
         } else {
-          await ApiService.createStudent(
+          //Show credentials in success message
+          final response = await ApiService.createStudent(
             name: result.name,
             studentCode: result.studentCode,
             stuClass: result.stuClass?.toString() ?? '',
@@ -148,24 +161,81 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
             address: result.address ?? '',
             debt: result.debt,
           );
+
+          if (mounted) {
+            // Show dialog with credentials
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                title: const Row(
+                  children: [
+                    Icon(Icons.check_circle, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('دانش‌آموز ایجاد شد', style: TextStyle(fontSize: 16)),
+                  ],
+                ),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'اطلاعات ورود:',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'نام کاربری: ${response['username']}',
+                            style: const TextStyle(fontSize: 13),
+                            textDirection: TextDirection.rtl,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'رمز عبور: ${response['password']}',
+                            style: const TextStyle(fontSize: 13),
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text(
+                      'این اطلاعات را به دانش‌آموز اطلاع دهید',
+                      style: TextStyle(fontSize: 11, color: Colors.orange),
+                      textDirection: TextDirection.rtl,
+                    ),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('متوجه شدم'),
+                  ),
+                ],
+              ),
+            );
+          }
         }
         _loadStudents();
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(isEdit ? 'دانش‌آموز به‌روزرسانی شد' : 'دانش‌آموز افزوده شد'),
-              backgroundColor: Colors.green,
-              duration: const Duration(seconds: 2),
-            ),
-          );
-        }
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('خطا: $e'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
           );
         }
         setState(() {
@@ -180,7 +250,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('تایید حذف'),
-        content: const Text('آیا مطمئن هستید که می‌خواهید این دانش‌آموز را حذف کنید؟'),
+        content: const Text(
+          'آیا مطمئن هستید که می‌خواهید این دانش‌آموز را حذف کنید؟',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -200,7 +272,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
       });
 
       try {
-        await ApiService.deleteStudent(studentId);
+        await ApiService.deleteStudent(studentId, widget.userId);
         _loadStudents();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -214,7 +286,10 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
       } catch (e) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('خطا در حذف: $e'), backgroundColor: Colors.red),
+            SnackBar(
+              content: Text('خطا در حذف: $e'),
+              backgroundColor: Colors.red,
+            ),
           );
         }
         setState(() {
@@ -230,6 +305,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
       builder: (context) => StudentDetailsDialog(
         student: student,
         getClassName: _getClassName,
+        username: student.username,
+        password: student.password,
       ),
     );
   }
@@ -272,7 +349,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                   FutureBuilder<List<StudentModel>>(
                     future: _studentsFuture,
                     builder: (context, snapshot) {
-                      if (_isLoading || snapshot.connectionState == ConnectionState.waiting) {
+                      if (_isLoading ||
+                          snapshot.connectionState == ConnectionState.waiting) {
                         return _buildLoadingState();
                       }
 
@@ -287,7 +365,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                       final filteredStudents = _allStudents.where((student) {
                         final name = student.name.toLowerCase();
                         final code = student.studentCode.toLowerCase();
-                        final className = _getClassName(student.stuClass).toLowerCase();
+                        final className = _getClassName(
+                          student.stuClass,
+                        ).toLowerCase();
                         return name.contains(_searchTerm) ||
                             code.contains(_searchTerm) ||
                             className.contains(_searchTerm);
@@ -300,7 +380,8 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
                       return StudentListSection(
                         students: filteredStudents,
                         getClassName: _getClassName,
-                        onEdit: (student) => _addOrEditStudent(isEdit: true, student: student),
+                        onEdit: (student) =>
+                            _addOrEditStudent(isEdit: true, student: student),
                         onDelete: _deleteStudent,
                         onTap: _showStudentDetails,
                         autoExpand: _searchTerm.isNotEmpty,
@@ -371,11 +452,18 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
               onTap: () => _addOrEditStudent(isEdit: false),
               borderRadius: BorderRadius.circular(12),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.add_rounded, color: Colors.white, size: 20),
+                    const Icon(
+                      Icons.add_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                     const SizedBox(width: 6),
                     const Text(
                       'افزودن',
@@ -414,15 +502,23 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
         decoration: InputDecoration(
           hintText: 'جستجو بر اساس نام، کد یا کلاس...',
           hintStyle: TextStyle(color: Colors.grey[400], fontSize: 13),
-          prefixIcon: Icon(Icons.search_rounded, color: AppColor.lightGray, size: 20),
+          prefixIcon: Icon(
+            Icons.search_rounded,
+            color: AppColor.lightGray,
+            size: 20,
+          ),
           suffixIcon: _searchTerm.isNotEmpty
               ? GestureDetector(
-            onTap: () {
-              _searchController.clear();
-              setState(() => _searchTerm = '');
-            },
-            child: Icon(Icons.close_rounded, color: AppColor.lightGray, size: 20),
-          )
+                  onTap: () {
+                    _searchController.clear();
+                    setState(() => _searchTerm = '');
+                  },
+                  child: Icon(
+                    Icons.close_rounded,
+                    color: AppColor.lightGray,
+                    size: 20,
+                  ),
+                )
               : null,
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 14),
@@ -503,10 +599,7 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
             SizedBox(height: 16),
             Text(
               'در حال بارگذاری...',
-              style: TextStyle(
-                fontSize: 14,
-                color: AppColor.lightGray,
-              ),
+              style: TextStyle(fontSize: 14, color: AppColor.lightGray),
             ),
           ],
         ),
@@ -520,7 +613,11 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
       child: Center(
         child: Column(
           children: [
-            Icon(Icons.error_outline_rounded, size: 64, color: Colors.red.shade400),
+            Icon(
+              Icons.error_outline_rounded,
+              size: 64,
+              color: Colors.red.shade400,
+            ),
             const SizedBox(height: 16),
             const Text(
               'خطا در بارگذاری اطلاعات',
@@ -544,7 +641,9 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.purple,
                 foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],
@@ -594,8 +693,13 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.purple,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
             ),
           ],

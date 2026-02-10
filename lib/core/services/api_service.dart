@@ -1865,7 +1865,7 @@ class ApiService {
       print('Get All Students Body: ${response.body}');
 
       if (response.statusCode == 200) {
-        // ✅ FIX: Handle both array and object responses
+        // Handle both array and object responses
         final dynamic decoded = json.decode(response.body);
 
         // If response is already a list, return it directly
@@ -1936,7 +1936,7 @@ class ApiService {
         body: json.encode({
           'name': name,
           'studentCode': studentCode,
-          'classId': stuClass,  // ✅ FIXED: Changed from 'class' to 'classId'
+          'classId': stuClass,
           'phone': phone,
           'parentPhone': parentPhone,
           'birthDate': birthDate,
@@ -2009,8 +2009,8 @@ class ApiService {
   }
 
   /// Delete student
-  static Future<Map<String, dynamic>> deleteStudent(int studentId) async {
-    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+  static Future<Map<String, dynamic>> deleteStudent(int studentId, int userId) async {
+    final url = Uri.parse('$baseUrl/admin/students/$studentId/$userId');
 
     try {
       final response = await http

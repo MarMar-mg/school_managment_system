@@ -334,7 +334,7 @@ namespace SchoolPortalAPI.Controllers
                     .OrderByDescending(s => s.avgScore)
                     .ToList();
 
-                // ✅ TOP PERFORMERS - Group by Studentid and calculate average
+                // Group by Studentid and calculate average
                 var groupedScores = allScores
                     .GroupBy(s => s.Studentid ?? 0)
                     .Select(g => new
@@ -522,46 +522,46 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // Get all students with pagination
-        // ──────────────────────────────────────────────────────────────
-        [HttpGet("students")]
-        public async Task<IActionResult> GetAllStudents(
-            [FromQuery] int page = 1,
-            [FromQuery] int pageSize = 50)
-        {
-            try
-            {
-                var skip = (page - 1) * pageSize;
-
-                var students = await _context.Students
-                    .Skip(skip)
-                    .Take(pageSize)
-                    .Select(s => new
-                    {
-                        id = s.Studentid,
-                        name = s.Name ?? "نامشخص",
-                        studentCode = s.StuCode,
-                        classs = s.Classeid,
-                        phone = s.ParentNum1,
-                        parentPhone = s.ParentNum2,
-                        birthDate = s.Birthdate,
-                        address = s.Address,
-                        debt = s.Debt ?? 0,
-                        registerDate = s.Registerdate,
-                        userId = s.UserID,
-                    })
-                    .OrderByDescending(s => s.registerDate)
-                    .ToListAsync();
-
-                // ✅ RETURN ARRAY DIRECTLY - NOT wrapped in pagination object
-                return Ok(students);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
-            }
-        }
+//        // ──────────────────────────────────────────────────────────────
+//        // Get all students with pagination
+//        // ──────────────────────────────────────────────────────────────
+//        [HttpGet("students")]
+//        public async Task<IActionResult> GetAllStudents(
+//            [FromQuery] int page = 1,
+//            [FromQuery] int pageSize = 50)
+//        {
+//            try
+//            {
+//                var skip = (page - 1) * pageSize;
+//
+//                var students = await _context.Students
+//                    .Skip(skip)
+//                    .Take(pageSize)
+//                    .Select(s => new
+//                    {
+//                        id = s.Studentid,
+//                        name = s.Name ?? "نامشخص",
+//                        studentCode = s.StuCode,
+//                        classs = s.Classeid,
+//                        phone = s.ParentNum1,
+//                        parentPhone = s.ParentNum2,
+//                        birthDate = s.Birthdate,
+//                        address = s.Address,
+//                        debt = s.Debt ?? 0,
+//                        registerDate = s.Registerdate,
+//                        userId = s.UserID,
+//                    })
+//                    .OrderByDescending(s => s.registerDate)
+//                    .ToListAsync();
+//
+//                //  RETURN ARRAY DIRECTLY - NOT wrapped in pagination object
+//                return Ok(students);
+//            }
+//            catch (Exception ex)
+//            {
+//                return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
+//            }
+//        }
 
         // ──────────────────────────────────────────────────────────────
         // Alternative: If you want pagination info, use different endpoint
@@ -599,7 +599,7 @@ namespace SchoolPortalAPI.Controllers
 
                 return Ok(new
                 {
-                    data = students,  // ✅ Array of students
+                    data = students,  // Array of students
                     pagination = new
                     {
                         page,
@@ -650,7 +650,56 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // Create new student
+        // Get all students with user data
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("students")]
+        public async Task<IActionResult> GetAllStudents(
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 50)
+        {
+            try
+            {
+                var skip = (page - 1) * pageSize;
+
+                var students = await _context.Students
+                    .Skip(skip)
+                    .Take(pageSize)
+                    .Select(s => new
+                    {
+                        id = s.Studentid,
+                        name = s.Name ?? "نامشخص",
+                        studentCode = s.StuCode,
+                        classs = s.Classeid,
+                        phone = s.ParentNum1,
+                        parentPhone = s.ParentNum2,
+                        birthDate = s.Birthdate,
+                        address = s.Address,
+                        debt = s.Debt ?? 0,
+                        registerDate = s.Registerdate,
+                        userId = s.UserID,
+                        Get username and password from User table
+                        username = _context.Users
+                            .Where(u => u.Userid == s.UserID)
+                            .Select(u => u.Username)
+                            .FirstOrDefault(),
+                        password = _context.Users
+                            .Where(u => u.Userid == s.UserID)
+                            .Select(u => u.Password)
+                            .FirstOrDefault()
+                    })
+                    .OrderByDescending(s => s.registerDate)
+                    .ToListAsync();
+
+                return Ok(students);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطا در دریافت دانش‌آموزان", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Create new student with user account
         // ──────────────────────────────────────────────────────────────
         [HttpPost("students")]
         public async Task<IActionResult> CreateStudent([FromBody] CreateStudentDto model)
@@ -674,6 +723,31 @@ namespace SchoolPortalAPI.Controllers
                 if (existingStudent != null)
                     return BadRequest(new { message = "این کد دانش‌آموز قبلا ثبت شده است" });
 
+                // CREATE USER ACCOUNT
+                var username = model.StudentCode; // Use student code as username
+                var password = model.StudentCode; // Default password = student code
+
+                // Check if username already exists
+                var existingUser = await _context.Users
+                    .FirstOrDefaultAsync(u => u.Username == username);
+
+                if (existingUser != null)
+                    return BadRequest(new { message = "نام کاربری قبلا استفاده شده است" });
+
+                // Create user
+                var user = new User
+                {
+                    Username = username,
+                    Password = password,
+                    Role = "student"
+                };
+
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                Console.WriteLine($"[CREATE STUDENT] User created: {user.Userid} - {user.Username}");
+
+                // Create student with user ID
                 var student = new Student
                 {
                     Name = model.Name,
@@ -685,6 +759,7 @@ namespace SchoolPortalAPI.Controllers
                     Debt = model.Debt,
                     Registerdate = DateTime.Now.ToShamsi(),
                     Birthdate = model.BirthDate,
+                    UserID = user.Userid //LINK USER TO STUDENT
                 };
 
                 _context.Students.Add(student);
@@ -697,6 +772,9 @@ namespace SchoolPortalAPI.Controllers
                     message = "دانش‌آموز با موفقیت ایجاد شد",
                     id = student.Studentid,
                     name = student.Name,
+                    userId = user.Userid,
+                    username = user.Username,
+                    password = user.Password // Return so manager knows initial credentials
                 });
             }
             catch (Exception ex)
@@ -705,6 +783,7 @@ namespace SchoolPortalAPI.Controllers
                 return StatusCode(500, new { message = "خطا در ایجاد دانش‌آموز", error = ex.Message });
             }
         }
+
 
         // ──────────────────────────────────────────────────────────────
         // Update student
@@ -776,17 +855,19 @@ namespace SchoolPortalAPI.Controllers
         // ──────────────────────────────────────────────────────────────
         // Delete student
         // ──────────────────────────────────────────────────────────────
-        [HttpDelete("students/{studentId}")]
-        public async Task<IActionResult> DeleteStudent(long studentId)
+        [HttpDelete("students/{studentId}/{userId}")]
+        public async Task<IActionResult> DeleteStudent(long studentId, long userId)
         {
             try
             {
                 var student = await _context.Students.FindAsync(studentId);
+                var user = await _context.Users.FindAsync(student.UserID);
 
                 if (student == null)
                     return NotFound(new { message = "دانش‌آموز یافت نشد" });
 
                 _context.Students.Remove(student);
+                _context.Users.Remove(user);
                 await _context.SaveChangesAsync();
 
                 Console.WriteLine($"[DELETE STUDENT] Student deleted: {studentId}");
