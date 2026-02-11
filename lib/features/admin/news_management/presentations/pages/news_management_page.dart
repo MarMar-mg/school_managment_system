@@ -25,12 +25,8 @@ class _NewsManagementPageState extends State<NewsManagementPage> {
   final List<String> _categories = [
     'عمومی',
     'آموزشی',
-    'رویدادها',
-    'اطلاعیه',
+    'فرهنگی و هنری',
     'ورزشی',
-    'فرهنگی',
-    'اخبار مدرسه',
-    'برنامه امتحانات',
     'دانش‌آموزی',
     'معلمی',
   ];
@@ -179,46 +175,73 @@ class _NewsManagementPageState extends State<NewsManagementPage> {
 
         const SizedBox(height: 20),
 
-        // Category Tabs (Navbar at top)
-        Container(
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.grey.shade100,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          padding: const EdgeInsets.all(4),
-          child: Row(
-            children: List.generate(_categories.length, (index) {
-              final isSelected = index == _selectedCategoryIndex;
-              return Expanded(
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _selectedCategoryIndex = index;
-                    });
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    decoration: BoxDecoration(
-                      color: isSelected ? AppColor.purple : Colors.transparent,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    alignment: Alignment.center,
-                    child: Text(
-                      _categories[index],
-                      style: defaultTextStyle(context, StyleText.bb2)
-                          .s(15)
-                          .c(
-                            isSelected
-                                ? Colors.white
-                                : AppColor.grey(true, 700),
+        SizedBox(
+          child: Container(
+            margin: const EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              physics: const BouncingScrollPhysics(),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(_categories.length, (index) {
+                  final isSelected = index == _selectedCategoryIndex;
+                  final title = _categories[index];
+
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 4),
+                    child: GestureDetector(
+                      onTap: () {
+                        setState(() {
+                          _selectedCategoryIndex = index;
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected ? AppColor.purple : Colors.purple.shade50,
+                          borderRadius: BorderRadius.circular(30), // pill shape
+                          boxShadow: isSelected
+                              ? [
+                            BoxShadow(
+                              color: AppColor.purple.withOpacity(0.35),
+                              blurRadius: 12,
+                              spreadRadius: 1,
+                              offset: const Offset(0, 4),
+                            ),
+                          ]
+                              : null,
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(30),
+                            splashColor: isSelected ? null : AppColor.purple.withOpacity(0.18),
+                            highlightColor: Colors.transparent,
+                            onTap: () {
+                              setState(() => _selectedCategoryIndex = index);
+                            },
+                            child: AnimatedDefaultTextStyle(
+                              duration: const Duration(milliseconds: 300),
+                              style: defaultTextStyle(context, StyleText.bb2)
+                                  .s(15)
+                                  .w(isSelected ? 700 : 500)
+                                  .c(isSelected ? Colors.white : AppColor.grey(true, 700)),
+                              child: Text(
+                                title,
+                                textDirection: TextDirection.rtl,
+                              ),
+                            ),
                           ),
-                      textDirection: TextDirection.rtl,
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-              );
-            }),
+                  );
+                }),
+              ),
+            ),
           ),
         ),
 

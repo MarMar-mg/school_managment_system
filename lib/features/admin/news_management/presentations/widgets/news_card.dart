@@ -124,17 +124,7 @@ class NewsVerticalCard extends StatelessWidget {
                       ),
                     ],
                   ),
-                  if (news.description != null &&
-                      news.description!.trim().isNotEmpty) ...[
-                    const SizedBox(height: 12),
-                    Text(
-                      news.description!.trim(),
-                      style: const TextStyle(fontSize: 14, height: 1.5),
-                      textDirection: TextDirection.rtl,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
+
                   if (role == Role.manager) ...[
                     const SizedBox(height: 16),
                     Row(

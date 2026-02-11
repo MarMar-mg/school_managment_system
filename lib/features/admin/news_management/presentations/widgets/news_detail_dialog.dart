@@ -84,7 +84,7 @@ class NewsDetailDialog extends StatelessWidget {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       child: Container(
-        constraints: const BoxConstraints(maxWidth: 500, maxHeight: 700),
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,32 +114,6 @@ class NewsDetailDialog extends StatelessWidget {
               ),
             ),
 
-            // Image
-            if (news.image != null && news.image!.trim().isNotEmpty)
-              ClipRRect(
-                borderRadius: const BorderRadius.horizontal(),
-                child: Image.network(
-                  ApiService.getImageFullUrl(news.image!.trim()),
-                  height: 220,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    print(
-                      "Detail image failed: ${ApiService.getImageFullUrl(news.image)} → $error",
-                    );
-                    return Container(
-                      height: 220,
-                      color: Colors.grey.shade200,
-                      child: const Icon(Icons.broken_image, size: 80),
-                    );
-                  },
-                ),
-              ),
-
             // Content
             Flexible(
               child: SingleChildScrollView(
@@ -147,6 +121,33 @@ class NewsDetailDialog extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    if (news.image != null && news.image!.trim().isNotEmpty)
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(15),
+                        child: Image.network(
+                          ApiService.getImageFullUrl(news.image!.trim()),
+                          height: 220,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return const Center(
+                              child: CircularProgressIndicator(),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            print(
+                              "Detail image failed: ${ApiService.getImageFullUrl(news.image)} → $error",
+                            );
+                            return Container(
+                              height: 220,
+                              color: Colors.grey.shade200,
+                              child: const Icon(Icons.broken_image, size: 80),
+                            );
+                          },
+                        ),
+                      ),
+                    const SizedBox(height: 16),
                     Row(
                       children: [
                         Icon(Icons.calendar_today, color: Colors.grey[700]),

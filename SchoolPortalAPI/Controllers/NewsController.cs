@@ -29,7 +29,8 @@ namespace SchoolPortalAPI.Controllers
                     n.Category,
                     n.Startdate,
                     n.Enddate,
-                    n.Image
+                    n.Image,
+                    n.Description
                 })
                 .ToListAsync();
 

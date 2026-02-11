@@ -41,14 +41,11 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
   final List<String> _newsCategories = [
     'عمومی',
     'آموزشی',
-    'رویدادها',
-    'اطلاعیه',
+    'فرهنگی و هنری',
     'ورزشی',
-    'فرهنگی',
-    'اخبار مدرسه',
-    'برنامه امتحانات',
     'دانش‌آموزی',
     'معلمی',
+
   ];
 
   @override
@@ -68,7 +65,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
 
       // Parse and set dates
       try {
-        final startParts = widget.news!.startDate.split('-');
+        final startParts = widget.news!.startDate.split('/');
         final startJalali = Jalali(
           int.parse(startParts[0]),
           int.parse(startParts[1]),
@@ -76,7 +73,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
         );
         _startDateController.text = _formatJalaliDate(startJalali);
 
-        final endParts = widget.news!.endDate.split('-');
+        final endParts = widget.news!.endDate.split('/');
         final endJalali = Jalali(
           int.parse(endParts[0]),
           int.parse(endParts[1]),
@@ -151,16 +148,23 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
 
   Future<void> _pickImage() async {
     final file = await showBottomSheetFilePicker(context);
-    if (file != null && mounted) {
-      setState(() {
-        _imageFile = file;
-        _existingImageUrl = null; // remove old image preview
-        if (kIsWeb) {
-          file.readAsBytes().then((bytes) {
-            setState(() => _imageBytes = bytes);
-          });
-        }
-      });
+    if (file != null) {
+      if (kIsWeb) {
+        // On web: read bytes for preview
+        final bytes = await file.readAsBytes();
+        setState(() {
+          _imageBytes = bytes;
+          _imageFile = file;
+          _existingImageUrl = null; // clear old url when new image picked
+        });
+      } else {
+        // On mobile/desktop
+        setState(() {
+          _imageFile = file;
+          _imageBytes = null;
+          _existingImageUrl = null;
+        });
+      }
     }
   }
 
@@ -193,7 +197,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
         description: _descriptionController.text.trim().isEmpty
             ? null
             : _descriptionController.text.trim(),
-        image: widget.isEdit ? widget.news?.image : null, // old image - will be replaced if new file
+        image: widget.isEdit ? widget.news?.image : _existingImageUrl, // old image - will be replaced if new file
       );
 
       bool success = false;
@@ -205,8 +209,9 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
           _imageFile, // new image (null = keep old)
         );
       } else {
-        await ApiService.createNews(
+        await ApiService.createNewsWithImage(
           newsData,
+            _imageFile
         );
       }
 
