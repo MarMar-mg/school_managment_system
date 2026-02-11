@@ -5,6 +5,7 @@ import 'package:school_management_system/applications/role.dart';
 import '../features/admin/news_management/presentations/pages/news_management_page.dart';
 import '../features/admin/score_review/presentations/pages/score_review.dart';
 import '../features/admin/student_management/presentations/pages/student_management_page.dart';
+import '../features/admin/teacher_management/presentations/pages/teacher_management_page.dart';
 import '../features/classes/presentations/pages/classes_page.dart';
 import '../features/dashboard/presentation/pages/dashboard.dart';
 import '../features/profile/presentations/pages/profile_page.dart';
@@ -114,6 +115,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userId: widget.userIdi,
     ),
     NewsManagementPage(role: widget.role),
+    TeacherManagementPage(),
     // Placeholder for Events page (e.g., from ApiService getEvents)
     const Center(child: Text('صفحه رویدادها', style: TextStyle(fontSize: 20))),
     ProfilePage(

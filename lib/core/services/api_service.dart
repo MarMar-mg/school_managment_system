@@ -13,6 +13,8 @@ import 'package:shamsi_date/shamsi_date.dart';
 import '../../applications/role.dart';
 import '../../commons/untils.dart';
 import '../../features/admin/news_management/data/models/news_model.dart';
+import '../../features/admin/teacher_management/data/models/course_model.dart';
+import '../../features/admin/teacher_management/data/models/teacher_model.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
 import '../../features/student/exam/entities/models/exam_model.dart';
@@ -2291,6 +2293,169 @@ class ApiService {
     } catch (e) {
       print('Error updating news $newsId: $e');
       return false;
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // Teacher CRUD + Course Assignment
+  // ──────────────────────────────────────────────────────────────
+
+  /// Get all teachers
+  Future<List<TeacherModel>> getTeachers() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/admin/teachers'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => TeacherModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load teachers: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching teachers: $e');
+      rethrow;
+    }
+  }
+
+  /// Create new teacher (basic info)
+  Future<TeacherModel> addTeacher(Map<String, dynamic> data) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/teachers'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        return TeacherModel.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to create teacher: ${response.body}');
+      }
+    } catch (e) {
+      print('Error adding teacher: $e');
+      rethrow;
+    }
+  }
+
+  /// Update existing teacher (basic info)
+  Future<bool> updateTeacher(int teacherId, Map<String, dynamic> data) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/admin/teachers/$teacherId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('Teacher $teacherId updated successfully');
+        return true;
+      } else {
+        print('Failed to update teacher $teacherId - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error updating teacher $teacherId: $e');
+      return false;
+    }
+  }
+
+  /// Delete teacher
+  Future<bool> deleteTeacher(int teacherId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/admin/teachers/$teacherId'),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('Teacher $teacherId deleted');
+        return true;
+      } else {
+        print('Failed to delete teacher: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error deleting teacher: $e');
+      return false;
+    }
+  }
+
+  /// Assign teacher to a course
+  Future<bool> assignTeacherToCourse(int teacherId, int courseId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/assign-teacher'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'teacherId': teacherId, 'courseId': courseId}),
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        print('Teacher $teacherId assigned to course $courseId');
+        return true;
+      } else {
+        print('Failed to assign teacher: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error assigning teacher: $e');
+      return false;
+    }
+  }
+
+  /// Unassign teacher from a course
+  /// (assuming backend clears teacherId on the course)
+  Future<bool> unassignTeacherFromCourse(int courseId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/admin/unassign-teacher/$courseId'),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('Teacher unassigned from course $courseId');
+        return true;
+      } else {
+        print('Failed to unassign: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error unassigning teacher: $e');
+      return false;
+    }
+  }
+
+  /// Get all courses (with class names, etc.)
+  Future<List<CourseModel>> getAllCourses() async {
+    try {
+      final response = await http.get(Uri.parse('$baseUrl/course'));
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => CourseModel.fromJson(json)).toList();
+      } else {
+        throw Exception('Failed to load courses: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching courses: $e');
+      rethrow;
+    }
+  }
+
+  /// Get courses currently assigned to a teacher
+  Future<List<CourseModel>> getTeacherCourses(int teacherId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/teacher/$teacherId/courses'),
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = jsonDecode(response.body);
+        return data.map((json) => CourseModel.fromJson(json)).toList();
+      } else {
+        throw Exception(
+          'Failed to load teacher courses: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      print('Error fetching teacher courses: $e');
+      rethrow;
     }
   }
 

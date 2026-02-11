@@ -2,6 +2,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
 using SchoolPortalAPI.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace SchoolPortalAPI.Controllers
 {
@@ -980,7 +984,300 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
+        // ──────────────────────────────────────────────────────────────
+        // Get detailed statistics for a specific class
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("class/{classId}/statistics")]
+        public async Task<IActionResult> GetClassStatistics(long classId)
+        {
+            try
+            {
+                var classObj = await _context.Classes.FindAsync(classId);
+                if (classObj == null)
+                    return NotFound(new { message = "کلاس یافت نشد" });
+
+                var students = await _context.Students
+                    .Where(s => s.Classeid == classId)
+                    .Select(s => new { s.Studentid, s.Name, s.StuCode })
+                    .ToListAsync();
+
+                if (!students.Any())
+                {
+                    return Ok(new
+                    {
+                        id = classObj.Classid,
+                        name = classObj.Name,
+                        grade = classObj.Grade,
+                        capacity = classObj.Capacity,
+                        totalStudents = 0,
+                        avgScore = 0.0,
+                        passPercentage = 0,
+                        scoreRanges = new List<object>(),
+                        subjectScores = new List<object>(),
+                        topPerformers = new List<object>()
+                    });
+                }
+
+                var studentIds = students.Select(s => s.Studentid).ToList();
+
+                var scores = await _context.Scores
+                    .Where(s => studentIds.Contains(s.Studentid ?? 0) && s.Classid == classId)
+                    .Include(s => s.Course)
+                    .ToListAsync();
+
+                if (!scores.Any())
+                {
+                    return Ok(new
+                    {
+                        id = classObj.Classid,
+                        name = classObj.Name,
+                        grade = classObj.Grade,
+                        capacity = classObj.Capacity,
+                        totalStudents = students.Count,
+                        avgScore = 0.0,
+                        passPercentage = 0,
+                        scoreRanges = new List<object>
+                        {
+                            new { range = "18-20", count = 0, percentage = 0 },
+                            new { range = "16-18", count = 0, percentage = 0 },
+                            new { range = "14-16", count = 0, percentage = 0 },
+                            new { range = "12-14", count = 0, percentage = 0 },
+                            new { range = "<12", count = 0, percentage = 0 }
+                        },
+                        subjectScores = new List<object>(),
+                        topPerformers = new List<object>()
+                    });
+                }
+
+                double avgScore = scores.Average(s => (double)s.ScoreValue);
+                int passCount = scores.Count(s => s.ScoreValue >= 12);
+                int totalScores = scores.Count;
+                int passPercentage = totalScores > 0 ? (int)Math.Round((double)passCount / totalScores * 100) : 0;
+
+                var scoreRanges = new List<ScoreRangeDto>
+                {
+                    new() { Range = "18-20", Count = scores.Count(s => s.ScoreValue >= 18) },
+                    new() { Range = "16-18", Count = scores.Count(s => s.ScoreValue >= 16 && s.ScoreValue < 18) },
+                    new() { Range = "14-16", Count = scores.Count(s => s.ScoreValue >= 14 && s.ScoreValue < 16) },
+                    new() { Range = "12-14", Count = scores.Count(s => s.ScoreValue >= 12 && s.ScoreValue < 14) },
+                    new() { Range = "<12",   Count = scores.Count(s => s.ScoreValue < 12)  },
+                };
+
+                foreach (var range in scoreRanges)
+                {
+                    range.Percentage = totalScores > 0 ? (int)Math.Round((double)range.Count / totalScores * 100) : 0;
+                }
+
+                var subjectScores = scores
+                    .GroupBy(s => s.Course?.Name ?? "نامشخص")
+                    .Select(g => new
+                    {
+                        name = g.Key,
+                        avgScore = Math.Round(g.Average(s => (double)s.ScoreValue), 1),
+                        totalCount = g.Count()
+                    })
+                    .OrderByDescending(x => x.avgScore)
+                    .ToList();
+
+                var topPerformers = scores
+                    .GroupBy(s => s.Studentid ?? 0)
+                    .Select(g => new
+                    {
+                        studentId = g.Key,
+                        avgScore = Math.Round(g.Average(s => (double)s.ScoreValue), 2)
+                    })
+                    .OrderByDescending(x => x.avgScore)
+                    .Take(3)
+                    .Join(students,
+                        g => g.studentId,
+                        s => s.Studentid,
+                        (g, s) => new
+                        {
+                            studentId = g.studentId,
+                            studentName = s.Name ?? "نامشخص",
+                            stuCode = s.StuCode ?? "نامشخص",
+                            avgScore = g.avgScore,
+                            rank = 0 // will be set below
+                        })
+                    .ToList();
+
+                for (int i = 0; i < topPerformers.Count; i++)
+                {
+                    topPerformers[i] = topPerformers[i] with { rank = i + 1 };
+                }
+
+                return Ok(new
+                {
+                    id = classObj.Classid,
+                    name = classObj.Name,
+                    grade = classObj.Grade,
+                    capacity = classObj.Capacity,
+                    totalStudents = students.Count,
+                    avgScore = Math.Round(avgScore, 1),
+                    passPercentage,
+                    scoreRanges,
+                    subjectScores,
+                    topPerformers
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // Teacher Endpoints
+        // ──────────────────────────────────────────────────────────────
+
+        [HttpGet("teachers")]
+        public async Task<IActionResult> GetTeachers()
+        {
+            var teachers = await _context.Teachers
+                .Select(t => new
+                {
+                    teacherid = t.Teacherid,
+                    name = t.Name,
+                    phone = t.Phone,
+                    nationalCode = t.NationalCode,
+                    email = t.Email,
+                    createdAt = t.CreatedAt,
+                    assignedCoursesCount = _context.Courses.Count(c => c.Teacherid == t.Teacherid)
+                })
+                .OrderBy(t => t.name)
+                .ToListAsync();
+
+            return Ok(teachers);
+        }
+
+        [HttpPost("teachers")]
+        public async Task<IActionResult> CreateTeacher([FromBody] CreateTeacherDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            if (await _context.Teachers.AnyAsync(t => t.Phone == dto.Phone))
+                return BadRequest("این شماره تلفن قبلاً ثبت شده است.");
+
+            if (!string.IsNullOrEmpty(dto.NationalCode) &&
+                await _context.Teachers.AnyAsync(t => t.NationalCode == dto.NationalCode))
+                return BadRequest("این کد ملی قبلاً ثبت شده است.");
+
+            var teacher = new Teacher
+            {
+                Name = dto.Name.Trim(),
+                Phone = dto.Phone?.Trim(),
+                NationalCode = dto.NationalCode?.Trim(),
+                Email = dto.Email?.Trim(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            _context.Teachers.Add(teacher);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetTeachers),
+                new { id = teacher.Teacherid },
+                new { teacherId = teacher.Teacherid, name = teacher.Name, message = "معلم با موفقیت ایجاد شد" });
+        }
+
+        [HttpPut("teachers/{id}")]
+        public async Task<IActionResult> UpdateTeacher(long id, [FromBody] UpdateTeacherDto dto)
+        {
+            var teacher = await _context.Teachers.FindAsync(id);
+            if (teacher == null) return NotFound("معلم یافت نشد");
+
+            if (!string.IsNullOrWhiteSpace(dto.Name))
+                teacher.Name = dto.Name.Trim();
+
+            if (!string.IsNullOrWhiteSpace(dto.Phone))
+            {
+                if (await _context.Teachers.AnyAsync(t => t.Phone == dto.Phone && t.Teacherid != id))
+                    return BadRequest("این شماره تلفن قبلاً استفاده شده است.");
+                teacher.Phone = dto.Phone.Trim();
+            }
+
+            if (!string.IsNullOrEmpty(dto.NationalCode))
+            {
+                if (await _context.Teachers.AnyAsync(t => t.NationalCode == dto.NationalCode && t.Teacherid != id))
+                    return BadRequest("این کد ملی قبلاً ثبت شده است.");
+                teacher.NationalCode = dto.NationalCode.Trim();
+            }
+
+            if (!string.IsNullOrEmpty(dto.Email))
+                teacher.Email = dto.Email.Trim();
+
+            teacher.UpdatedAt = DateTime.UtcNow;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "معلم با موفقیت به‌روزرسانی شد", teacherId = teacher.Teacherid });
+        }
+
+        [HttpDelete("teachers/{id}")]
+        public async Task<IActionResult> DeleteTeacher(long id)
+        {
+            var teacher = await _context.Teachers
+                .Include(t => t.Courses)
+                .FirstOrDefaultAsync(t => t.Teacherid == id);
+
+            if (teacher == null) return NotFound("معلم یافت نشد");
+
+            if (teacher.Courses?.Any() == true)
+                return BadRequest("این معلم به درس/دروس اختصاص دارد. ابتدا دروس را تغییر دهید.");
+
+            _context.Teachers.Remove(teacher);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "معلم با موفقیت حذف شد" });
+        }
+
+        [HttpPost("assign-teacher")]
+        public async Task<IActionResult> AssignTeacher([FromBody] AssignTeacherDto dto)
+        {
+            var course = await _context.Courses.FindAsync(dto.CourseId);
+            if (course == null) return NotFound("درس یافت نشد");
+
+            var teacher = await _context.Teachers.FindAsync(dto.TeacherId);
+            if (teacher == null) return NotFound("معلم یافت نشد");
+
+            course.Teacherid = dto.TeacherId;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "معلم با موفقیت به درس اختصاص یافت" });
+        }
+
+        [HttpPost("unassign-teacher/{courseId}")]
+        public async Task<IActionResult> UnassignTeacher(long courseId)
+        {
+            var course = await _context.Courses.FindAsync(courseId);
+            if (course == null) return NotFound("درس یافت نشد");
+
+            course.Teacherid = null;
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "معلم از درس حذف شد" });
+        }
+
+        [HttpGet("teacher/{teacherId}/courses")]
+        public async Task<IActionResult> GetTeacherCourses(long teacherId)
+        {
+            var courses = await _context.Courses
+                .Where(c => c.Teacherid == teacherId)
+                .Select(c => new
+                {
+                    courseid = c.Courseid,
+                    name = c.Name,
+                    className = c.Class != null ? c.Class.Name : "بدون کلاس",
+                    teacherid = c.Teacherid
+                })
+                .ToListAsync();
+
+            return Ok(courses);
+        }
     }
+
+    // ──────────────────────────────────────────────────────────────
+    // DTOs (placed here for clarity - can be moved to separate file)
+    // ──────────────────────────────────────────────────────────────
 
     public class ScoreRangeDto
     {
@@ -998,9 +1295,28 @@ namespace SchoolPortalAPI.Controllers
         }
     }
 
-    // ──────────────────────────────────────────────────────────────
-    // DTOs
-    // ──────────────────────────────────────────────────────────────
+    public class CreateTeacherDto
+    {
+        public string Name { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        public string? NationalCode { get; set; }
+        public string? Email { get; set; }
+    }
+
+    public class UpdateTeacherDto
+    {
+        public string? Name { get; set; }
+        public string? Phone { get; set; }
+        public string? NationalCode { get; set; }
+        public string? Email { get; set; }
+    }
+
+    public class AssignTeacherDto
+    {
+        public long TeacherId { get; set; }
+        public long CourseId { get; set; }
+    }
+
     public class CreateStudentDto
     {
         public string Name { get; set; } = null!;
@@ -1025,4 +1341,3 @@ namespace SchoolPortalAPI.Controllers
         public long? Debt { get; set; }
     }
 }
-
