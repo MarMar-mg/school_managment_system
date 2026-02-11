@@ -76,7 +76,10 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
               // ====================== STATS GRID ======================
               _buildAnimatedSection(
                 index: 0,
-                child: StatsGrid(role: widget.role, userId: widget.userId.toInt()),
+                child: StatsGrid(
+                  role: widget.role,
+                  userId: widget.userId.toInt(),
+                ),
               ),
 
               const SizedBox(height: 24),
@@ -85,34 +88,6 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ====================== NEWS SECTION ======================
-                    _buildAnimatedSection(
-                      index: 1,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionHeader(title: 'اخبار', onSeeAll: () {}),
-                          const SizedBox(height: 12),
-                          const NewsList(),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(height: 24),
-
-                    // ====================== EVENTS SECTION ======================
-                    _buildAnimatedSection(
-                      index: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionHeader(title: 'رویدادها', onSeeAll: () {}),
-                          const SizedBox(height: 12),
-                          const EventsList(),
-                        ],
-                      ),
-                    ),
-
                     // ====================== ASSIGNMENTS & EXAMS (STUDENT ONLY) ======================
                     if (widget.role == Role.student) ...[
                       const SizedBox(height: 24),
@@ -156,6 +131,35 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ),
                     ),
 
+                    const SizedBox(height: 32),
+
+                    // ====================== NEWS SECTION ======================
+                    _buildAnimatedSection(
+                      index: 1,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'اخبار', onSeeAll: () {}),
+                          const SizedBox(height: 12),
+                          const NewsList(),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // ====================== EVENTS SECTION ======================
+                    _buildAnimatedSection(
+                      index: 2,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SectionHeader(title: 'رویدادها', onSeeAll: () {}),
+                          const SizedBox(height: 12),
+                          const EventsList(),
+                        ],
+                      ),
+                    ),
                     const SizedBox(height: 40),
                   ],
                 ),
@@ -168,10 +172,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
   }
 
   /// Wraps any section with fade + slide-up animation
-  Widget _buildAnimatedSection({
-    required int index,
-    required Widget child,
-  }) {
+  Widget _buildAnimatedSection({required int index, required Widget child}) {
     final animation = _sectionAnims[index];
 
     return AnimatedBuilder(
@@ -180,10 +181,7 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
         final value = animation.value;
         return Transform.translate(
           offset: Offset(0, 80 * (1 - value)),
-          child: Opacity(
-            opacity: value,
-            child: child,
-          ),
+          child: Opacity(opacity: value, child: child),
         );
       },
     );

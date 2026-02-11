@@ -1,10 +1,10 @@
-// features/dashboard/presentation/widgets/news_list_widget.dart
 import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
-
 import '../../../../applications/colors.dart';
+import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../commons/utils/manager/date_manager.dart';
+import '../../../admin/news_management/presentations/widgets/news_card.dart';
 
 /// Premium animated news list with category colors, shimmer loading,
 /// pull-to-refresh, and stunning staggered card animations.
@@ -50,11 +50,11 @@ class _NewsListState extends State<NewsList>
         _errorMessage = null;
       });
 
-      final news = await ApiService.getNews();
+      final news = await ApiService.getAllNews();
       final sortedNews = news
         ..sort((a, b) {
-          final dateA = _parseDate(a['Startdate']);
-          final dateB = _parseDate(b['Startdate']);
+          final dateA = _parseDate(a.startDate);
+          final dateB = _parseDate(b.startDate);
           return dateB.compareTo(dateA); // newest first
         });
 
@@ -208,7 +208,12 @@ class AnimatedNewsCard extends StatelessWidget {
           ),
         );
       },
-      child: NewsCard(item: item),
+      child:  NewsVerticalCard(
+        news: item,
+        onEdit: () => {},
+        onDelete: () => {},
+        role: Role.teacher, load: () => {},
+      ),
     );
   }
 }
