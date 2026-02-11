@@ -67,6 +67,7 @@ dependencies:
   dio: ^5.9.0
   persian_datetime_picker: ^3.2.0
   flutter_animated_dialog: ^2.0.1
+  path: ^1.9.0
 
 dev_dependencies:
   flutter_test:

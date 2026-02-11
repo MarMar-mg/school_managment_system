@@ -677,7 +677,7 @@ namespace SchoolPortalAPI.Controllers
                         debt = s.Debt ?? 0,
                         registerDate = s.Registerdate,
                         userId = s.UserID,
-                        Get username and password from User table
+                        // Get username and password from User table
                         username = _context.Users
                             .Where(u => u.Userid == s.UserID)
                             .Select(u => u.Username)

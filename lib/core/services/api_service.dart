@@ -1,7 +1,8 @@
 import 'dart:convert';
 import 'dart:html' as html;
 import 'dart:io';
-
+import 'package:image_picker/image_picker.dart';
+import 'package:path/path.dart' as path;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -9,13 +10,15 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:shamsi_date/shamsi_date.dart';
-
 import '../../applications/role.dart';
+import '../../commons/untils.dart';
+import '../../features/admin/news_management/data/models/news_model.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
+import 'dart:typed_data';
 
 class ApiService {
   // Update this based on your testing environment
@@ -2115,6 +2118,92 @@ class ApiService {
     } catch (e) {
       print('Error fetching class: $e');
       throw Exception('خطا: $e');
+    }
+  }
+
+  //
+  static Future<List<NewsModel>> getAllNews() async {
+    final response = await http.get(Uri.parse('$baseUrl/news'));
+    if (isSuccessfulHttp(response)) {
+      final List<dynamic> jsonList = json.decode(response.body);
+      return jsonList.map((json) => NewsModel.fromJson(json)).toList();
+    } else {
+      throw Exception('Failed to load news: ${response.statusCode}');
+    }
+  }
+
+  static Future<NewsModel> createNews(NewsModel news) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/news'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(news.toJson()),
+    );
+    if (response.statusCode == 201) {
+      return NewsModel.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to create news: ${response.statusCode}');
+    }
+  }
+
+  static Future<NewsModel> createNewsWithImage(NewsModel news, XFile? pickedFile) async {
+    try {
+      var request = http.MultipartRequest(
+        'POST',
+        Uri.parse('$baseUrl/news'), // your endpoint
+      );
+
+      // Add text fields (match your backend property names exactly)
+      request.fields['title'] = news.title;
+      request.fields['category'] = news.category;
+      request.fields['startdate'] = news.startDate;
+      request.fields['enddate'] = news.endDate;
+      request.fields['description'] = news.description ?? '';
+
+      // Handle image upload — cross-platform way
+      if (pickedFile != null) {
+        Uint8List fileBytes;
+
+        if (kIsWeb) {
+          // Web: read bytes directly
+          fileBytes = await pickedFile.readAsBytes();
+        } else {
+          // Mobile/desktop: read bytes (safer than relying on path)
+          fileBytes = await pickedFile.readAsBytes();
+        }
+
+        String fileName;
+
+        if (kIsWeb) {
+          // On web, XFile.name is usually available and reliable
+          fileName = pickedFile.name.isNotEmpty ? pickedFile.name : 'news_image.jpg';
+        } else {
+          // On mobile, use path.basename as fallback
+          fileName = path.basename(pickedFile.path);
+        }
+
+        var multipartFile = http.MultipartFile.fromBytes(
+          'image',              // ← must match backend IFormFile parameter name
+          fileBytes,
+          filename: fileName,
+          // Optional: contentType: MediaType('image', 'jpeg'), // or detect from extension
+        );
+
+        request.files.add(multipartFile);
+      }
+
+      // Send the request
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (streamedResponse.statusCode == 201 || streamedResponse.statusCode == 200) {
+        return NewsModel.fromJson(json.decode(response.body));
+      } else {
+        throw Exception(
+          'Upload failed: ${streamedResponse.statusCode} → ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('Error uploading news + image: $e');
     }
   }
 
