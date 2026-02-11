@@ -7,6 +7,7 @@ import 'package:school_management_system/commons/text_style.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 import '../../data/models/news_model.dart';
 import '../widgets/add_edit_news_dialog.dart';
+import '../widgets/news_card.dart';
 
 class NewsManagementPage extends StatefulWidget {
   final Role role;
@@ -18,234 +19,284 @@ class NewsManagementPage extends StatefulWidget {
 }
 
 class _NewsManagementPageState extends State<NewsManagementPage> {
-  List<NewsModel> _news = [];
-  bool _isLoading = true;
+  late Future<List<NewsModel>> _newsFuture;
+  int _selectedCategoryIndex = 0;
+
+  final List<String> _categories = [
+    'عمومی',
+    'آموزشی',
+    'رویدادها',
+    'اطلاعیه',
+    'ورزشی',
+    'فرهنگی',
+    'اخبار مدرسه',
+    'برنامه امتحانات',
+    'دانش‌آموزی',
+    'معلمی',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _fetchNews();
+    _loadNews();
   }
 
-  Future<void> _fetchNews() async {
-    try {
-      final news = await ApiService.getAllNews();
-      setState(() {
-        _news = news;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('خطا در بارگیری اخبار: $e')));
-    }
+  void _loadNews() {
+    setState(() {
+      _newsFuture = ApiService.getAllNews();
+    });
   }
 
-  Future<void> _addNews() async {
-    if (widget.role != Role.manager) return;  // Only managers can add
+  void _addNews() async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AddEditNewsDialog(isEdit: false, role: widget.role),
+      builder: (context) => const AddEditNewsDialog(isEdit: false),
     );
-    if (result == true) {
-      _fetchNews();
-    }
-  }
-
-  void _showNewsDetails(BuildContext context, NewsModel news) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: Text(
-          news.title,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
-          ),
-          textDirection: TextDirection.rtl,
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Category & Dates
-              Row(
-                children: [
-                  Chip(
-                    label: Text(news.category),
-                    backgroundColor: AppColor.purple.withOpacity(0.1),
-                  ),
-                  const Spacer(),
-                  Text(
-                    '${news.startDate} - ${news.endDate}',
-                    style: TextStyle(color: Colors.grey[700]),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-
-              // Image (if exists)
-              if (news.image != null && news.image!.isNotEmpty)
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  // child: CircleAvatar(backgroundImage: NetworkImage(news.image!))
-                  child: Image.network(
-                    news.image!,
-                    width: double.infinity,
-                    height: 220,
-                    fit: BoxFit.cover,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (context, error, stackTrace) => Container(
-                      height: 220,
-                      color: Colors.grey[200],
-                      child: const Center(
-                        child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
-                      ),
-                    ),
-                  ),
-                ),
-              const SizedBox(height: 20),
-
-              // Description
-              Text(
-                'توضیحات:',
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 8),
-              Text(
-                news.description?.trim().isNotEmpty == true
-                    ? news.description!
-                    : 'این خبر توضیحات بیشتری ندارد.',
-                style: const TextStyle(fontSize: 15, height: 1.5),
-                textDirection: TextDirection.rtl,
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('بستن'),
-          ),
-          if (widget.role == Role.manager)
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _editNews(news);
-              },
-              child: const Text('ویرایش'),
-            ),
-        ],
-        actionsPadding: const EdgeInsets.fromLTRB(8, 0, 16, 16),
-      ),
-    );
+    if (result == true) _loadNews();
   }
 
   void _editNews(NewsModel news) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AddEditNewsDialog(
-        isEdit: true,
-        news: news,
-        role: widget.role,
-      ),
+      builder: (context) => AddEditNewsDialog(isEdit: true, news: news),
     );
 
     if (result == true) {
-      _fetchNews(); // refresh list
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'خبر با موفقیت ویرایش شد',
+            textDirection: TextDirection.rtl,
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadNews();
     }
+  }
+
+  void _deleteNews(int newsId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف خبر', textDirection: TextDirection.rtl),
+        content: const Text(
+          'آیا مطمئن هستید که می‌خواهید این خبر را حذف کنید؟ این عملیات قابل بازگشت نیست.',
+          textDirection: TextDirection.rtl,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('لغو'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('حذف', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    // Show loading indicator
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('در حال حذف...')));
+
+    final success = await ApiService().deleteNews(newsId);
+
+    // Hide loading
+    ScaffoldMessenger.of(context).clearSnackBars();
+
+    if (success) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'خبر با موفقیت حذف شد',
+            textDirection: TextDirection.rtl,
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+      _loadNews(); // Refresh the list
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('خطا در حذف خبر', textDirection: TextDirection.rtl),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  List<NewsModel> _getFilteredNews(List<NewsModel> allNews) {
+    if (_selectedCategoryIndex == 0) return allNews; // "همه"
+    final selectedCategory = _categories[_selectedCategoryIndex];
+    return allNews.where((news) => news.category == selectedCategory).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return ResponsiveContainer(
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('مدیریت اخبار', style: defaultTextStyle(context, StyleText.bb1).c(Colors.white)),
-          backgroundColor: AppColor.adminBaseColor,
-          actions: widget.role == Role.manager
-              ? [
-            IconButton(
-              icon: Icon(Icons.add, color: Colors.white),
-              onPressed: _addNews,
-            ),
-          ]
-              : null,
-        ),
-        body: _isLoading
-            ? LoadingWidget()
-            : RefreshIndicator(
-          onRefresh: _fetchNews,
-          child: ListView.builder(
-            itemCount: _news.length,
-            itemBuilder: (context, index) {
-              final newsItem = _news[index];
-              return Card(
-                margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                elevation: 2,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: InkWell(
-                  borderRadius: BorderRadius.circular(16),
-                  onTap: () {
-                    _showNewsDetails(context, newsItem);
-                  },
-                  child: ListTile(
-                    contentPadding: const EdgeInsets.all(12),
-                    leading: newsItem.image != null && newsItem.image!.isNotEmpty
-                        ? ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: CircleAvatar(backgroundImage: NetworkImage(newsItem.image!))
-                    )
-                        : const Icon(Icons.newspaper, size: 50, color: AppColor.purple),
-                    title: Text(
-                      newsItem.title,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '${newsItem.category} • ${newsItem.startDate} تا ${newsItem.endDate}',
-                          style: TextStyle(color: Colors.grey[700]),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          newsItem.description ?? 'بدون توضیحات',
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(color: Colors.grey[600]),
-                        ),
-                      ],
-                    ),
-                    trailing: widget.role == Role.manager
-                        ? Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit, color: Colors.blue),
-                          onPressed: () => _editNews(newsItem),
-                        ),
-                        // delete button if you have it
-                      ],
-                    )
-                        : null,
+    return Column(
+      children: [
+        ResponsiveContainer(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header + Add Button
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'اخبار و اطلاعیه‌ها',
+                    style: defaultTextStyle(
+                      context,
+                      StyleText.bb1,
+                    ).s(22).c(AppColor.purple),
+                    textDirection: TextDirection.rtl,
                   ),
+                  if (widget.role == Role.manager)
+                    ElevatedButton.icon(
+                      onPressed: _addNews,
+                      icon: const Icon(Icons.add, size: 20),
+                      label: const Text('افزودن'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColor.purple,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+
+        const SizedBox(height: 20),
+
+        // Category Tabs (Navbar at top)
+        Container(
+          height: 48,
+          decoration: BoxDecoration(
+            color: Colors.grey.shade100,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.all(4),
+          child: Row(
+            children: List.generate(_categories.length, (index) {
+              final isSelected = index == _selectedCategoryIndex;
+              return Expanded(
+                child: GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _selectedCategoryIndex = index;
+                    });
+                  },
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 250),
+                    decoration: BoxDecoration(
+                      color: isSelected ? AppColor.purple : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      _categories[index],
+                      style: defaultTextStyle(context, StyleText.bb2)
+                          .s(15)
+                          .c(
+                            isSelected
+                                ? Colors.white
+                                : AppColor.grey(true, 700),
+                          ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ),
+
+        const SizedBox(height: 24),
+
+        // News List (vertical)
+        Expanded(
+          child: FutureBuilder<List<NewsModel>>(
+            future: _newsFuture,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return LoadingWidget();
+              }
+
+              if (snapshot.hasError) {
+                return Center(
+                  child: Text(
+                    'خطا در بارگذاری اخبار\n${snapshot.error}',
+                    textAlign: TextAlign.center,
+                    textDirection: TextDirection.rtl,
+                    style: const TextStyle(color: Colors.red),
+                  ),
+                );
+              }
+
+              final allNews = snapshot.data ?? [];
+              final filteredNews = _getFilteredNews(allNews);
+
+              if (filteredNews.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'هیچ خبری در این دسته وجود ندارد',
+                        style: defaultTextStyle(
+                          context,
+                          StyleText.bb2,
+                        ).s(16).c(AppColor.grey(true, 600)),
+                        textDirection: TextDirection.rtl,
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ResponsiveContainer(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 24,
+                ),
+                child: ListView.builder(
+                  itemCount: filteredNews.length,
+                  padding: const EdgeInsets.only(bottom: 16),
+                  itemBuilder: (context, index) {
+                    final news = filteredNews[index];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: NewsVerticalCard(
+                        news: news,
+                        onEdit: () => _editNews(news),
+                        onDelete: () => _deleteNews(news.newsId),
+                        role: widget.role, load: () => _loadNews(),
+                      ),
+                    );
+                  },
                 ),
               );
             },
           ),
         ),
-      ),
+      ],
     );
   }
 }

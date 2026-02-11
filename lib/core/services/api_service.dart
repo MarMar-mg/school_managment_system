@@ -23,6 +23,7 @@ import 'dart:typed_data';
 class ApiService {
   // Update this based on your testing environment
   static const String baseUrl = 'http://localhost:5105/api';
+  static const String baseImageUrl = 'http://localhost:5105';
 
   // For Android Emulator: 'http://10.0.2.2:5105/api'
   // For iOS Simulator: 'http://localhost:5105/api'
@@ -1922,7 +1923,7 @@ class ApiService {
   static Future<Map<String, dynamic>> createStudent({
     required String name,
     required String studentCode,
-    required String stuClass,  // This parameter name is fine
+    required String stuClass, // This parameter name is fine
     required String phone,
     required String parentPhone,
     required String birthDate,
@@ -1934,19 +1935,19 @@ class ApiService {
     try {
       final response = await http
           .post(
-        url,
-        headers: _headers,
-        body: json.encode({
-          'name': name,
-          'studentCode': studentCode,
-          'classId': stuClass,
-          'phone': phone,
-          'parentPhone': parentPhone,
-          'birthDate': birthDate,
-          'address': address,
-          'debt': debt,
-        }),
-      )
+            url,
+            headers: _headers,
+            body: json.encode({
+              'name': name,
+              'studentCode': studentCode,
+              'classId': stuClass,
+              'phone': phone,
+              'parentPhone': parentPhone,
+              'birthDate': birthDate,
+              'address': address,
+              'debt': debt,
+            }),
+          )
           .timeout(_timeout);
 
       print('Create Student Status: ${response.statusCode}');
@@ -2012,7 +2013,10 @@ class ApiService {
   }
 
   /// Delete student
-  static Future<Map<String, dynamic>> deleteStudent(int studentId, int userId) async {
+  static Future<Map<String, dynamic>> deleteStudent(
+    int studentId,
+    int userId,
+  ) async {
     final url = Uri.parse('$baseUrl/admin/students/$studentId/$userId');
 
     try {
@@ -2145,7 +2149,10 @@ class ApiService {
     }
   }
 
-  static Future<NewsModel> createNewsWithImage(NewsModel news, XFile? pickedFile) async {
+  static Future<NewsModel> createNewsWithImage(
+    NewsModel news,
+    XFile? pickedFile,
+  ) async {
     try {
       var request = http.MultipartRequest(
         'POST',
@@ -2175,14 +2182,16 @@ class ApiService {
 
         if (kIsWeb) {
           // On web, XFile.name is usually available and reliable
-          fileName = pickedFile.name.isNotEmpty ? pickedFile.name : 'news_image.jpg';
+          fileName = pickedFile.name.isNotEmpty
+              ? pickedFile.name
+              : 'news_image.jpg';
         } else {
           // On mobile, use path.basename as fallback
           fileName = path.basename(pickedFile.path);
         }
 
         var multipartFile = http.MultipartFile.fromBytes(
-          'image',              // ← must match backend IFormFile parameter name
+          'image', // ← must match backend IFormFile parameter name
           fileBytes,
           filename: fileName,
           // Optional: contentType: MediaType('image', 'jpeg'), // or detect from extension
@@ -2195,7 +2204,8 @@ class ApiService {
       final streamedResponse = await request.send();
       final response = await http.Response.fromStream(streamedResponse);
 
-      if (streamedResponse.statusCode == 201 || streamedResponse.statusCode == 200) {
+      if (streamedResponse.statusCode == 201 ||
+          streamedResponse.statusCode == 200) {
         return NewsModel.fromJson(json.decode(response.body));
       } else {
         throw Exception(
@@ -2207,7 +2217,103 @@ class ApiService {
     }
   }
 
+  Future<bool> deleteNews(int newsId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/news/$newsId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // Add Authorization header if your API requires authentication
+          // 'Authorization': 'Bearer $yourToken',
+        },
+      );
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('News $newsId deleted successfully');
+        return true;
+      } else {
+        print('Failed to delete news $newsId - Status: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error deleting news $newsId: $e');
+      return false;
+    }
+  }
+
+  /// Updates an existing news item
+  Future<bool> updateNews(
+    int newsId,
+    NewsModel updatedNews,
+    XFile? newImage,
+  ) async {
+    try {
+      var request = http.MultipartRequest(
+        'PUT',
+        Uri.parse('$baseUrl/news/$newsId'),
+      );
+
+      // Add JSON fields
+      request.fields['title'] = updatedNews.title;
+      request.fields['category'] = updatedNews.category;
+      request.fields['startdate'] = updatedNews.startDate;
+      request.fields['enddate'] = updatedNews.endDate;
+      if (updatedNews.description != null) {
+        request.fields['description'] = updatedNews.description!;
+      }
+
+      // Add image if a new one is selected
+      if (newImage != null) {
+        var imageBytes = await newImage.readAsBytes();
+        var multipartFile = http.MultipartFile.fromBytes(
+          'image',
+          imageBytes,
+          filename: newImage.name ?? 'news_image.jpg',
+        );
+        request.files.add(multipartFile);
+      }
+
+      // Optional: add auth header if needed
+      // request.headers['Authorization'] = 'Bearer $token';
+
+      var streamedResponse = await request.send();
+      var response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        print('News $newsId updated successfully');
+        return true;
+      } else {
+        print('Failed to update news $newsId - Status: ${response.statusCode}');
+        print('Response: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Error updating news $newsId: $e');
+      return false;
+    }
+  }
+
   ///////////////////////////////////////////
+
+  static String getImageFullUrl(String? relativePath) {
+    if (relativePath == null || relativePath.isEmpty) return '';
+
+    // Already full URL
+    if (relativePath.startsWith('http')) return relativePath;
+
+    // Remove leading /api if it exists (very common mistake)
+    String path = relativePath;
+    if (path.startsWith('/')) {
+      path = path.replaceFirst('/', '/');
+    } else if (path.startsWith('/')) {
+      // already good
+    } else if (!path.startsWith('/')) {
+      path = '/$path';
+    }
+
+    return '$baseImageUrl$path';
+  }
 
   // تبدیل DateTime میلادی به رشته شمسی (14030825)
   static String _formatShamsiDate(DateTime date) {

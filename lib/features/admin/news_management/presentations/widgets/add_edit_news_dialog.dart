@@ -8,20 +8,17 @@ import 'package:school_management_system/commons/shamsi_date_picker_dialog.dart'
 import 'package:school_management_system/commons/text_style.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 import 'package:shamsi_date/shamsi_date.dart';
-import '../../../../../applications/role.dart';
 import '../../../../../commons/widgets/bottom_sheet_image_picker.dart';
 import '../../data/models/news_model.dart';
 
 class AddEditNewsDialog extends StatefulWidget {
   final bool isEdit;
   final NewsModel? news;
-  final Role role;
 
   const AddEditNewsDialog({
     super.key,
     required this.isEdit,
     this.news,
-    required this.role,
   });
 
   @override
@@ -31,13 +28,15 @@ class AddEditNewsDialog extends StatefulWidget {
 class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
   late TextEditingController _titleController;
   late TextEditingController _descriptionController;
+  late TextEditingController _startDateController;
+  late TextEditingController _endDateController;
 
   String? _selectedCategory;
-  Jalali? _startDate;
-  Jalali? _endDate;
-  XFile? _imageFile;
-  Uint8List? _imageBytes;          // ← For web preview
-  String? _existingImageUrl;
+  XFile? _imageFile;               // selected new image file
+  Uint8List? _imageBytes;          // for web preview
+  String? _existingImageUrl;       // old image url (for edit mode)
+
+  bool _isLoading = false;
 
   final List<String> _newsCategories = [
     'عمومی',
@@ -59,32 +58,38 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
     _titleController = TextEditingController(text: widget.news?.title ?? '');
     _descriptionController = TextEditingController(text: widget.news?.description ?? '');
 
+    _startDateController = TextEditingController();
+    _endDateController = TextEditingController();
+
     _selectedCategory = widget.news?.category ?? _newsCategories.first;
 
     if (widget.news != null) {
+      _existingImageUrl = widget.news?.image;
+
+      // Parse and set dates
       try {
         final startParts = widget.news!.startDate.split('-');
-        _startDate = Jalali(
+        final startJalali = Jalali(
           int.parse(startParts[0]),
           int.parse(startParts[1]),
           int.parse(startParts[2]),
         );
+        _startDateController.text = _formatJalaliDate(startJalali);
 
         final endParts = widget.news!.endDate.split('-');
-        _endDate = Jalali(
+        final endJalali = Jalali(
           int.parse(endParts[0]),
           int.parse(endParts[1]),
           int.parse(endParts[2]),
         );
+        _endDateController.text = _formatJalaliDate(endJalali);
       } catch (e) {
-        _startDate = Jalali.now();
-        _endDate = Jalali.now().addDays(7);
+        _startDateController.text = _formatJalaliDate(Jalali.now());
+        _endDateController.text = _formatJalaliDate(Jalali.now().addDays(7));
       }
-
-      _existingImageUrl = widget.news?.image;
     } else {
-      _startDate = Jalali.now();
-      _endDate = Jalali.now().addDays(7);
+      _startDateController.text = _formatJalaliDate(Jalali.now());
+      _endDateController.text = _formatJalaliDate(Jalali.now().addDays(7));
     }
   }
 
@@ -92,97 +97,146 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _startDateController.dispose();
+    _endDateController.dispose();
     super.dispose();
   }
 
+  String _formatJalaliDate(Jalali date) {
+    return '${date.year}/${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}';
+  }
+
   Future<void> _pickDate(bool isStart) async {
+    final initial = isStart
+        ? _startDateController.text.isNotEmpty
+        ? _parseDate(_startDateController.text)
+        : Jalali.now()
+        : _endDateController.text.isNotEmpty
+        ? _parseDate(_endDateController.text)
+        : Jalali.now();
+
     final picked = await showDialog<Jalali>(
       context: context,
       builder: (context) => ShamsiDatePickerDialog(
-        initialDate: isStart ? _startDate! : _endDate!,
+        initialDate: initial,
         firstDate: Jalali.now().addDays(-365),
         lastDate: Jalali.now().addDays(365 * 2),
       ),
     );
 
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() {
-        if (isStart) _startDate = picked;
-        else _endDate = picked;
+        final formatted = _formatJalaliDate(picked);
+        if (isStart) {
+          _startDateController.text = formatted;
+        } else {
+          _endDateController.text = formatted;
+        }
       });
+    }
+  }
+
+  Jalali _parseDate(String text) {
+    try {
+      final parts = text.split('/');
+      return Jalali(
+        int.parse(parts[0]),
+        int.parse(parts[1]),
+        int.parse(parts[2]),
+      );
+    } catch (_) {
+      return Jalali.now();
     }
   }
 
   Future<void> _pickImage() async {
     final file = await showBottomSheetFilePicker(context);
-    if (file != null) {
-      if (kIsWeb) {
-        // On web: read bytes for preview
-        final bytes = await file.readAsBytes();
-        setState(() {
-          _imageBytes = bytes;
-          _imageFile = file;
-          _existingImageUrl = null; // clear old url when new image picked
-        });
-      } else {
-        // On mobile/desktop
-        setState(() {
-          _imageFile = file;
-          _imageBytes = null;
-          _existingImageUrl = null;
-        });
-      }
+    if (file != null && mounted) {
+      setState(() {
+        _imageFile = file;
+        _existingImageUrl = null; // remove old image preview
+        if (kIsWeb) {
+          file.readAsBytes().then((bytes) {
+            setState(() => _imageBytes = bytes);
+          });
+        }
+      });
     }
-  }
-
-  String _formatJalaliDate(Jalali? date) {
-    if (date == null) return '';
-    return '${date.formatter.yyyy}/${date.formatter.mm}/${date.formatter.dd}';
   }
 
   Future<void> _saveNews() async {
+    // Validation
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('عنوان خبر الزامی است')),
-      );
+      _showSnackBar('عنوان خبر الزامی است', Colors.orange);
       return;
     }
-    if (_selectedCategory == null || _selectedCategory!.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('دسته‌بندی را انتخاب کنید')),
-      );
+
+    if (_selectedCategory == null || _selectedCategory!.trim().isEmpty) {
+      _showSnackBar('دسته‌بندی را انتخاب کنید', Colors.orange);
       return;
     }
+
+    if (_startDateController.text.trim().isEmpty || _endDateController.text.trim().isEmpty) {
+      _showSnackBar('تاریخ شروع و پایان الزامی است', Colors.orange);
+      return;
+    }
+
+    setState(() => _isLoading = true);
 
     try {
-      final news = NewsModel(
-        newsId: widget.news?.newsId ?? 0,
+      final newsData = NewsModel(
+        newsId: widget.isEdit ? widget.news!.newsId : 0,
         title: _titleController.text.trim(),
         category: _selectedCategory!,
-        startDate: '${_startDate!.year}-${_startDate!.month.toString().padLeft(2, '0')}-${_startDate!.day.toString().padLeft(2, '0')}',
-        endDate: '${_endDate!.year}-${_endDate!.month.toString().padLeft(2, '0')}-${_endDate!.day.toString().padLeft(2, '0')}',
-        description: _descriptionController.text.trim(),
-        image: _existingImageUrl,
+        startDate: _startDateController.text.trim(),
+        endDate: _endDateController.text.trim(),
+        description: _descriptionController.text.trim().isEmpty
+            ? null
+            : _descriptionController.text.trim(),
+        image: widget.isEdit ? widget.news?.image : null, // old image - will be replaced if new file
       );
 
+      bool success = false;
+
       if (widget.isEdit) {
-        // TODO: Call update API (with optional new image)
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ویرایش خبر هنوز پیاده‌سازی نشده است')),
+        success = await ApiService().updateNews(
+          widget.news!.newsId,
+          newsData,
+          _imageFile, // new image (null = keep old)
         );
       } else {
-        await ApiService.createNewsWithImage(news, _imageFile);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('خبر با موفقیت ثبت شد')),
+        await ApiService.createNews(
+          newsData,
         );
       }
 
-      Navigator.pop(context, true);
+      if (mounted) {
+        _showSnackBar(
+          widget.isEdit ? 'خبر با موفقیت ویرایش شد' : 'خبر با موفقیت ثبت شد',
+          Colors.green,
+        );
+        Navigator.pop(context, true);
+      } else if (mounted) {
+        _showSnackBar('عملیات ناموفق بود', Colors.red);
+      }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('خطا در ذخیره: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        _showSnackBar('خطا در ذخیره: $e', Colors.red);
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  void _showSnackBar(String message, Color color) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message, textDirection: TextDirection.rtl),
+        backgroundColor: color,
+      ),
+    );
   }
 
   @override
@@ -217,7 +271,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
             DropdownButtonFormField<String>(
               value: _selectedCategory,
               decoration: InputDecoration(
-                labelText: 'دسته بندی',
+                labelText: 'دسته‌بندی',
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
               ),
               items: _newsCategories.map((cat) {
@@ -236,12 +290,12 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
                     onTap: () => _pickDate(true),
                     child: AbsorbPointer(
                       child: TextField(
+                        controller: _startDateController,
                         decoration: InputDecoration(
                           labelText: 'تاریخ شروع',
                           suffixIcon: const Icon(Icons.calendar_today),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        controller: TextEditingController(text: _formatJalaliDate(_startDate)),
                         textDirection: TextDirection.rtl,
                       ),
                     ),
@@ -253,12 +307,12 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
                     onTap: () => _pickDate(false),
                     child: AbsorbPointer(
                       child: TextField(
+                        controller: _endDateController,
                         decoration: InputDecoration(
                           labelText: 'تاریخ پایان',
                           suffixIcon: const Icon(Icons.calendar_today),
                           border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                         ),
-                        controller: TextEditingController(text: _formatJalaliDate(_endDate)),
                         textDirection: TextDirection.rtl,
                       ),
                     ),
@@ -280,7 +334,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
             ),
             const SizedBox(height: 20),
 
-            // Pick Image Button
+            // Pick Image
             ElevatedButton.icon(
               onPressed: _pickImage,
               icon: const Icon(Icons.image),
@@ -293,7 +347,7 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
             ),
             const SizedBox(height: 16),
 
-            // Image Preview - cross platform
+            // Image Preview
             Container(
               height: 200,
               width: double.infinity,
@@ -304,18 +358,18 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
                 child: _imageFile != null
-                    ? kIsWeb
+                    ? (kIsWeb
                     ? (_imageBytes != null
                     ? Image.memory(_imageBytes!, fit: BoxFit.cover)
                     : const Center(child: CircularProgressIndicator()))
-                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover)
+                    : Image.file(File(_imageFile!.path), fit: BoxFit.cover))
                     : (_existingImageUrl != null && _existingImageUrl!.isNotEmpty)
                     ? Image.network(
-                  _existingImageUrl!,
+                  ApiService.getImageFullUrl(_existingImageUrl!),
                   fit: BoxFit.cover,
-                  loadingBuilder: (_, child, progress) =>
+                  loadingBuilder: (ctx, child, progress) =>
                   progress == null ? child : const Center(child: CircularProgressIndicator()),
-                  errorBuilder: (_, __, ___) => const Center(
+                  errorBuilder: (ctx, error, stack) => const Center(
                     child: Icon(Icons.broken_image, size: 80, color: Colors.grey),
                   ),
                 )
@@ -336,12 +390,22 @@ class _AddEditNewsDialogState extends State<AddEditNewsDialog> {
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context),
+          onPressed: _isLoading ? null : () => Navigator.pop(context),
           child: const Text('لغو'),
         ),
         ElevatedButton(
-          onPressed: _saveNews,
-          child: Text(widget.isEdit ? 'ذخیره تغییرات' : 'ثبت خبر'),
+          onPressed: _isLoading ? null : _saveNews,
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColor.purple,
+            foregroundColor: Colors.white,
+          ),
+          child: _isLoading
+              ? const SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+          )
+              : Text(widget.isEdit ? 'ذخیره تغییرات' : 'ثبت خبر'),
         ),
       ],
     );
