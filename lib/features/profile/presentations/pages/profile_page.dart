@@ -35,7 +35,7 @@ class _ProfilePageState extends State<ProfilePage>
 
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800), // ✅ Faster
+      duration: const Duration(milliseconds: 800),
     );
 
     _sectionAnims = List.generate(4, (index) {
@@ -67,7 +67,7 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context, _) {
         final value = animation.value;
         return Transform.translate(
-          offset: Offset(0, 40 * (1 - value)), // ✅ Smaller movement
+          offset: Offset(0, 40 * (1 - value)),
           child: Opacity(opacity: value, child: child),
         );
       },

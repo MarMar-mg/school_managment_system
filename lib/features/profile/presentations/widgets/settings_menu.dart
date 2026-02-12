@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../pages/about_page.dart';
+import '../pages/notification_page.dart';
+import '../pages/privacy_page.dart';
+
 class SettingsMenu extends StatefulWidget {
   final VoidCallback onLogout;
 
@@ -23,7 +27,10 @@ class _SettingsMenuState extends State<SettingsMenu> {
           label: 'اعلان‌ها',
           iconBgColor: Colors.purple,
           onTap: () {
-            _showSnackBar('اعلان‌ها');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => NotificationsPage()),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -33,7 +40,10 @@ class _SettingsMenuState extends State<SettingsMenu> {
           label: 'حریم خصوصی و امنیت',
           iconBgColor: Colors.blue,
           onTap: () {
-            _showSnackBar('حریم خصوصی و امنیت');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => PrivacyPage()),
+            );
           },
         ),
         const SizedBox(height: 12),
@@ -43,7 +53,10 @@ class _SettingsMenuState extends State<SettingsMenu> {
           label: 'راهنما و پشتیبانی',
           iconBgColor: Colors.teal,
           onTap: () {
-            _showSnackBar('راهنما و پشتیبانی');
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AboutPage()),
+            );
           },
         ),
         const SizedBox(height: 24),
