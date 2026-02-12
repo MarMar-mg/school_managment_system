@@ -1150,34 +1150,54 @@ namespace SchoolPortalAPI.Controllers
             return Ok(teachers);
         }
 
-        [HttpPost("teachers")]
-        public async Task<IActionResult> CreateTeacher([FromBody] CreateTeacherDto dto)
-        {
-            if (!ModelState.IsValid) return BadRequest(ModelState);
+       [HttpPost("teachers")]
+       public async Task<IActionResult> CreateTeacher([FromBody] CreateTeacherDto dto)
+       {
+           if (!ModelState.IsValid)
+               return BadRequest(ModelState);
 
-            if (await _context.Teachers.AnyAsync(t => t.Phone == dto.Phone))
-                return BadRequest("این شماره تلفن قبلاً ثبت شده است.");
+           // ... duplicate checks ...
 
-            if (!string.IsNullOrEmpty(dto.NationalCode) &&
-                await _context.Teachers.AnyAsync(t => t.NationalCode == dto.NationalCode))
-                return BadRequest("این کد ملی قبلاً ثبت شده است.");
+           // 1. Create User first
+           var user = new User
+           {
+               Username = dto.NationalCode ?? dto.Phone ?? $"teacher_{Guid.NewGuid().ToString().Substring(0,8)}",
+               Password = "12345678", // TODO: generate random / send to email / force change later
+               Role = "teacher"
+           };
 
-            var teacher = new Teacher
-            {
-                Name = dto.Name.Trim(),
-                Phone = dto.Phone?.Trim(),
-                NationalCode = dto.NationalCode?.Trim(),
-                Email = dto.Email?.Trim(),
-                CreatedAt = DateTime.UtcNow
-            };
+           _context.Users.Add(user);
+           await _context.SaveChangesAsync();
 
-            _context.Teachers.Add(teacher);
-            await _context.SaveChangesAsync();
+           // 2. Create Teacher linked to User
+           var teacher = new Teacher
+           {
+               Name = dto.Name.Trim(),
+               Phone = dto.Phone.Trim(),
+               NationalCode = dto.NationalCode?.Trim(),
+               Email = dto.Email?.Trim(),
+               Userid = user.Userid,          // ← link here
+               CreatedAt = DateTime.UtcNow
+           };
 
-            return CreatedAtAction(nameof(GetTeachers),
-                new { id = teacher.Teacherid },
-                new { teacherId = teacher.Teacherid, name = teacher.Name, message = "معلم با موفقیت ایجاد شد" });
-        }
+           _context.Teachers.Add(teacher);
+           await _context.SaveChangesAsync();
+
+           var response = new
+           {
+               teacherid = teacher.Teacherid,
+               userid = user.Userid,
+               username = user.Username,
+               password = user.Password,       // WARNING: only return in development / secure later
+               name = teacher.Name,
+               phone = teacher.Phone,
+               nationalCode = teacher.NationalCode,
+               email = teacher.Email,
+               message = "معلم و حساب کاربری با موفقیت ایجاد شد"
+           };
+
+           return CreatedAtAction(nameof(GetTeachers), new { id = teacher.Teacherid }, response);
+       }
 
         [HttpPut("teachers/{id}")]
         public async Task<IActionResult> UpdateTeacher(long id, [FromBody] UpdateTeacherDto dto)
@@ -1234,15 +1254,28 @@ namespace SchoolPortalAPI.Controllers
         public async Task<IActionResult> AssignTeacher([FromBody] AssignTeacherDto dto)
         {
             var course = await _context.Courses.FindAsync(dto.CourseId);
-            if (course == null) return NotFound("درس یافت نشد");
+            if (course == null)
+                return NotFound("درس یافت نشد");
 
             var teacher = await _context.Teachers.FindAsync(dto.TeacherId);
-            if (teacher == null) return NotFound("معلم یافت نشد");
+            if (teacher == null)
+                return NotFound("معلم یافت نشد");
 
+            // ── This is the critical line ──
             course.Teacherid = dto.TeacherId;
-            await _context.SaveChangesAsync();
 
-            return Ok(new { message = "معلم با موفقیت به درس اختصاص یافت" });
+            try
+            {
+                await _context.SaveChangesAsync();
+                Console.WriteLine($"[SUCCESS] Assigned teacher {dto.TeacherId} to course {dto.CourseId}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[DB ERROR] {ex.Message}");
+                return StatusCode(500, "خطا در ذخیره اختصاص درس");
+            }
+
+            return Ok(new { message = "اختصاص انجام شد" });
         }
 
         [HttpPost("unassign-teacher/{courseId}")]
@@ -1260,18 +1293,31 @@ namespace SchoolPortalAPI.Controllers
         [HttpGet("teacher/{teacherId}/courses")]
         public async Task<IActionResult> GetTeacherCourses(long teacherId)
         {
+            // Log for debugging
+            Console.WriteLine($"[API] GetTeacherCourses called for TeacherId = {teacherId}");
+
+            // Optional: Check if teacher exists (but still return 200 + [] if not or no courses)
+            var teacherExists = await _context.Teachers.AnyAsync(t => t.Teacherid == teacherId);
+            if (!teacherExists)
+            {
+                Console.WriteLine($"[API] Teacher {teacherId} not found");
+                return Ok(new List<object>());  // ← return empty array, NOT NotFound
+            }
+
             var courses = await _context.Courses
                 .Where(c => c.Teacherid == teacherId)
                 .Select(c => new
                 {
                     courseid = c.Courseid,
-                    name = c.Name,
-                    className = c.Class != null ? c.Class.Name : "بدون کلاس",
+                    name = c.Name ?? "نام درس",
+                    className = c.Class != null ? c.Class.Name ?? "بدون کلاس" : "بدون کلاس",
                     teacherid = c.Teacherid
                 })
                 .ToListAsync();
 
-            return Ok(courses);
+            Console.WriteLine($"[API] Found {courses.Count} courses for teacher {teacherId}");
+
+            return Ok(courses);  // ALWAYS 200 OK + list (empty or not)
         }
     }
 

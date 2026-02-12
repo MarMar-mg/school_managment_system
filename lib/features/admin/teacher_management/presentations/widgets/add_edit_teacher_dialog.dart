@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
-import '../../data/models/course_model.dart'; // Assume you create CourseModel
+import '../../data/models/course_model.dart';
 import '../../data/models/teacher_model.dart';
 
 class AddEditTeacherDialog extends StatefulWidget {
@@ -29,21 +29,59 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   final _formKey = GlobalKey<FormState>();
 
   Future<void> _loadData() async {
+    setState(() => _isLoading = true); // safe at start
+
     try {
-      _allCourses = await ApiService()
-          .getAllCourses(); // Implement this in ApiService
-      if (widget.isEdit) {
-        final teacherCourses = await ApiService().getTeacherCourses(
-          widget.teacher!.teacherId,
-        );
-        _selectedCourseIds = teacherCourses.map((c) => c.courseId).toSet();
+      _allCourses = await ApiService().getAllCourses();
+
+      if (widget.isEdit && widget.teacher != null) {
+        final teacherId = widget.teacher!.teacherId;
+        print('Loading courses for teacher $teacherId');
+
+        try {
+          final teacherCourses = await ApiService().getTeacherCourses(
+            teacherId,
+          );
+
+          // ← Critical fix: only setState if widget still mounted
+          if (mounted) {
+            setState(() {
+              _selectedCourseIds = teacherCourses
+                  .map((c) => c.courseId)
+                  .toSet();
+              print(
+                'Pre-selected ${teacherCourses.length} courses: $_selectedCourseIds',
+              );
+            });
+          } else {
+            print('Widget disposed - skipping setState for courses');
+          }
+        } catch (e) {
+          print('Failed to load teacher courses: $e');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('ناتوانی در بارگذاری دروس فعلی معلم'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('خطا در بارگذاری دروس: $e')));
+      print('General load error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در بارگذاری اطلاعات: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -61,77 +99,143 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   }
 
   Future<void> _saveTeacher() async {
+    print('START _saveTeacher() - isEdit: ${widget.isEdit}');
+
     if (!_formKey.currentState!.validate()) {
+      print('→ Form validation FAILED');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('لطفاً همه فیلدهای الزامی را پر کنید'),
-          backgroundColor: Colors.red,
-        ),
+        const SnackBar(content: Text('لطفاً همه فیلدهای الزامی را پر کنید')),
       );
       return;
     }
+    print('→ Form validation PASSED');
+
+    if (_selectedCourseIds.isEmpty) {
+      print('→ No courses selected - exiting');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('حداقل یک درس باید انتخاب شود')),
+      );
+      return;
+    }
+    print(
+      '→ Courses selected: ${_selectedCourseIds.length} items → ${_selectedCourseIds.toList()}',
+    );
 
     setState(() => _isSaving = true);
+    print('→ Saving started');
 
     try {
-      final data = {
-        'name': _nameController.text.trim(),
-        'phone': _phoneController.text.trim(),
-        'nationalCode': _nationalCodeController.text.trim(),
-        'email': _emailController.text.trim(),
-      };
+      late int teacherId;
+      String? newUsername;
+      String? newPassword;
 
-      late TeacherModel savedTeacher;
       if (widget.isEdit) {
-        await ApiService().updateTeacher(widget.teacher!.teacherId, data);
-        savedTeacher = widget.teacher!.copyWith(
-          name: data['name'],
-          phone: data['phone'],
-          nationalCode: data['nationalCode'],
-          email: data['email'],
+        print('→ Updating existing teacher ID: ${widget.teacher!.teacherId}');
+        await ApiService().updateTeacher(widget.teacher!.teacherId, {
+          'name': _nameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'nationalCode': _nationalCodeController.text.trim(),
+          'email': _emailController.text.trim(),
+        });
+        teacherId = widget.teacher!.teacherId;
+        print('→ Update success - teacherId: $teacherId');
+      } else {
+        print('→ Creating new teacher');
+        final created = await ApiService().addTeacher({
+          'name': _nameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'nationalCode': _nationalCodeController.text.trim(),
+          'email': _emailController.text.trim(),
+        });
+
+        teacherId = created.teacherId;
+        // If backend returns username/password for new user
+        newUsername =
+            created.username; // add these fields to TeacherModel if needed
+        newPassword = created.password;
+
+        print('→ Create success - new teacherId: $teacherId');
+        if (newUsername != null) {
+          print(
+            '→ New user created - username: $newUsername, password: $newPassword',
+          );
+        }
+      }
+
+      // Assignment block
+      print('ASSIGNMENT BLOCK REACHED - teacherId: $teacherId');
+
+      // Load current courses (for edit mode or to avoid duplicates)
+      Set<int> currentIds = {};
+      try {
+        final currentCourses = await ApiService().getTeacherCourses(teacherId);
+        currentIds = currentCourses.map((c) => c.courseId).toSet();
+        print('→ Current assigned courses: $currentIds');
+      } catch (e) {
+        print(
+          '→ Warning: Could not load current courses: $e (continuing anyway)',
         );
-      } else {
-        savedTeacher = await ApiService().addTeacher(data);
-      }
-      if (widget.isEdit) {
-        await ApiService().updateTeacher(widget.teacher!.teacherId, data);
-        savedTeacher = widget.teacher!;
-      } else {
-        savedTeacher = await ApiService().addTeacher(data);
       }
 
-      // Handle assignments
-      final currentCourses = await ApiService().getTeacherCourses(
-        savedTeacher.teacherId,
-      );
-      final currentIds = currentCourses.map((c) => c.courseId).toSet();
+      // Assign selected courses (add only new ones)
+      for (final courseId in _selectedCourseIds) {
+        if (currentIds.contains(courseId)) {
+          print('→ Course $courseId already assigned - skipping');
+          continue;
+        }
 
-      final toAssign = _selectedCourseIds.difference(currentIds);
-      final toUnassign = currentIds.difference(_selectedCourseIds);
-
-      for (final cid in toAssign) {
-        await ApiService().assignTeacherToCourse(savedTeacher.teacherId, cid);
+        print('→ Assigning course $courseId to teacher $teacherId');
+        try {
+          await ApiService().assignTeacherToCourse(teacherId, courseId);
+          print('  ✓ Assigned $courseId');
+        } catch (e) {
+          print('  ✗ Assign failed for $courseId: $e');
+          // You can decide: continue or show error
+        }
       }
-      for (final cid in toUnassign) {
-        await ApiService().unassignTeacherFromCourse(cid);
+
+      // Unassign removed courses (only if we could load current ones)
+      if (currentIds.isNotEmpty) {
+        final toRemove = currentIds.difference(_selectedCourseIds.toSet());
+        for (final oldId in toRemove) {
+          print('→ Unassigning removed course $oldId');
+          try {
+            await ApiService().unassignTeacherFromCourse(oldId);
+            print('  ✓ Unassigned $oldId');
+          } catch (e) {
+            print('  ✗ Unassign failed for $oldId: $e');
+          }
+        }
+      }
+
+      print('SAVE COMPLETE - should refresh list now');
+
+      // Show success + credentials (only for new teacher)
+      String successMsg = 'معلم با موفقیت ذخیره شد';
+      if (!widget.isEdit && newUsername != null) {
+        successMsg +=
+            '\nنام کاربری: $newUsername\nرمز عبور اولیه: $newPassword\n(لطفاً فوراً تغییر دهید)';
       }
 
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('عملیات با موفقیت انجام شد')),
+        SnackBar(
+          content: Text(successMsg),
+          duration: const Duration(seconds: 10),
+        ),
       );
-    } catch (e) {
-      String errorMsg = 'خطا در افزودن معلم';
-      if (e.toString().contains('این شماره تلفن قبلاً')) {
-        errorMsg = 'این شماره تلفن قبلاً ثبت شده است';
-      } else if (e.toString().contains('کد ملی')) {
-        errorMsg = 'این کد ملی قبلاً ثبت شده است';
-      }
+    } catch (e, stack) {
+      print('CATCH BLOCK - ERROR: $e');
+      print('Stack trace: $stack');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMsg), backgroundColor: Colors.red),
+        SnackBar(
+          content: Text('خطا در ذخیره: $e'),
+          backgroundColor: Colors.red,
+        ),
       );
     } finally {
       setState(() => _isSaving = false);
+      print('END _saveTeacher()');
     }
   }
 
@@ -219,7 +323,9 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
                     if (value == null || value.trim().isEmpty) {
                       return 'ایمیل الزامی است';
                     }
-                    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                    if (!RegExp(
+                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                    ).hasMatch(value)) {
                       return 'ایمیل معتبر وارد کنید';
                     }
                     return null;
@@ -227,24 +333,33 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
                 ),
                 const SizedBox(height: 24),
 
-                const Text('انتخاب دروس تدریس', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text(
+                  'انتخاب دروس تدریس',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
                 const SizedBox(height: 8),
 
                 // Course selection (you can also make it required)
-                ..._allCourses.map((course) => CheckboxListTile(
-                  title: Text('${course.className} - ${course.name}', textDirection: TextDirection.rtl),
-                  value: _selectedCourseIds.contains(course.courseId),
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value == true) {
-                        _selectedCourseIds.add(course.courseId);
-                      } else {
-                        _selectedCourseIds.remove(course.courseId);
-                      }
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                )),
+                ..._allCourses.map(
+                  (course) => CheckboxListTile(
+                    title: Text(
+                      '${course.className} - ${course.name}',
+                      textDirection: TextDirection.rtl,
+                    ),
+                    value: _selectedCourseIds.contains(course.courseId),
+                    // ← this must be true for assigned ones
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedCourseIds.add(course.courseId);
+                        } else {
+                          _selectedCourseIds.remove(course.courseId);
+                        }
+                      });
+                    },
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ),
 
                 // Optional: warn if no courses selected
                 if (_selectedCourseIds.isEmpty && !_isLoading)
@@ -270,10 +385,13 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
           style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
           child: _isSaving
               ? const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
-          )
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    color: Colors.white,
+                    strokeWidth: 2,
+                  ),
+                )
               : const Text('ذخیره', style: TextStyle(color: Colors.white)),
         ),
       ],

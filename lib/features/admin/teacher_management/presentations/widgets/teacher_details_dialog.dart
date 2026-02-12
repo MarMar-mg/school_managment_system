@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:school_management_system/applications/colors.dart';
 import '../../data/models/teacher_model.dart';
 
 class TeacherDetailsDialog extends StatelessWidget {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:school_management_system/applications/colors.dart';
 import '../../data/models/teacher_model.dart';
-import 'teacher_tile.dart'; // Create this
+import 'teacher_tile.dart';
 
 class TeacherListSection extends StatelessWidget {
   final List<TeacherModel> teachers;

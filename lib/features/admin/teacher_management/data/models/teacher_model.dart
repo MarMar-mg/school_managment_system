@@ -5,7 +5,9 @@ class TeacherModel {
   final String? nationalCode;
   final String? email;
   final DateTime? createdAt;
-  final int? assignedCoursesCount;
+  final int? assignedCoursesCount;  // ← make this nullable (int?)
+  final String? username;
+  final String? password;
 
   TeacherModel({
     required this.teacherId,
@@ -14,12 +16,15 @@ class TeacherModel {
     this.nationalCode,
     this.email,
     this.createdAt,
-    this.assignedCoursesCount,
+    this.assignedCoursesCount,  // ← no 'required' here
+    this.username,
+    this.password,
   });
 
   factory TeacherModel.fromJson(Map<String, dynamic> json) {
+    print('Raw JSON: $json');
     return TeacherModel(
-      teacherId: json['teacherid'] as int,
+      teacherId: json['teacherid'] as int? ?? 0,
       name: (json['name'] as String?) ?? 'نامشخص',
       phone: json['phone'] as String?,
       nationalCode: json['nationalCode'] as String?,
@@ -28,10 +33,12 @@ class TeacherModel {
           ? DateTime.tryParse(json['createdAt'].toString())
           : null,
       assignedCoursesCount: json['assignedCoursesCount'] as int?,
+      username: json['username'] as String?,
+      password: json['password'] as String?,
     );
   }
 
-  // ─── Add this copyWith method ───
+  // copyWith remains the same
   TeacherModel copyWith({
     int? teacherId,
     String? name,
