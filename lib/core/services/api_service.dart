@@ -14,7 +14,9 @@ import 'package:shamsi_date/shamsi_date.dart';
 import '../../applications/role.dart';
 import '../../commons/untils.dart';
 import '../../features/admin/news_management/data/models/news_model.dart';
+import '../../features/admin/teacher_management/data/models/class_group.dart';
 import '../../features/admin/teacher_management/data/models/course_model.dart';
+import '../../features/admin/teacher_management/data/models/grouped_teachers_response.dart';
 import '../../features/admin/teacher_management/data/models/teacher_model.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
@@ -2364,7 +2366,9 @@ class ApiService {
 
     final response = await http.get(uri);
 
-    print('Status: ${response.statusCode} | Body: ${response.body.substring(0, min(200, response.body.length))}...');
+    print(
+      'Status: ${response.statusCode} | Body: ${response.body.substring(0, min(200, response.body.length))}...',
+    );
 
     if (response.statusCode == 200) {
       final List<dynamic> data = jsonDecode(response.body);
@@ -2393,22 +2397,11 @@ class ApiService {
   }
 
   /// Delete teacher
-  Future<bool> deleteTeacher(int teacherId) async {
-    try {
-      final response = await http.delete(
-        Uri.parse('$baseUrl/admin/teachers/$teacherId'),
-      );
+  Future<void> deleteTeacher(int teacherId) async {
+    final response = await http.delete(Uri.parse('$baseUrl/admin/teachers/$teacherId'));
 
-      if (response.statusCode == 200 || response.statusCode == 204) {
-        print('Teacher $teacherId deleted');
-        return true;
-      } else {
-        print('Failed to delete teacher: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('Error deleting teacher: $e');
-      return false;
+    if (response.statusCode != 200) {
+      throw Exception('Failed to delete teacher: ${response.statusCode} - ${response.body}');
     }
   }
 
@@ -2425,6 +2418,20 @@ class ApiService {
     } catch (e) {
       print('Error fetching courses: $e');
       rethrow;
+    }
+  }
+
+  Future<GroupedTeachersResponse> getTeachersGroupedByClass() async {
+    final response = await http.get(Uri.parse('$baseUrl/admin/teachers/grouped-by-class'));
+
+    print('Grouped endpoint status: ${response.statusCode}');
+    print('Grouped response body: ${response.body.substring(0, min(300, response.body.length))}...');
+
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body) as Map<String, dynamic>;
+      return GroupedTeachersResponse.fromJson(json);
+    } else {
+      throw Exception('Failed to load grouped teachers: ${response.statusCode} - ${response.body}');
     }
   }
 

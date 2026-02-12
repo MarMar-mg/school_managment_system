@@ -42,5 +42,8 @@ namespace SchoolPortalAPI.Models
         // Navigation property: Many-to-Many or One-to-Many relationship
         // Teachers → Courses (a teacher can teach multiple courses)
         public virtual ICollection<Course> Courses { get; set; } = new List<Course>();
+
+        [StringLength(100)]
+        public string? Specialty { get; set; }
     }
 }

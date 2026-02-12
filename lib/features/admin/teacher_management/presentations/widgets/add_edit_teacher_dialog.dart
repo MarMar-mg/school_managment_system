@@ -20,6 +20,7 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   late TextEditingController _phoneController;
   late TextEditingController _nationalCodeController;
   late TextEditingController _emailController;
+  late TextEditingController _specialtyController;
   List<CourseModel> _allCourses = [];
   Set<int> _selectedCourseIds = {};
   bool _isLoading = true;
@@ -88,6 +89,7 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   @override
   void initState() {
     super.initState();
+    _specialtyController = TextEditingController(text: widget.teacher?.specialty ?? '');
     _nameController = TextEditingController(text: widget.teacher?.name ?? '');
     _phoneController = TextEditingController(text: widget.teacher?.phone ?? '');
     _nationalCodeController = TextEditingController(
@@ -136,6 +138,7 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
           'phone': _phoneController.text.trim(),
           'nationalCode': _nationalCodeController.text.trim(),
           'email': _emailController.text.trim(),
+          'specialty': _specialtyController.text.trim(),
         });
         teacherId = widget.teacher!.teacherId;
         print('→ Update success - teacherId: $teacherId');
@@ -146,6 +149,7 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
           'phone': _phoneController.text.trim(),
           'nationalCode': _nationalCodeController.text.trim(),
           'email': _emailController.text.trim(),
+          'specialty': _specialtyController.text.trim(),
         });
 
         teacherId = created.teacherId;
@@ -327,6 +331,24 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
                       r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
                     ).hasMatch(value)) {
                       return 'ایمیل معتبر وارد کنید';
+                    }
+                    return null;
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                TextFormField(
+                  controller: _specialtyController,
+                  decoration: const InputDecoration(
+                    labelText: 'تخصص / رشته تدریس *',
+                    border: OutlineInputBorder(),
+                    hintText: 'مثال: ریاضی، فیزیک، زبان انگلیسی',
+                  ),
+                  textDirection: TextDirection.rtl,
+                  validator: (value) {
+                    if (value == null || value.trim().isEmpty) {
+                      return 'تخصص معلم را وارد کنید';
                     }
                     return null;
                   },

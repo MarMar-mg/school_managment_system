@@ -1141,7 +1141,9 @@ namespace SchoolPortalAPI.Controllers
                     phone = t.Phone,
                     nationalCode = t.NationalCode,
                     email = t.Email,
+                    Specialty = t.Specialty,
                     createdAt = t.CreatedAt,
+
                     assignedCoursesCount = _context.Courses.Count(c => c.Teacherid == t.Teacherid)
                 })
                 .OrderBy(t => t.name)
@@ -1156,8 +1158,6 @@ namespace SchoolPortalAPI.Controllers
            if (!ModelState.IsValid)
                return BadRequest(ModelState);
 
-           // ... duplicate checks ...
-
            // 1. Create User first
            var user = new User
            {
@@ -1169,6 +1169,7 @@ namespace SchoolPortalAPI.Controllers
            _context.Users.Add(user);
            await _context.SaveChangesAsync();
 
+
            // 2. Create Teacher linked to User
            var teacher = new Teacher
            {
@@ -1177,7 +1178,8 @@ namespace SchoolPortalAPI.Controllers
                NationalCode = dto.NationalCode?.Trim(),
                Email = dto.Email?.Trim(),
                Userid = user.Userid,          // ← link here
-               CreatedAt = DateTime.UtcNow
+               CreatedAt = DateTime.UtcNow,
+               Specialty = dto.Specialty?.Trim()
            };
 
            _context.Teachers.Add(teacher);
@@ -1193,6 +1195,7 @@ namespace SchoolPortalAPI.Controllers
                phone = teacher.Phone,
                nationalCode = teacher.NationalCode,
                email = teacher.Email,
+               Specialty = teacher.Specialty,
                message = "معلم و حساب کاربری با موفقیت ایجاد شد"
            };
 
@@ -1222,6 +1225,9 @@ namespace SchoolPortalAPI.Controllers
                 teacher.NationalCode = dto.NationalCode.Trim();
             }
 
+            if (!string.IsNullOrWhiteSpace(dto.Specialty))
+                teacher.Specialty = dto.Specialty.Trim();
+
             if (!string.IsNullOrEmpty(dto.Email))
                 teacher.Email = dto.Email.Trim();
 
@@ -1232,23 +1238,52 @@ namespace SchoolPortalAPI.Controllers
             return Ok(new { message = "معلم با موفقیت به‌روزرسانی شد", teacherId = teacher.Teacherid });
         }
 
-        [HttpDelete("teachers/{id}")]
+        [HttpDelete("teachers/{id:long}")]
         public async Task<IActionResult> DeleteTeacher(long id)
         {
             var teacher = await _context.Teachers
-                .Include(t => t.Courses)
+                .Include(t => t.User)      // Load User
+                .Include(t => t.Courses)   // Load Courses if needed
                 .FirstOrDefaultAsync(t => t.Teacherid == id);
 
-            if (teacher == null) return NotFound("معلم یافت نشد");
+            // check null first
+            if (teacher == null)
+                return NotFound(new { message = "معلم یافت نشد" });
 
-            if (teacher.Courses?.Any() == true)
-                return BadRequest("این معلم به درس/دروس اختصاص دارد. ابتدا دروس را تغییر دهید.");
+            try
+            {
+                // Disconnect teacher from courses (if FK exists)
+                if (teacher.Courses != null && teacher.Courses.Any())
+                {
+                    foreach (var course in teacher.Courses)
+                    {
+                        course.Teacherid = null;   // prevent FK conflict
+                    }
+                }
 
-            _context.Teachers.Remove(teacher);
-            await _context.SaveChangesAsync();
+                // Delete linked user (if exists)
+                if (teacher.User != null)
+                {
+                    _context.Users.Remove(teacher.User);
+                }
 
-            return Ok(new { message = "معلم با موفقیت حذف شد" });
+                // Delete teacher
+                _context.Teachers.Remove(teacher);
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "معلم با موفقیت حذف شد" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "خطا در حذف معلم",
+                    detail = ex.Message
+                });
+            }
         }
+
 
         [HttpPost("assign-teacher")]
         public async Task<IActionResult> AssignTeacher([FromBody] AssignTeacherDto dto)
@@ -1319,6 +1354,95 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(courses);  // ALWAYS 200 OK + list (empty or not)
         }
+
+        [HttpGet("teachers/grouped-by-class")]
+        public async Task<IActionResult> GetTeachersGroupedByClass()
+        {
+            try
+            {
+                // Existing grouped classes
+                var classGroups = await _context.Courses
+                    .Where(c => c.Teacherid != null && c.Classid != null)
+                    .GroupBy(c => c.Classid)
+                    .Select(g => new
+                    {
+                        classId = g.Key,
+                        className = g.FirstOrDefault().Class != null
+                            ? g.FirstOrDefault().Class.Name
+                            : "بدون نام کلاس",
+                        teachers = g.Select(c => new
+                        {
+                            teacherid = c.Teacherid,
+                            name = c.Teacher != null ? c.Teacher.Name : "نامشخص",
+                            phone = c.Teacher != null ? c.Teacher.Phone : null,
+                            nationalCode = c.Teacher != null ? c.Teacher.NationalCode : null,
+                            email = c.Teacher != null ? c.Teacher.Email : null,
+                            userId = c.Teacher != null ? c.Teacher.Userid : null,
+                            specialty = c.Teacher != null ? c.Teacher.Specialty : null,
+                            // Get username and password from User table
+                            username = _context.Users
+                                .Where(u => u.Userid ==  c.Teacher.Userid)
+                                .Select(u => u.Username)
+                                .FirstOrDefault(),
+                            password = _context.Users
+                                .Where(u => u.Userid ==  c.Teacher.Userid)
+                                .Select(u => u.Password)
+                                .FirstOrDefault()
+                        })
+                        .GroupBy(t => t.teacherid)
+                        .Select(tg => tg.First())
+                        .ToList()
+                    })
+                    .OrderBy(g => g.className)
+                    .ToListAsync();
+
+                // Get all teachers who have NO courses
+                var assignedTeacherIds = await _context.Courses
+                    .Where(c => c.Teacherid != null)
+                    .Select(c => c.Teacherid)
+                    .Distinct()
+                    .ToListAsync();
+
+                var unassignedTeachers = await _context.Teachers
+                    .Where(t => !assignedTeacherIds.Contains(t.Teacherid))
+                    .Select(t => new
+                    {
+                        teacherid = t.Teacherid,
+                        name = t.Name ?? "نامشخص",
+                        phone = t.Phone,
+                        nationalCode = t.NationalCode,
+                        email = t.Email,
+                        createdAt = t.CreatedAt,
+                        userid = t.Userid,
+                        Specialty = t.Specialty,
+                        // Get username and password from User table
+                        username = _context.Users
+                            .Where(u => u.Userid ==  t.Userid)
+                            .Select(u => u.Username)
+                            .FirstOrDefault(),
+                        password = _context.Users
+                            .Where(u => u.Userid ==  t.Userid)
+                            .Select(u => u.Password)
+                            .FirstOrDefault()
+                    })
+                    .OrderBy(t => t.name)
+                    .ToListAsync();
+
+                // Final response
+                var result = new
+                {
+                    groupedClasses = classGroups,
+                    unassignedTeachers = unassignedTeachers
+                };
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] GetTeachersGroupedByClass: {ex.Message}");
+                return StatusCode(500, ex.Message);
+            }
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -1347,6 +1471,7 @@ namespace SchoolPortalAPI.Controllers
         public string Phone { get; set; } = null!;
         public string? NationalCode { get; set; }
         public string? Email { get; set; }
+        public string? Specialty { get; set; }
     }
 
     public class UpdateTeacherDto
@@ -1355,6 +1480,7 @@ namespace SchoolPortalAPI.Controllers
         public string? Phone { get; set; }
         public string? NationalCode { get; set; }
         public string? Email { get; set; }
+        public string? Specialty { get; set; }
     }
 
     public class AssignTeacherDto

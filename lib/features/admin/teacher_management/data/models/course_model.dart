@@ -1,4 +1,3 @@
-
 class CourseModel {
   final int courseId;
   final String name;
@@ -21,3 +20,21 @@ class CourseModel {
     );
   }
 }
+
+class TeacherGroupItem {
+  final Map<String, dynamic> teacher; // the nested "teacher" object
+  final List<dynamic> courses;
+
+  TeacherGroupItem({
+    required this.teacher,
+    required this.courses,
+  });
+
+  factory TeacherGroupItem.fromJson(Map<String, dynamic> json) {
+    return TeacherGroupItem(
+      teacher: json['teacher'] as Map<String, dynamic>,
+      courses: json['courses'] as List<dynamic>? ?? [],
+    );
+  }
+}
+
