@@ -26,31 +26,21 @@ class _ProfilePageState extends State<ProfilePage>
   late AnimationController _controller;
   late List<Animation<double>> _sectionAnims;
 
-  // ========================== LIFECYCLE ==========================
+  bool get _isStaff =>
+      widget.role == Role.teacher || widget.role == Role.manager;
 
   @override
   void initState() {
     super.initState();
-    _initializeAnimations();
-  }
 
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  // ========================== ANIMATIONS ==========================
-
-  void _initializeAnimations() {
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 800), // ✅ Faster
     );
 
-    _sectionAnims = List.generate(8, (index) {
-      final start = 0.1 + (index * 0.1);
-      final end = (start + 0.35).clamp(0.0, 1.0);
+    _sectionAnims = List.generate(4, (index) {
+      final start = 0.1 + (index * 0.15);
+      final end = (start + 0.4).clamp(0.0, 1.0);
 
       return Tween<double>(begin: 0.0, end: 1.0).animate(
         CurvedAnimation(
@@ -63,11 +53,13 @@ class _ProfilePageState extends State<ProfilePage>
     _controller.forward();
   }
 
-  Widget _buildAnimatedSection({
-    required int index,
-    required Widget child,
-    double slideDistance = 100,
-  }) {
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  Widget _animatedSection(int index, Widget child) {
     final animation = _sectionAnims[index];
 
     return AnimatedBuilder(
@@ -75,115 +67,139 @@ class _ProfilePageState extends State<ProfilePage>
       builder: (context, _) {
         final value = animation.value;
         return Transform.translate(
-          offset: Offset(0, slideDistance * (1 - value)),
+          offset: Offset(0, 40 * (1 - value)), // ✅ Smaller movement
           child: Opacity(opacity: value, child: child),
         );
       },
     );
   }
 
-  // ========================== MAIN BUILD ==========================
-
   @override
   Widget build(BuildContext context) {
     return ResponsiveContainer(
       child: SingleChildScrollView(
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildAnimatedSection(
-              index: 0,
-              child: UserInfoCard(userName: widget.userName),
+            // ================= USER CARD =================
+            _animatedSection(0, UserInfoCard(userName: widget.userName)),
+
+            const SizedBox(height: 40),
+
+            // ================= SETTINGS =================
+            _animatedSection(1, _buildSectionHeader("تنظیمات")),
+
+            const SizedBox(height: 16),
+
+            _animatedSection(
+              2,
+              _buildCard(child: SettingsMenu(onLogout: _showLogoutDialog)),
             ),
-            const SizedBox(height: 32),
-            // _buildAnimatedSection(
-            //   index: 1,
-            //   child: _buildSectionTitle('آمار و اطلاعات'),
-            // ),
-            // const SizedBox(height: 12),
-            // _buildAnimatedSection(
-            //   index: 2,
-            //   child: StatsGrid(
-            //     role: widget.role,
-            //     userId: widget.userId.toInt(),
-            //   ),
-            // ),
-            const SizedBox(height: 32),
-            _buildAnimatedSection(
-              index: 3,
-              child: _buildSectionTitle('تنظیمات'),
-            ),
-            const SizedBox(height: 12),
-            _buildAnimatedSection(
-              index: 4,
-              child: SettingsMenu(onLogout: () => _showLogoutDialog()),
-            ),
-            const SizedBox(height: 32),
-            if (widget.role == Role.teacher || widget.role == Role.manager)
-              const SizedBox(height: 40),
+
+            if (_isStaff) const SizedBox(height: 50),
           ],
         ),
       ),
     );
   }
 
-  // ========================== HELPERS ==========================
+  // ================= CARD WRAPPER =================
 
-  Widget _buildSectionTitle(String title) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        title,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: Colors.black87,
-          letterSpacing: 0.5,
-        ),
-        textDirection: TextDirection.rtl,
-      ),
+  Widget _buildCard({required Widget child}) {
+    return Card(
+      elevation: 1.5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(padding: const EdgeInsets.all(24), child: child),
     );
   }
 
-  // ========================== DIALOGS ==========================
+  // ================= SECTION HEADER =================
+
+  Widget _buildSectionHeader(String title) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          textDirection: TextDirection.rtl,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 6),
+        Container(
+          width: 40,
+          height: 3,
+          decoration: BoxDecoration(
+            color: Theme.of(context).primaryColor,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+      ],
+    );
+  }
+
+  // ================= LOGOUT DIALOG =================
 
   void _showLogoutDialog() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('خروج از حساب', textDirection: TextDirection.rtl),
-        content: const Text(
-          'آیا مطمئن هستید که می‌خواهید خروج کنید؟',
-          textDirection: TextDirection.rtl,
-        ),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('لغو'),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(
-                    builder: (_) => RegisterPage()
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.logout, color: Colors.red.shade600, size: 32),
+                const SizedBox(height: 16),
+                const Text(
+                  'خروج از حساب',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  textDirection: TextDirection.rtl,
                 ),
-              );
-              // Add logout logic here
-            },
-            child: Text(
-              'خروج',
-              style: TextStyle(
-                color: Colors.red.shade600,
-                fontWeight: FontWeight.bold,
-              ),
+                const SizedBox(height: 12),
+                const Text(
+                  'آیا مطمئن هستید که می‌خواهید خروج کنید؟',
+                  textDirection: TextDirection.rtl,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(context),
+                      child: const Text('لغو'),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red.shade600,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(context);
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (_) => RegisterPage()),
+                        );
+                      },
+                      child: const Text(
+                        'خروج',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
