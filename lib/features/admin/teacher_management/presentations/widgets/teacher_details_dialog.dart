@@ -46,14 +46,14 @@ class TeacherDetailsDialog extends StatelessWidget {
               ),
             ],
 
-            // if (teacher.username == null && teacher.password == null)
-            //   const Padding(
-            //     padding: EdgeInsets.only(top: 16),
-            //     child: Text(
-            //       'حساب کاربری برای این معلم ایجاد نشده است',
-            //       style: TextStyle(color: Colors.orange, fontSize: 14),
-            //     ),
-            //   ),
+            if (teacher.username == null && teacher.password == null)
+              const Padding(
+                padding: EdgeInsets.only(top: 16),
+                child: Text(
+                  'حساب کاربری برای این معلم ایجاد نشده است',
+                  style: TextStyle(color: Colors.orange, fontSize: 14),
+                ),
+              ),
             //
             // const Divider(height: 24),
             // _buildRow(Icons.calendar_today, 'تاریخ ایجاد', teacher.createdAt?.toString() ?? 'نامشخص'),

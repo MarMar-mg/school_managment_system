@@ -247,152 +247,158 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.isEdit ? 'ویرایش معلم' : 'افزودن معلم جدید'),
-      content: SizedBox(
-        width: double.maxFinite,
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Name - required
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(
-                    labelText: 'نام و نام خانوادگی *',
-                    border: OutlineInputBorder(),
-                  ),
-                  textDirection: TextDirection.rtl,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'نام معلم را وارد کنید';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Phone - required
-                TextFormField(
-                  controller: _phoneController,
-                  decoration: const InputDecoration(
-                    labelText: 'شماره موبایل *',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.phone,
-                  textDirection: TextDirection.rtl,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'شماره موبایل الزامی است';
-                    }
-                    if (value.length < 11 || !value.startsWith('09')) {
-                      return 'شماره موبایل معتبر وارد کنید';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // National Code - required
-                TextFormField(
-                  controller: _nationalCodeController,
-                  decoration: const InputDecoration(
-                    labelText: 'کد ملی *',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  textDirection: TextDirection.rtl,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'کد ملی الزامی است';
-                    }
-                    if (value.length != 10) {
-                      return 'کد ملی باید ۱۰ رقم باشد';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-
-                // Email - required (or make optional if you prefer)
-                TextFormField(
-                  controller: _emailController,
-                  decoration: const InputDecoration(
-                    labelText: 'ایمیل *',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'ایمیل الزامی است';
-                    }
-                    if (!RegExp(
-                      r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                    ).hasMatch(value)) {
-                      return 'ایمیل معتبر وارد کنید';
-                    }
-                    return null;
-                  },
-                ),
-
-                const SizedBox(height: 16),
-
-                TextFormField(
-                  controller: _specialtyController,
-                  decoration: const InputDecoration(
-                    labelText: 'تخصص / رشته تدریس *',
-                    border: OutlineInputBorder(),
-                    hintText: 'مثال: ریاضی، فیزیک، زبان انگلیسی',
-                  ),
-                  textDirection: TextDirection.rtl,
-                  validator: (value) {
-                    if (value == null || value.trim().isEmpty) {
-                      return 'تخصص معلم را وارد کنید';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 24),
-
-                const Text(
-                  'انتخاب دروس تدریس',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-
-                // Course selection (you can also make it required)
-                ..._allCourses.map(
-                  (course) => CheckboxListTile(
-                    title: Text(
-                      '${course.className} - ${course.name}',
-                      textDirection: TextDirection.rtl,
+      content: ConstrainedBox(
+        constraints: BoxConstraints(
+          maxWidth: 600,
+          maxHeight: 700,
+        ),
+        child: SizedBox(
+          width: double.maxFinite,
+          child: SingleChildScrollView(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Name - required
+                  TextFormField(
+                    controller: _nameController,
+                    decoration: const InputDecoration(
+                      labelText: 'نام و نام خانوادگی *',
+                      border: OutlineInputBorder(),
                     ),
-                    value: _selectedCourseIds.contains(course.courseId),
-                    // ← this must be true for assigned ones
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedCourseIds.add(course.courseId);
-                        } else {
-                          _selectedCourseIds.remove(course.courseId);
-                        }
-                      });
+                    textDirection: TextDirection.rtl,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'نام معلم را وارد کنید';
+                      }
+                      return null;
                     },
-                    controlAffinity: ListTileControlAffinity.leading,
                   ),
-                ),
+                  const SizedBox(height: 16),
 
-                // Optional: warn if no courses selected
-                if (_selectedCourseIds.isEmpty && !_isLoading)
-                  const Padding(
-                    padding: EdgeInsets.only(top: 8),
-                    child: Text(
-                      'حداقل یک درس باید انتخاب شود',
-                      style: TextStyle(color: Colors.red, fontSize: 12),
+                  // Phone - required
+                  TextFormField(
+                    controller: _phoneController,
+                    decoration: const InputDecoration(
+                      labelText: 'شماره موبایل *',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.phone,
+                    textDirection: TextDirection.rtl,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'شماره موبایل الزامی است';
+                      }
+                      if (value.length < 11 || !value.startsWith('09')) {
+                        return 'شماره موبایل معتبر وارد کنید';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // National Code - required
+                  TextFormField(
+                    controller: _nationalCodeController,
+                    decoration: const InputDecoration(
+                      labelText: 'کد ملی *',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.number,
+                    textDirection: TextDirection.rtl,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'کد ملی الزامی است';
+                      }
+                      if (value.length != 10) {
+                        return 'کد ملی باید ۱۰ رقم باشد';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Email - required (or make optional if you prefer)
+                  TextFormField(
+                    controller: _emailController,
+                    decoration: const InputDecoration(
+                      labelText: 'ایمیل *',
+                      border: OutlineInputBorder(),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'ایمیل الزامی است';
+                      }
+                      if (!RegExp(
+                        r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                      ).hasMatch(value)) {
+                        return 'ایمیل معتبر وارد کنید';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  TextFormField(
+                    controller: _specialtyController,
+                    decoration: const InputDecoration(
+                      labelText: 'تخصص / رشته تدریس *',
+                      border: OutlineInputBorder(),
+                      hintText: 'مثال: ریاضی، فیزیک، زبان انگلیسی',
+                    ),
+                    textDirection: TextDirection.rtl,
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'تخصص معلم را وارد کنید';
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    'انتخاب دروس تدریس',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+
+                  // Course selection (you can also make it required)
+                  ..._allCourses.map(
+                    (course) => CheckboxListTile(
+                      title: Text(
+                        '${course.className} - ${course.name}',
+                        textDirection: TextDirection.rtl,
+                      ),
+                      value: _selectedCourseIds.contains(course.courseId),
+                      // ← this must be true for assigned ones
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedCourseIds.add(course.courseId);
+                          } else {
+                            _selectedCourseIds.remove(course.courseId);
+                          }
+                        });
+                      },
+                      controlAffinity: ListTileControlAffinity.leading,
                     ),
                   ),
-              ],
+
+                  // Optional: warn if no courses selected
+                  if (_selectedCourseIds.isEmpty && !_isLoading)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8),
+                      child: Text(
+                        'حداقل یک درس باید انتخاب شود',
+                        style: TextStyle(color: Colors.red, fontSize: 12),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ),
         ),
