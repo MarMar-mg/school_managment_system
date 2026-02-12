@@ -156,40 +156,36 @@ class _ScoreClassSelectionState extends State<ScoreClassSelection> {
 
                 return DropdownMenuItem<String>(
                   value: course['id'].toString(),
-                  child: Padding(
-                    padding:
-                    const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          courseName,
-                          style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: AppColor.darkText,
-                          ),
-                          textDirection: TextDirection.rtl,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        courseName,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColor.darkText,
                         ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            if (courseCode.isNotEmpty) ...[
-                              Text(
-                                courseCode,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColor.lightGray,
-                                ),
+                        textDirection: TextDirection.rtl,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          if (courseCode.isNotEmpty) ...[
+                            Text(
+                              courseCode,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColor.lightGray,
                               ),
-                              const SizedBox(width: 8),
-                            ],
+                            ),
+                            const SizedBox(width: 8),
                           ],
-                        ),
-                      ],
-                    ),
+                        ],
+                      ),
+                    ],
                   ),
                 );
               }).toList(),
