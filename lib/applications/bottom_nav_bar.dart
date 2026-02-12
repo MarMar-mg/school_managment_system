@@ -114,10 +114,10 @@ class _BottomNavBarState extends State<BottomNavBar> {
       userName: widget.userName,
       userId: widget.userIdi,
     ),
-    NewsManagementPage(role: widget.role),
     TeacherManagementPage(),
+    NewsManagementPage(role: widget.role),
     // Placeholder for Events page (e.g., from ApiService getEvents)
-    const Center(child: Text('صفحه رویدادها', style: TextStyle(fontSize: 20))),
+    // const Center(child: Text('صفحه رویدادها', style: TextStyle(fontSize: 20))),
     ProfilePage(
       role: widget.role,
       userName: widget.userName,
@@ -184,18 +184,23 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 const GButton(icon: Icons.bar_chart_rounded, text: 'نمرات'),
                 if (widget.role == Role.manager)
                   const GButton(
-                    icon: Icons.person_add_alt_outlined,
+                    icon: Icons.person_add_alt_1,
                     text: 'دانش آموزان',
                   ),
                 if (widget.role == Role.manager)
-                  const GButton(icon: Icons.newspaper, text: 'اخبار'),
-                if (widget.role == Role.manager)
                   const GButton(
-                    icon: Icons.calendar_today_outlined,
-                    text: 'رویدادها',
+                    icon: Icons.people_alt,
+                    text: 'اساتید',
                   ),
+                if (widget.role == Role.manager)
+                  const GButton(icon: Icons.newspaper, text: 'اخبار'),
+                // if (widget.role == Role.manager)
+                //   const GButton(
+                //     icon: Icons.calendar_today_outlined,
+                //     text: 'رویدادها',
+                //   ),
                 const GButton(
-                  icon: Icons.person_outline_rounded,
+                  icon: Icons.person_rounded,
                   text: 'پروفایل',
                 ),
               ],
