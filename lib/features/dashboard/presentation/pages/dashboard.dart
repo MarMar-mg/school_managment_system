@@ -146,20 +146,20 @@ class _DashboardState extends State<Dashboard> with TickerProviderStateMixin {
                       ),
                     ),
 
-                    const SizedBox(height: 24),
-
-                    // ====================== EVENTS SECTION ======================
-                    _buildAnimatedSection(
-                      index: 2,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          SectionHeader(title: 'رویدادها', onSeeAll: () {}),
-                          const SizedBox(height: 12),
-                          const EventsList(),
-                        ],
-                      ),
-                    ),
+                    // const SizedBox(height: 24),
+                    //
+                    // // ====================== EVENTS SECTION ======================
+                    // _buildAnimatedSection(
+                    //   index: 2,
+                    //   child: Column(
+                    //     crossAxisAlignment: CrossAxisAlignment.start,
+                    //     children: [
+                    //       SectionHeader(title: 'رویدادها', onSeeAll: () {}),
+                    //       const SizedBox(height: 12),
+                    //       const EventsList(),
+                    //     ],
+                    //   ),
+                    // ),
                     const SizedBox(height: 40),
                   ],
                 ),
