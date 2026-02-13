@@ -703,48 +703,46 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // Create new student with user account
-        // ──────────────────────────────────────────────────────────────
         [HttpPost("students")]
         public async Task<IActionResult> CreateStudent([FromBody] CreateStudentDto model)
         {
             try
             {
-                if (string.IsNullOrEmpty(model.Name) || string.IsNullOrEmpty(model.StudentCode))
+                // Basic validation
+                if (string.IsNullOrWhiteSpace(model.Name) || string.IsNullOrWhiteSpace(model.StudentCode))
                     return BadRequest(new { message = "نام و کد دانش‌آموز الزامی است" });
 
-                long? classId = null;
-                if (!string.IsNullOrEmpty(model.ClassId) &&
-                    long.TryParse(model.ClassId, out var parsedClassId))
+                model.Name = model.Name.Trim();
+                model.StudentCode = model.StudentCode.Trim();
+
+                // ──────────────────────────────────────────────
+                // 1. Check duplicate StudentCode
+                // ──────────────────────────────────────────────
+                if (await _context.Students.AnyAsync(s => s.StuCode == model.StudentCode))
                 {
-                    classId = parsedClassId;
+                    return BadRequest(new { message = "این کد دانش‌آموز قبلاً ثبت شده است" });
                 }
 
-                // Check if student code already exists
-                var existingStudent = await _context.Students
-                    .FirstOrDefaultAsync(s => s.StuCode == model.StudentCode);
+                // ──────────────────────────────────────────────
+                // 2. Prepare username & password
+                // ──────────────────────────────────────────────
+                var username = model.StudentCode; // or model.NationalCode if you add it later
+                var password = GenerateRandomPassword();
 
-                if (existingStudent != null)
-                    return BadRequest(new { message = "این کد دانش‌آموز قبلا ثبت شده است" });
+                // Check duplicate username
+                if (await _context.Users.AnyAsync(u => u.Username == username))
+                {
+                    return BadRequest(new { message = "نام کاربری (کد دانش‌آموز) قبلاً استفاده شده است" });
+                }
 
-                // CREATE USER ACCOUNT
-                var username = model.StudentCode; // Use student code as username
-                var password = model.StudentCode; // Default password = student code
-
-                // Check if username already exists
-                var existingUser = await _context.Users
-                    .FirstOrDefaultAsync(u => u.Username == username);
-
-                if (existingUser != null)
-                    return BadRequest(new { message = "نام کاربری قبلا استفاده شده است" });
-
-                // Create user
+                // ──────────────────────────────────────────────
+                // 3. Create User account
+                // ──────────────────────────────────────────────
                 var user = new User
                 {
                     Username = username,
-                    Password = password,
-                    Role = "student"
+                    Password = password, // In production → hash + random + force change
+                    Role     = "student"
                 };
 
                 _context.Users.Add(user);
@@ -752,40 +750,104 @@ namespace SchoolPortalAPI.Controllers
 
                 Console.WriteLine($"[CREATE STUDENT] User created: {user.Userid} - {user.Username}");
 
-                // Create student with user ID
+                // ──────────────────────────────────────────────
+                // 4. Create Student record
+                // ──────────────────────────────────────────────
+                long? classId = null;
+                if (!string.IsNullOrWhiteSpace(model.ClassId) && long.TryParse(model.ClassId, out var parsed))
+                {
+                    classId = parsed;
+
+                    // Optional: verify class exists
+                    if (!await _context.Classes.AnyAsync(c => c.Classid == classId))
+                        return BadRequest("کلاس انتخاب‌شده وجود ندارد");
+                }
+
                 var student = new Student
                 {
-                    Name = model.Name,
-                    StuCode = model.StudentCode,
-                    Classeid = classId,
-                    ParentNum1 = model.Phone,
-                    ParentNum2 = model.ParentPhone,
-                    Address = model.Address,
-                    Debt = model.Debt,
+                    Name        = model.Name,
+                    StuCode     = model.StudentCode,
+                    Classeid    = classId,
+                    ParentNum1  = model.Phone?.Trim(),
+                    ParentNum2  = model.ParentPhone?.Trim(),
+                    Address     = model.Address?.Trim(),
+                    Debt        = model.Debt,
                     Registerdate = DateTime.Now.ToShamsi(),
-                    Birthdate = model.BirthDate,
-                    UserID = user.Userid //LINK USER TO STUDENT
+                    Birthdate   = model.BirthDate?.Trim(),
+                    UserID      = user.Userid,
+                    // Score, Score_month etc. can be set to null or default
                 };
 
                 _context.Students.Add(student);
+
+                // ──────────────────────────────────────────────
+                // 5. Welcome notification for the student
+                // ──────────────────────────────────────────────
+                _context.Notifications.Add(new Notification
+                {
+                    UserId      = user.Userid,
+                    Title       = "خوش آمدید!",
+                    Body        = $"نام کاربری: {username}\n" +
+                                  $"رمز عبور اولیه: {password}\n" +
+                                  "لطفاً در اولین ورود رمز عبور خود را تغییر دهید.\n" +
+                                  "می‌توانید نمرات، تکالیف و برنامه خود را مشاهده کنید.",
+                    Type        = "student_welcome",
+                    RelatedId   = student.Studentid,
+                    RelatedType = "student",
+                    CreatedAt   = DateTime.UtcNow,
+                    IsRead      = false
+                });
+
+                // ──────────────────────────────────────────────
+                // 6. Optional: Notify admins/managers about new student
+                // ──────────────────────────────────────────────
+                var admins = await _context.Users
+                    .Where(u => u.Role == "admin" || u.Role == "manager")
+                    .ToListAsync();
+
+                foreach (var admin in admins)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId      = admin.Userid,
+                        Title       = "دانش‌آموز جدید ثبت شد",
+                        Body        = $"نام: {student.Name}\n" +
+                                      $"کد دانش‌آموز: {student.StuCode}\n" +
+                                      $"کلاس: {classId?.ToString() ?? "نامشخص"}",
+                        Type        = "new_student_registered",
+                        RelatedId   = student.Studentid,
+                        RelatedType = "student",
+                        CreatedAt   = DateTime.UtcNow
+                    });
+                }
+
+                // ──────────────────────────────────────────────
+                // 7. Final save (student + notifications)
+                // ──────────────────────────────────────────────
                 await _context.SaveChangesAsync();
 
                 Console.WriteLine($"[CREATE STUDENT] New student created: {student.Studentid}");
 
                 return Ok(new
                 {
-                    message = "دانش‌آموز با موفقیت ایجاد شد",
-                    id = student.Studentid,
-                    name = student.Name,
-                    userId = user.Userid,
-                    username = user.Username,
-                    password = user.Password // Return so manager knows initial credentials
+                    message   = "دانش‌آموز با موفقیت ایجاد شد",
+                    id        = student.Studentid,
+                    name      = student.Name,
+                    userId    = user.Userid,
+                    username  = user.Username,
+                    password  = user.Password, // ← WARNING: Remove in production!
+                    studentCode = student.StuCode
                 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                Console.WriteLine($"[CREATE STUDENT DB ERROR] {dbEx.InnerException?.Message ?? dbEx.Message}");
+                return StatusCode(500, new { message = "خطا در ذخیره اطلاعات دانش‌آموز" });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"[CREATE STUDENT] Error: {ex.Message}");
-                return StatusCode(500, new { message = "خطا در ایجاد دانش‌آموز", error = ex.Message });
+                Console.WriteLine($"[CREATE STUDENT ERROR] {ex.Message}");
+                return StatusCode(500, new { message = "خطای سیستمی در ایجاد دانش‌آموز" });
             }
         }
 
@@ -1181,7 +1243,7 @@ namespace SchoolPortalAPI.Controllers
                Username = dto.NationalCode?.Trim()
                           ?? dto.Phone?.Trim()
                           ?? $"teacher_{Guid.NewGuid().ToString()[..8]}",
-               Password = "12345678", // TODO: تولید رمز تصادفی قوی + ارسال به ایمیل/پیامک + اجبار به تغییر
+               Password = GenerateRandomPassword(),
                Role = "teacher"
            };
 
