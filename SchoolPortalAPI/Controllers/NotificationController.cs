@@ -115,6 +115,25 @@ namespace SchoolPortalAPI.Controllers
 
             return NoContent();
         }
+
+        // DELETE ALL for a user: api/notifications/clear?userId=123
+        [HttpDelete("clear")]
+        public async Task<IActionResult> DeleteAllUserNotifications([FromQuery] long userId)
+        {
+            if (userId <= 0) return BadRequest("UserId نامعتبر است");
+
+            var notifications = await _context.Notifications
+                .Where(n => n.UserId == userId)
+                .ToListAsync();
+
+            if (!notifications.Any())
+                return NoContent(); // nothing to delete
+
+            _context.Notifications.RemoveRange(notifications);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 
     public class CreateNotificationDto

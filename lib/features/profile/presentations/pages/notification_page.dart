@@ -133,6 +133,55 @@ class _NotificationsPageState extends State<NotificationsPage>
     }
   }
 
+  Future<void> _showDeleteAllConfirmation() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('حذف همه اعلان‌ها'),
+        content: const Text(
+          'آیا مطمئن هستید که می‌خواهید تمام اعلان‌ها را حذف کنید؟\nاین عملیات قابل بازگشت نیست.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('خیر'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('بله، حذف همه', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    try {
+      // Call API to delete all (you need to implement this in ApiService)
+      await ApiService().deleteAllNotifications(widget.userId);
+
+      setState(() {
+        _notifications.clear();
+      });
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('همه اعلان‌ها با موفقیت حذف شدند'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطا در حذف همه اعلان‌ها: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   @override
   void dispose() {
     _controller.dispose();
@@ -152,8 +201,22 @@ class _NotificationsPageState extends State<NotificationsPage>
             icon: const Icon(Icons.refresh_rounded),
             onPressed: _fetchNotifications,
           ),
+          // if (_notifications.isNotEmpty && !_isLoading && !_hasError)
+          //   IconButton(
+          //     icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
+          //     onPressed: _showDeleteAllConfirmation,
+          //     tooltip: 'حذف همه اعلان‌ها',
+          //   ),
         ],
       ),
+      floatingActionButton: _notifications.isNotEmpty && !_isLoading && !_hasError
+          ? FloatingActionButton(
+        backgroundColor: Colors.redAccent,
+        onPressed: _showDeleteAllConfirmation,
+        tooltip: 'حذف همه اعلان‌ها',
+        child: const Icon(Icons.delete_sweep),
+      )
+          : null,
       body: ResponsiveContainer(
         child: _isLoading
             ? const NotificationShimmerList()

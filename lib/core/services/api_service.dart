@@ -2555,6 +2555,24 @@ class ApiService {
     }
   }
 
+  Future<void> deleteAllNotifications(int userId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/notifications/clear?userId=$userId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer $token', // if you have auth
+        },
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('خطا در حذف همه اعلان‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   ///////////////////////////////////////////
 
   static String getImageFullUrl(String? relativePath) {
