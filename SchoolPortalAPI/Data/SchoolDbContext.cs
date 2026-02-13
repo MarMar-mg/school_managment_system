@@ -22,5 +22,6 @@ namespace SchoolPortalAPI.Data
         public DbSet<ExamStuTeach> ExamStuTeaches { get; set; } = null!;
         public DbSet<ExerciseStuTeach> ExerciseStuTeaches { get; set; } = null!;
         public DbSet<Score> Scores { get; set; } = null!;
+        public DbSet<Notification> Notifications { get; set; }
     }
 }

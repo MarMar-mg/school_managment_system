@@ -6,8 +6,9 @@ import '../pages/privacy_page.dart';
 
 class SettingsMenu extends StatefulWidget {
   final VoidCallback onLogout;
+  final int userId;
 
-  const SettingsMenu({super.key, required this.onLogout});
+  const SettingsMenu({super.key, required this.onLogout, required this.userId});
 
   @override
   State<SettingsMenu> createState() => _SettingsMenuState();
@@ -29,7 +30,9 @@ class _SettingsMenuState extends State<SettingsMenu> {
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => NotificationsPage()),
+              MaterialPageRoute(
+                builder: (_) => NotificationsPage(userId: widget.userId),
+              ),
             );
           },
         ),
@@ -117,13 +120,13 @@ class _SettingsMenuState extends State<SettingsMenu> {
                   gradient: LinearGradient(
                     colors: isHovered
                         ? [
-                      iconBgColor.withOpacity(0.4),
-                      iconBgColor.withOpacity(0.15),
-                    ]
+                            iconBgColor.withOpacity(0.4),
+                            iconBgColor.withOpacity(0.15),
+                          ]
                         : [
-                      iconBgColor.withOpacity(0.15),
-                      iconBgColor.withOpacity(0.08),
-                    ],
+                            iconBgColor.withOpacity(0.15),
+                            iconBgColor.withOpacity(0.08),
+                          ],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
                   ),
@@ -147,7 +150,9 @@ class _SettingsMenuState extends State<SettingsMenu> {
                       label,
                       style: TextStyle(
                         fontSize: 15,
-                        fontWeight: isHovered ? FontWeight.w700 : FontWeight.w600,
+                        fontWeight: isHovered
+                            ? FontWeight.w700
+                            : FontWeight.w600,
                         color: isHovered ? iconBgColor : Colors.black87,
                         letterSpacing: isHovered ? 0.3 : 0,
                       ),

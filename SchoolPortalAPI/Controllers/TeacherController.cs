@@ -256,7 +256,7 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 8. Add new exercise (with optional file)
+        // 8. Add new exercise (with optional file) + notify students
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exercises")]
         public async Task<IActionResult> AddExercise([FromForm] AddExerciseDto model, IFormFile? file)
@@ -266,11 +266,16 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            // 1. Find teacher ID from UserId
             var teacherIdd = await _context.Teachers
                 .Where(t => t.Userid == model.Teacherid)
                 .Select(t => t.Teacherid)
                 .FirstOrDefaultAsync();
 
+            if (teacherIdd == 0)
+                return Unauthorized("معلم معتبر یافت نشد");
+
+            // 2. Validate course belongs to this teacher
             var course = await _context.Courses
                 .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
 
@@ -279,17 +284,17 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest("درس یافت نشد یا متعلق به شما نیست");
             }
 
-            // Handle file upload
+            // 3. Handle file upload (your existing logic – slightly improved)
             string? fileName = null;
             if (file != null && file.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exercises");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                Directory.CreateDirectory(uploadsFolder);
 
                 fileName = $"{Guid.NewGuid()}_{file.FileName}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                await using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -297,25 +302,88 @@ namespace SchoolPortalAPI.Controllers
                 Console.WriteLine($"[ADD EXERCISE] File saved: {fileName}");
             }
 
+            // 4. Create the exercise
             var exercise = new Exercise
             {
-                Title = model.Title,
+                Title       = model.Title,
                 Description = model.Description,
-                Enddate = model.Enddate,
-                Endtime = model.Endtime,
-                Startdate = model.Startdate,
-                Starttime = model.Starttime,
-                Score = model.Score,
-                Courseid = model.Courseid,
-                Classid = course.Classid,
-                Filename = file?.FileName,  // ✓ CHANGED - can be null
-                File = fileName              // ✓ Can be null
+                Enddate     = model.Enddate,
+                Endtime     = model.Endtime,
+                Startdate   = model.Startdate,
+                Starttime   = model.Starttime,
+                Score       = model.Score,
+                Courseid    = model.Courseid,
+                Classid     = course.Classid,          // ← from course
+                Filename    = file?.FileName,          // original name
+                File        = fileName,                // stored unique name (or null)
             };
 
             _context.Exercises.Add(exercise);
+
+            // 5. Save exercise first → we need exercise.Exerciseid for RelatedId
             await _context.SaveChangesAsync();
 
-            return Ok(new { id = exercise.Exerciseid, message = "تمرین با موفقیت اضافه شد", filename = fileName });
+            // ──────────────────────────────────────────────
+            // 6. Send notifications to students in the class/course
+            // ──────────────────────────────────────────────
+
+            // Find students in the same class (adjust if you use different relation)
+            var students = await _context.Students
+                .Where(s => s.Classeid == course.Classid)
+                .ToListAsync();
+
+            foreach (var student in students)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student.UserID ?? 0,
+                    Title       = "تمرین جدید اضافه شد",
+                    Body        = $"درس {course.Name ?? "نامشخص"} – عنوان: {exercise.Title} – مهلت ارسال: {exercise.Enddate} {exercise.Endtime}",
+                    Type        = "exercise",
+                    RelatedId   = exercise.Exerciseid,
+                    RelatedType = "exercise",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // Optional: Notify the teacher (confirmation / log)
+            var teacherUser = await _context.Users.FirstOrDefaultAsync(u => u.Userid == model.Teacherid);
+            if (teacherUser != null)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId      = teacherUser.Userid,
+                    Title       = "تمرین شما ثبت شد",
+                    Body        = $"تمرین {exercise.Title} با موفقیت ایجاد گردید.",
+                    Type        = "exercise_created",
+                    RelatedId   = exercise.Exerciseid,
+                    RelatedType = "exercise",
+                    CreatedAt   = DateTime.UtcNow
+                });
+            }
+
+            // 7. Final save (exercise + notifications)
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره تمرین یا ارسال اعلان‌ها",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            return Ok(new
+            {
+                id = exercise.Exerciseid,
+                message = "تمرین با موفقیت اضافه شد",
+                filename = fileName
+            });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -378,32 +446,38 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 10. Update exercise (with optional file)
+        // 10. Update exercise (with optional file) + notify students
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exercises/{exerciseId}")]
         public async Task<IActionResult> UpdateExercise(long exerciseId, [FromForm] UpdateExerciseDto model, IFormFile? file)
         {
+            // 1. Find teacher ID from UserId
             var teacherIdd = await _context.Teachers
                 .Where(t => t.Userid == model.Teacherid)
                 .Select(t => t.Teacherid)
                 .FirstOrDefaultAsync();
 
+            if (teacherIdd == 0)
+                return Unauthorized("معلم معتبر یافت نشد");
+
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            var exercise = await _context.Exercises.FindAsync(exerciseId);
-            if (exercise == null) return NotFound("تمرین یافت نشد");
+            // 2. Find the exercise + include Course
+            var exercise = await _context.Exercises
+                .Include(e => e.Course)               // for course name in notification
+                .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
 
-            var course = await _context.Courses.FindAsync(exercise.Courseid);
+            if (exercise == null)
+                return NotFound("تمرین یافت نشد");
+
+            // 3. Authorization check
+            var course = exercise.Course;
             if (course == null || course.Teacherid != teacherIdd)
-            {
-                return BadRequest("مجوز ویرایش ندارید");
-            }
+                return BadRequest("مجوز ویرایش این تمرین را ندارید");
 
-            // Handle file upload
-            string? fileName = exercise.File; // Keep old filename by default
+            // 4. Handle file upload (your logic – slightly cleaned)
+            string? fileName = exercise.File; // keep old if no new file
 
             if (file != null && file.Length > 0)
             {
@@ -417,19 +491,26 @@ namespace SchoolPortalAPI.Controllers
 
                     if (System.IO.File.Exists(oldFilePath))
                     {
-                        System.IO.File.Delete(oldFilePath);
-                        Console.WriteLine($"[UPDATE EXERCISE] Deleted old file: {exercise.File}");
+                        try
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                            Console.WriteLine($"[UPDATE EXERCISE] Deleted old file: {exercise.File}");
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[UPDATE EXERCISE] Failed to delete old file: {ex.Message}");
+                        }
                     }
                 }
 
                 // Save new file
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exercises");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                Directory.CreateDirectory(uploadsFolder);
 
                 fileName = $"{Guid.NewGuid()}_{file.FileName}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                await using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -437,17 +518,79 @@ namespace SchoolPortalAPI.Controllers
                 Console.WriteLine($"[UPDATE EXERCISE] File saved: {fileName}");
             }
 
-            exercise.Title = model.Title ?? exercise.Title;
+            // 5. Apply updates (only if new value provided)
+            exercise.Title       = model.Title ?? exercise.Title;
             exercise.Description = model.Description ?? exercise.Description;
-            exercise.Enddate = model.Enddate ?? exercise.Enddate;
-            exercise.Endtime = model.Endtime ?? exercise.Endtime;
-            exercise.Score = model.Score ?? exercise.Score;
-            exercise.Filename = file?.FileName;  // ✓ CHANGED - can be null
-            exercise.File = fileName;            // ✓ Can be null
+            exercise.Enddate     = model.Enddate ?? exercise.Enddate;
+            exercise.Endtime     = model.Endtime ?? exercise.Endtime;
+            exercise.Score       = model.Score ?? exercise.Score;
+            exercise.Filename    = file?.FileName;   // original filename
+            exercise.File        = fileName;         // stored unique name (or null)
 
+            // 6. Save exercise changes first
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "تمرین به‌روزرسانی شد", filename = fileName });
+            // ──────────────────────────────────────────────
+            // 7. Send notifications to students in the class/course
+            // ──────────────────────────────────────────────
+
+            // Find students in the same class as the exercise
+            var students = await _context.Students
+                .Where(s => s.Classeid == course.Classid)
+                .ToListAsync();
+
+            foreach (var student in students)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student.UserID ?? 0,
+                    Title       = "تمرین به‌روزرسانی شد",
+                    Body        = $"تمرین {exercise.Title} در درس {course.Name ?? "نامشخص"} ویرایش شد. لطفاً مهلت ارسال، توضیحات یا فایل جدید را بررسی کنید.",
+                    Type        = "exercise_updated",
+                    RelatedId   = exercise.Exerciseid,
+                    RelatedType = "exercise",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // Optional: Notify the teacher (confirmation)
+            var teacherUser = await _context.Users.FirstOrDefaultAsync(u => u.Userid == model.Teacherid);
+            if (teacherUser != null)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId      = teacherUser.Userid,
+                    Title       = "تمرین شما ویرایش شد",
+                    Body        = $"تمرین {exercise.Title} با موفقیت به‌روزرسانی گردید.",
+                    Type        = "exercise_teacher_update",
+                    RelatedId   = exercise.Exerciseid,
+                    RelatedType = "exercise",
+                    CreatedAt   = DateTime.UtcNow
+                });
+            }
+
+            // 8. Final save (exercise + notifications)
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره تغییرات یا ارسال اعلان‌ها",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            return Ok(new
+            {
+                message = "تمرین با موفقیت به‌روزرسانی شد",
+                filename = fileName,
+                exerciseId = exercise.Exerciseid
+            });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -650,32 +793,103 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 16. Update Exams Score(group)
+        // 16. Update Exams Score (group/batch) + notify affected students
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exams/{examId}/scores/batch")]
         public async Task<IActionResult> BatchUpdateScores(long examId, [FromBody] List<BatchScoreUpdate> scores)
         {
-            var exam = await _context.Exams.FirstOrDefaultAsync(e => e.Examid == examId);
-            if (exam == null)
-                return NotFound("Exam not found");
+            if (scores == null || !scores.Any())
+            {
+                return BadRequest("هیچ نمره‌ای برای به‌روزرسانی ارسال نشده است");
+            }
 
+            // 1. Validate exam exists
+            var exam = await _context.Exams
+                .Include(e => e.Course)           // optional: for course name in notification
+                .FirstOrDefaultAsync(e => e.Examid == examId);
+
+            if (exam == null)
+                return NotFound(new { message = "امتحان یافت نشد" });
+
+            // 2. Validate all scores are in valid range
             foreach (var scoreUpdate in scores)
             {
                 if (scoreUpdate.Score < 0 || scoreUpdate.Score > exam.PossibleScore)
-                    return BadRequest($"Score must be between 0 and {exam.PossibleScore}");
-
-                var submission = await _context.ExamStuTeaches
-                    .FirstOrDefaultAsync(est => est.Estid == scoreUpdate.SubmissionId);
-
-                if (submission != null)
                 {
-                    submission.Score = (int)scoreUpdate.Score;
-                    _context.ExamStuTeaches.Update(submission);
+                    return BadRequest(new
+                    {
+                        message = $"نمره باید بین ۰ تا {exam.PossibleScore} باشد",
+                        invalidSubmissionId = scoreUpdate.SubmissionId
+                    });
                 }
             }
 
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Scores updated successfully" });
+            // 3. Collect submissions to update + prepare notifications
+            var updatedSubmissions = new List<ExamStuTeach>();
+            var notificationsToAdd = new List<Notification>();
+
+            var courseName = exam.Course?.Name ?? "نامشخص";
+
+            // To avoid N+1 queries → load all relevant submissions in one go
+            var submissionIds = scores.Select(s => s.SubmissionId).ToList();
+            var existingSubmissions = await _context.ExamStuTeaches
+                .Include(est => est.Student)
+                .Where(est => est.Examid == examId && submissionIds.Contains(est.Estid))
+                .ToDictionaryAsync(est => est.Estid);
+
+            foreach (var scoreUpdate in scores)
+            {
+                if (!existingSubmissions.TryGetValue(scoreUpdate.SubmissionId, out var submission))
+                {
+                    // Skip or log – depending on your policy
+                    continue; // or return BadRequest if you want strict mode
+                }
+
+                // Update score
+                submission.Score = (int)scoreUpdate.Score;
+                _context.ExamStuTeaches.Update(submission);
+                updatedSubmissions.Add(submission);
+
+                // Create notification for the student (if they have a linked user)
+                if (submission.Student?.UserID > 0)
+                {
+                    var notification = new Notification
+                    {
+                        UserId      = submission.Student.UserID ?? 0,
+                        Title       = "نمره امتحان شما ثبت شد",
+                        Body        = $"امتحان {exam.Title} در درس {courseName} – نمره: {scoreUpdate.Score} از {exam.PossibleScore}",
+                        Type        = "grade",
+                        RelatedId   = exam.Examid,
+                        RelatedType = "exam",
+                        CreatedAt   = DateTime.UtcNow
+                    };
+
+                    notificationsToAdd.Add(notification);
+                }
+            }
+
+            // 4. Save everything in one transaction
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // In real app: log exception
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره نمرات یا ارسال اعلان‌ها",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            // 5. Return success with summary
+            return Ok(new
+            {
+                message = $"نمرات {updatedSubmissions.Count} دانش‌آموز با موفقیت به‌روزرسانی شد",
+                updatedCount = updatedSubmissions.Count,
+                examId = exam.Examid
+            });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -727,21 +941,57 @@ namespace SchoolPortalAPI.Controllers
             });
         }
 
-        public class UpdateScoreRequest
+        // ──────────────────────────────────────────────────────────────
+        // 17-b. Get Exercises Statistic
+        // ──────────────────────────────────────────────────────────────
+        [HttpGet("exercises/{exerciseId}/stats")]
+        public async Task<IActionResult> GetExercisesStats(long exerciseId)
         {
-            public decimal Score { get; set; }
+            var exercises = await _context.Exercises
+                .Include(e => e.Course)
+                .FirstOrDefaultAsync(e => e.Exerciseid == exerciseId);
+
+            if (exercises == null)
+                return NotFound("exercises not found");
+
+            var allStudents = await _context.Students
+                .Where(s => s.Classeid == exercises.Classid)
+                .ToListAsync();
+
+            var submissions = await _context.ExerciseStuTeaches
+                .Where(est => est.Exerciseid == exerciseId)
+                .ToListAsync();
+
+            var submission = submissions.Where(es => es.Date != null).ToList();
+
+            var gradedSubmissions = submissions.Where(s => s.Score.HasValue).ToList();
+
+            double avgScore = gradedSubmissions.Count > 0
+                ? gradedSubmissions.Average(s => (double)s.Score.Value)
+                : 0;
+
+            double passPercentage = submissions.Count > 0
+                ? (gradedSubmissions.Count(s => s.Score >= (exercises.Score * 0.5)) * 100.0 / allStudents.Count)
+                : 0;
+
+            return Ok(new
+            {
+                exercisesId = exercises.Exerciseid,
+                title = exercises.Title,
+                subject = exercises.Course?.Name ?? "نامشخص",
+                score = exercises.Score,
+                totalSubmissions = submission.Count,
+                gradedSubmissions = gradedSubmissions.Count,
+                pendingSubmissions = submissions.Count - gradedSubmissions.Count,
+                averageScore = Math.Round(avgScore, 2),
+                passPercentage = Math.Round(passPercentage, 1),
+                maxScore = gradedSubmissions.Count > 0 ? gradedSubmissions.Max(s => s.Score) : null,
+                minScore = gradedSubmissions.Count > 0 ? gradedSubmissions.Min(s => s.Score) : null
+            });
         }
-
-        public class BatchScoreUpdate
-        {
-            public long SubmissionId { get; set; }
-            public decimal Score { get; set; }
-        }
-
-
 
         // ──────────────────────────────────────────────────────────────
-        // 18. Add New Exams (with optional file)
+        // 18. Add New Exams (with optional file) + notify students
         // ──────────────────────────────────────────────────────────────
         [HttpPost("exams")]
         public async Task<IActionResult> CreateExam([FromForm] AddExamDto model, IFormFile? file)
@@ -751,11 +1001,16 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest(ModelState);
             }
 
+            // 1. Find teacher ID from UserId
             var teacherIdd = await _context.Teachers
                 .Where(t => t.Userid == model.Teacherid)
                 .Select(t => t.Teacherid)
                 .FirstOrDefaultAsync();
 
+            if (teacherIdd == 0)
+                return Unauthorized("معلم معتبر یافت نشد");
+
+            // 2. Validate course belongs to this teacher
             var course = await _context.Courses
                 .FirstOrDefaultAsync(c => c.Courseid == model.Courseid && c.Teacherid == teacherIdd);
 
@@ -764,17 +1019,17 @@ namespace SchoolPortalAPI.Controllers
                 return BadRequest("درس یافت نشد یا متعلق به شما نیست");
             }
 
-            // Handle file upload
+            // 3. Handle file upload (your existing logic – slightly improved)
             string? fileName = null;
             if (file != null && file.Length > 0)
             {
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                Directory.CreateDirectory(uploadsFolder);
 
                 fileName = $"{Guid.NewGuid()}_{file.FileName}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                await using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
@@ -782,55 +1037,124 @@ namespace SchoolPortalAPI.Controllers
                 Console.WriteLine($"[CREATE EXAM] File saved: {fileName}");
             }
 
+            // 4. Create the exam
             var exam = new Exam
             {
-                Title = model.Title,
-                Enddate = model.Enddate,
-                Endtime = model.Endtime,
-                Startdate = model.Startdate,
-                Starttime = model.Starttime,
+                Title         = model.Title,
+                Enddate       = model.Enddate,
+                Endtime       = model.Endtime,
+                Startdate     = model.Startdate,
+                Starttime     = model.Starttime,
                 PossibleScore = model.PossibleScore,
-                Courseid = model.Courseid,
-                Classid = course.Classid,
-                Description = model.Description,
-                Duration = model.Duration,
-                Filename = file?.FileName,  // ✓ CHANGED - can be null
-                File = fileName              // ✓ Can be null
+                Courseid      = model.Courseid,
+                Classid       = course.Classid,           // ← from course
+                Description   = model.Description,
+                Duration      = model.Duration,
+                Filename      = file?.FileName,           // original name
+                File          = fileName,                 // stored unique name
             };
 
             _context.Exams.Add(exam);
+
+            // 5. Save exam first → we need exam.Examid for RelatedId
             await _context.SaveChangesAsync();
 
-            return Ok(new { id = exam.Examid, message = "امتحان با موفقیت اضافه شد", filename = fileName });
+            // ──────────────────────────────────────────────
+            // 6. Send notifications to students in the class/course
+            // ──────────────────────────────────────────────
+
+            // Find students in the same class (adjust if you use different relation)
+            var students = await _context.Students
+                .Where(s => s.Classeid == course.Classid)
+                .ToListAsync();
+
+
+            foreach (var student in students)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student.UserID ?? 0,
+                    Title       = "امتحان جدید اضافه شد",
+                    Body        = $"امتحان {exam.Title} در درس {course.Name ?? "نامشخص"} – تاریخ: {exam.Startdate} تا {exam.Enddate}",
+                    Type        = "exam",
+                    RelatedId   = exam.Examid,
+                    RelatedType = "exam",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // Optional: Notify the teacher (confirmation / log)
+            var teacherUser = await _context.Users.FirstOrDefaultAsync(u => u.Userid == model.Teacherid);
+            if (teacherUser != null)
+            {
+                _context.Notifications.Add(new Notification
+                {
+                    UserId      = teacherUser.Userid,
+                    Title       = "امتحان شما ثبت شد",
+                    Body        = $"امتحان {exam.Title} با موفقیت ایجاد گردید.",
+                    Type        = "exam_created",
+                    RelatedId   = exam.Examid,
+                    RelatedType = "exam",
+                    CreatedAt   = DateTime.UtcNow
+                });
+            }
+
+            // 7. Final save (exam + notifications)
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره امتحان یا ارسال اعلان‌ها",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            return Ok(new
+            {
+                id = exam.Examid,
+                message = "امتحان با موفقیت اضافه شد",
+                filename = fileName
+            });
         }
 
         // ──────────────────────────────────────────────────────────────
-        // 19. Update Exam (with optional file)
+        // 19. Update Exam (with optional file) + send notifications to students
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/{examId}")]
         public async Task<IActionResult> UpdateExam(long examId, [FromForm] UpdateExamDto model, IFormFile? file)
         {
+            // 1. Find the teacher ID from UserId (your existing logic)
             var teacherIdd = await _context.Teachers
                 .Where(t => t.Userid == model.Teacherid)
                 .Select(t => t.Teacherid)
                 .FirstOrDefaultAsync();
 
+            if (teacherIdd == 0)
+                return Unauthorized("معلم معتبر یافت نشد");
+
             if (!ModelState.IsValid)
-            {
                 return BadRequest(ModelState);
-            }
 
-            var exam = await _context.Exams.FindAsync(examId);
-            if (exam == null) return NotFound("امتحان یافت نشد");
+            // 2. Find the exam
+            var exam = await _context.Exams
+                .Include(e => e.Course)                // to access course info
+                .FirstOrDefaultAsync(e => e.Examid == examId);
 
-            var course = await _context.Courses.FindAsync(exam.Courseid);
-            if (course == null || course.Teacherid != teacherIdd)
-            {
-                return BadRequest("مجوز ویرایش ندارید");
-            }
+            if (exam == null)
+                return NotFound("امتحان یافت نشد");
 
-            // Handle file upload
-            string? fileName = exam.File; // Keep old filename by default
+            // 3. Authorization check
+            if (exam.Course == null || exam.Course.Teacherid != teacherIdd)
+                return BadRequest("مجوز ویرایش این امتحان را ندارید");
+
+            // 4. Handle file upload (your existing logic - slightly cleaned)
+            string? fileName = exam.File; // keep old if no new file
 
             if (file != null && file.Length > 0)
             {
@@ -844,38 +1168,88 @@ namespace SchoolPortalAPI.Controllers
 
                     if (System.IO.File.Exists(oldFilePath))
                     {
-                        System.IO.File.Delete(oldFilePath);
-                        Console.WriteLine($"[UPDATE EXAM] Deleted old file: {exam.File}");
+                        try
+                        {
+                            System.IO.File.Delete(oldFilePath);
+                        }
+                        catch (Exception ex)
+                        {
+                            Console.WriteLine($"[UPDATE EXAM] Failed to delete old file: {ex.Message}");
+                        }
                     }
                 }
 
                 // Save new file
                 var uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "uploads", "exams");
-                if (!Directory.Exists(uploadsFolder)) Directory.CreateDirectory(uploadsFolder);
+                Directory.CreateDirectory(uploadsFolder);
 
                 fileName = $"{Guid.NewGuid()}_{file.FileName}";
                 var filePath = Path.Combine(uploadsFolder, fileName);
 
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                await using (var stream = new FileStream(filePath, FileMode.Create))
                 {
                     await file.CopyToAsync(stream);
                 }
-
-                Console.WriteLine($"[UPDATE EXAM] File saved: {fileName}");
             }
 
-            exam.Title = model.Title ?? exam.Title;
-            exam.Description = model.Description ?? exam.Description;
-            exam.Enddate = model.Enddate ?? exam.Enddate;
-            exam.Endtime = model.Endtime ?? exam.Endtime;
+            // 5. Apply updates (only if provided)
+            exam.Title         = model.Title ?? exam.Title;
+            exam.Description   = model.Description ?? exam.Description;
+            exam.Enddate       = model.Enddate ?? exam.Enddate;
+            exam.Endtime       = model.Endtime ?? exam.Endtime;
             exam.PossibleScore = model.PossibleScore ?? exam.PossibleScore;
-            exam.Duration = model.Duration ?? exam.Duration;
-            exam.Filename = file?.FileName;  // ✓ CHANGED - can be null
-            exam.File = fileName;            // ✓ Can be null
+            exam.Duration      = model.Duration ?? exam.Duration;
+            exam.Filename      = file?.FileName;   // original filename
+            exam.File          = fileName;         // stored unique name (or null)
 
+            // 6. Save changes first (so we have the updated exam data)
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "امتحان به‌روزرسانی شد", filename = fileName });
+            // ──────────────────────────────────────────────
+            // 7. Send notifications to students in the course/class
+            // ──────────────────────────────────────────────
+
+            var studentsInCourse = await _context.Students
+                .Where(s => s.Classeid == exam.Classid)
+                .ToListAsync();
+
+
+            foreach (var student in studentsInCourse)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student.UserID ?? 0,
+                    Title       = "امتحان به‌روزرسانی شد",
+                    Body        = $"امتحان {exam.Title} در درس {exam.Course?.Name ?? "نامشخص"} ویرایش شد. لطفاً جزئیات (تاریخ، زمان، نمره ممکن) را بررسی کنید.",
+                    Type        = "exam_updated",
+                    RelatedId   = exam.Examid,
+                    RelatedType = "exam",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // 8. Final save (notifications + exam updates)
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره تغییرات یا ارسال اعلان‌ها",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            return Ok(new
+            {
+                message = "امتحان با موفقیت به‌روزرسانی شد",
+                filename = fileName,
+                examId = exam.Examid
+            });
         }
 
         // ──────────────────────────────────────────────────────────────
@@ -1080,30 +1454,85 @@ namespace SchoolPortalAPI.Controllers
         }
 
         // ──────────────────────────────────────────────────────────────
-        // Update submission score (creates record if it doesn't exist)
+        // Update exam submission score
         // ──────────────────────────────────────────────────────────────
         [HttpPut("exams/submissions/{submissionId}/score")]
         public async Task<IActionResult> UpdateSubmissionScore(long submissionId, [FromBody] UpdateScoreRequest request)
         {
-            if (request.Score < 0)
-                return BadRequest(new { message = "Score cannot be negative" });
+            if (request == null || request.Score < 0)
+            {
+                return BadRequest(new { message = "نمره نمی‌تواند منفی باشد یا درخواست نامعتبر است" });
+            }
 
-            var submission = await _context.ExamStuTeaches.FirstOrDefaultAsync(est => est.Estid == submissionId);
+            // 1. Load the submission + related Exam (to get Courseid)
+            var submission = await _context.ExamStuTeaches
+                .Include(est => est.Exam)               // ← important: load the related Exam
+                .FirstOrDefaultAsync(est => est.Estid == submissionId);
 
             if (submission == null)
-                return NotFound(new { message = "Submission not found" });
+            {
+                return NotFound(new { message = "پاسخ امتحان یافت نشد" });
+            }
 
+            // 2. Update the score
             submission.Score = (int)request.Score;
             _context.ExamStuTeaches.Update(submission);
-            await _context.SaveChangesAsync();
 
-            return Ok(new {
-                message = "Score updated successfully",
+            // 3. Load student + user (for sending notification)
+            var student = await _context.Students               // assuming Student has User navigation property
+                .FirstOrDefaultAsync(s => s.Studentid == submission.Studentid);
+
+            // 4. Load course name (from Exam → Course)
+            string? courseName = null;
+            if (submission.Exam?.Courseid.HasValue == true)
+            {
+                courseName = await _context.Courses
+                    .Where(c => c.Courseid == submission.Exam.Courseid)
+                    .Select(c => c.Name)
+                    .FirstOrDefaultAsync();
+            }
+
+            // 5. Create notification for the student (if they have a linked user account)
+            if (student?.UserID > 0)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student.UserID ?? 0,
+                    Title       = "نمره امتحان شما ثبت شد",
+                    Body        = $"درس {courseName ?? "نامشخص"} – نمره: {request.Score}",
+                    Type        = "grade",
+                    RelatedId   = submission.Examid,           // link to the exam
+                    RelatedType = "exam",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // 6. Save all changes in one transaction
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // In real app: log the exception
+                return StatusCode(500, new
+                {
+                    message = "خطا در ذخیره تغییرات",
+                    detail = ex.InnerException?.Message ?? ex.Message
+                });
+            }
+
+            // 7. Return success response
+            return Ok(new
+            {
+                message = "نمره با موفقیت ثبت شد",
                 submission = new
                 {
                     submissionId = submission.Estid,
-                    studentId = submission.Studentid,
-                    score = submission.Score
+                    studentId    = submission.Studentid,
+                    score        = submission.Score
                 }
             });
         }
@@ -1114,25 +1543,73 @@ namespace SchoolPortalAPI.Controllers
         [HttpPut("exercises/submissions/{submissionId}/score")]
         public async Task<IActionResult> UpdateSubmissionScoreEx(long submissionId, [FromBody] UpdateScoreRequest request)
         {
-            if (request.Score < 0)
-                return BadRequest(new { message = "Score cannot be negative" });
+            if (request == null || request.Score < 0)
+            {
+                return BadRequest(new { message = "Score cannot be negative or request is invalid" });
+            }
 
-            var submission = await _context.ExerciseStuTeaches.FirstOrDefaultAsync(est => est.Exstid == submissionId);
+            // 1. Find the submission
+            var submission = await _context.ExerciseStuTeaches
+                .Include(est => est.Exercise)
+                .FirstOrDefaultAsync(est => est.Exstid == submissionId);
 
             if (submission == null)
+            {
                 return NotFound(new { message = "Submission not found" });
+            }
 
+            // 2. Update score
             submission.Score = (int)request.Score;
             _context.ExerciseStuTeaches.Update(submission);
-            await _context.SaveChangesAsync();
 
-            return Ok(new {
-                message = "Score updated successfully",
+            // 3. Try to load student + user + course for notification
+            var student = await _context.Students                        // assuming Student has User navigation property
+                .FirstOrDefaultAsync(s => s.Studentid == submission.Studentid);
+
+            Course? course = null;
+            if (submission.Exercise?.Courseid.HasValue == true)
+            {
+                course = await _context.Courses
+                    .FirstOrDefaultAsync(c => c.Courseid == submission.Exercise.Courseid);
+            }
+
+            // 4. Create notification only if student has a linked user account
+            if (student?.UserID > 0)
+            {
+                var notification = new Notification
+                {
+                    UserId      = student?.UserID ?? 0,
+                    Title       = "نمره تکلیف ثبت شد",
+                    Body        = $"درس {course?.Name ?? "نامشخص"} – نمره: {request.Score}",
+                    Type        = "grade",
+                    RelatedId   = submission.Exerciseid,           // links to the exercise
+                    RelatedType = "exercise",
+                    CreatedAt   = DateTime.UtcNow
+                };
+
+                _context.Notifications.Add(notification);
+            }
+
+            // 5. Save everything in one transaction
+            try
+            {
+                await _context.SaveChangesAsync();
+            }
+            catch (DbUpdateException ex)
+            {
+                // Log exception in real app
+                return StatusCode(500, new { message = "خطا در ذخیره تغییرات", detail = ex.Message });
+            }
+
+            // 6. Return success response
+            return Ok(new
+            {
+                message = "نمره با موفقیت به‌روزرسانی شد",
                 submission = new
                 {
                     submissionId = submission.Exstid,
-                    studentId = submission.Studentid,
-                    score = submission.Score
+                    studentId    = submission.Studentid,
+                    score        = submission.Score
                 }
             });
         }
@@ -1185,6 +1662,24 @@ namespace SchoolPortalAPI.Controllers
 
             await _context.SaveChangesAsync();
 
+            var studentt = await _context.Students
+                .FirstOrDefaultAsync(s => s.Studentid == studentId);
+
+            if (studentt?.UserID == null) return Ok(); // no user → skip notification
+
+            var notification = new Notification
+            {
+                UserId     = studentt.UserID.Value,
+                Title      = "نمره جدید ثبت شد",
+                Body       = $"درس {course?.Name ?? "نامشخص"} – نمره: {(int)request.Score}",
+                Type       = "grade",
+                RelatedId  = examId,           // optional
+                RelatedType = "exam"
+            };
+
+            _context.Notifications.Add(notification);
+            await _context.SaveChangesAsync();
+
             return Ok(new { message = "Score saved successfully" });
         }
 
@@ -1228,6 +1723,26 @@ namespace SchoolPortalAPI.Controllers
                 _context.ExerciseStuTeaches.Add(newSubmission);
             }
 
+            await _context.SaveChangesAsync();
+
+            var studentt = await _context.Students
+                .FirstOrDefaultAsync(s => s.Studentid == studentId);
+
+            if (studentt?.UserID == null) return Ok(); // no user → skip notification
+
+            var course = await _context.Courses.FindAsync(exercise.Courseid);
+
+            var notification = new Notification
+            {
+                UserId     = studentt.UserID.Value,
+                Title      = "نمره جدید ثبت شد",
+                Body       = $"درس {course?.Name ?? "نامشخص"} – نمره: {(int)request.Score}",
+                Type       = "grade",
+                RelatedId  = exerciseId,           // optional
+                RelatedType = "exercise"
+            };
+
+            _context.Notifications.Add(notification);
             await _context.SaveChangesAsync();
 
             return Ok(new { message = "Score saved successfully" });
@@ -1278,5 +1793,17 @@ namespace SchoolPortalAPI.Controllers
 
             return gregorianDate;
         }
+
+        public class UpdateScoreRequest
+        {
+            public decimal Score { get; set; }
+        }
+
+        public class BatchScoreUpdate
+        {
+            public long SubmissionId { get; set; }
+            public decimal Score { get; set; }
+        }
     }
+
 }

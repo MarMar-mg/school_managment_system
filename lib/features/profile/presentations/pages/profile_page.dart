@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/role.dart';
 import 'package:school_management_system/commons/responsive_container.dart';
+import 'package:school_management_system/commons/untils.dart';
 import '../../../login/presentations/pages/register_page.dart';
 import '../widgets/settings_menu.dart';
 import '../widgets/user_info_card.dart';
@@ -94,7 +95,12 @@ class _ProfilePageState extends State<ProfilePage>
 
             _animatedSection(
               2,
-              _buildCard(child: SettingsMenu(onLogout: _showLogoutDialog)),
+              _buildCard(
+                child: SettingsMenu(
+                  onLogout: _showLogoutDialog,
+                  userId: widget.userId.toInt(),
+                ),
+              ),
             ),
 
             if (_isStaff) const SizedBox(height: 50),
