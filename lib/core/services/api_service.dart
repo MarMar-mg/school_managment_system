@@ -2536,6 +2536,25 @@ class ApiService {
     }
   }
 
+  // core/services/api_service.dart
+  Future<void> deleteNotification(int notificationId) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/notifications/$notificationId'),
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer $token', // if needed
+        },
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('خطا در حذف اعلان: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   ///////////////////////////////////////////
 
   static String getImageFullUrl(String? relativePath) {

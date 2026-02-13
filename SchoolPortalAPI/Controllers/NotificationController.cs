@@ -98,6 +98,23 @@ namespace SchoolPortalAPI.Controllers
             await _context.SaveChangesAsync();
             return NoContent();
         }
+
+        // DELETE: api/notifications/{id}
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> DeleteNotification(long id)
+        {
+            var notification = await _context.Notifications.FindAsync(id);
+            if (notification == null)
+                return NotFound();
+
+            // Optional: Check ownership
+            // if (notification.UserId != currentUserId) return Forbid();
+
+            _context.Notifications.Remove(notification);
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
     }
 
     public class CreateNotificationDto
