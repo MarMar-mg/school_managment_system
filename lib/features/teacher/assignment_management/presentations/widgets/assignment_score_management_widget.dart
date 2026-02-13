@@ -225,13 +225,13 @@ class _AssignmentScoreManagementDialogState
           ),
           _buildStatItem(
             'تعداد پاسخ',
-            '${stats['submissionCount'] ?? 0}',
+            '${stats['totalSubmissions'] ?? 0}',
             Icons.people_outline,
             Colors.blue,
           ),
           _buildStatItem(
             'بالاترین نمره',
-            '${stats['highestScore'] ?? 0}',
+            '${stats['maxScore'] ?? 0}',
             Icons.arrow_upward,
             Colors.green,
           ),
@@ -372,7 +372,7 @@ class _AssignmentScoreManagementDialogState
     final submittedDescription =
         submission['submittedDescription'] ?? 'بدون توضیح';
     final filename = submission['filename'];
-    final estId = submission['estId'] ?? submission['submissionId'];
+    final estId = submission['studentId'] ?? submission['submissionId'];
 
     showDialog(
       context: context,
@@ -486,12 +486,13 @@ class _AssignmentScoreManagementDialogState
                 );
                 return;
               }
-
               try {
-                await ApiService.updateSubmissionScore(
-                  submission['submissionId'],
+                print(estId);
+                await ApiService.updateSubmissionScoreEx(
+                  estId,
                   score,
                 );
+                print('after');
                 if (mounted) {
                   Navigator.pop(context);
                   _loadData();
@@ -503,6 +504,7 @@ class _AssignmentScoreManagementDialogState
                   );
                 }
               } catch (e) {
+                print('catch');
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('خطا: $e'),

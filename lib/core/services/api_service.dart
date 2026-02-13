@@ -19,6 +19,7 @@ import '../../features/admin/teacher_management/data/models/course_model.dart';
 import '../../features/admin/teacher_management/data/models/grouped_teachers_response.dart';
 import '../../features/admin/teacher_management/data/models/teacher_model.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
+import '../../features/profile/data/models/notification_model.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
@@ -928,14 +929,16 @@ class ApiService {
   }
 
   static Future<Map<String, dynamic>> updateSubmissionScoreEx(
-    int submissionId,
-    double score,
-  ) async {
+      int submissionId,
+      double score,
+      ) async {
     final url = Uri.parse(
       '$baseUrl/teacher/exercises/submissions/$submissionId/score',
     );
+    print('beginning');
 
     try {
+      print('start');
       final response = await http
           .put(url, headers: _headers, body: json.encode({'score': score}))
           .timeout(_timeout);
@@ -1700,7 +1703,7 @@ class ApiService {
   static Future<Map<String, dynamic>> getAssignmentStats(
     int assignmentId,
   ) async {
-    final url = Uri.parse('$baseUrl/assignments/$assignmentId/stats');
+    final url = Uri.parse('$baseUrl/teacher/exercises/$assignmentId/stats');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -2398,10 +2401,14 @@ class ApiService {
 
   /// Delete teacher
   Future<void> deleteTeacher(int teacherId) async {
-    final response = await http.delete(Uri.parse('$baseUrl/admin/teachers/$teacherId'));
+    final response = await http.delete(
+      Uri.parse('$baseUrl/admin/teachers/$teacherId'),
+    );
 
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete teacher: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Failed to delete teacher: ${response.statusCode} - ${response.body}',
+      );
     }
   }
 
@@ -2422,16 +2429,103 @@ class ApiService {
   }
 
   Future<GroupedTeachersResponse> getTeachersGroupedByClass() async {
-    final response = await http.get(Uri.parse('$baseUrl/admin/teachers/grouped-by-class'));
+    final response = await http.get(
+      Uri.parse('$baseUrl/admin/teachers/grouped-by-class'),
+    );
 
     print('Grouped endpoint status: ${response.statusCode}');
-    print('Grouped response body: ${response.body.substring(0, min(300, response.body.length))}...');
+    print(
+      'Grouped response body: ${response.body.substring(0, min(300, response.body.length))}...',
+    );
 
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body) as Map<String, dynamic>;
       return GroupedTeachersResponse.fromJson(json);
     } else {
-      throw Exception('Failed to load grouped teachers: ${response.statusCode} - ${response.body}');
+      throw Exception(
+        'Failed to load grouped teachers: ${response.statusCode} - ${response.body}',
+      );
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Get notifications for a specific user
+  // ──────────────────────────────────────────────
+  Future<List<NotificationModel>> getNotifications(int userId) async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/$userId');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // Add authorization if needed:
+          // 'Authorization': 'Bearer $token',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonList = jsonDecode(response.body);
+        return jsonList
+            .map((json) => NotificationModel.fromJson(json))
+            .toList();
+      } else if (response.statusCode == 404) {
+        return []; // no notifications → empty list is better UX than error
+      } else {
+        throw Exception(
+          'خطا در دریافت اعلان‌ها: ${response.statusCode} - ${response.body}',
+        );
+      }
+    } catch (e) {
+      throw Exception('مشکل ارتباط با سرور: $e');
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Mark single notification as read
+  // ──────────────────────────────────────────────
+  Future<void> markNotificationAsRead(int notificationId) async {
+    try {
+      final url = Uri.parse('$baseUrl/notifications/$notificationId/read');
+
+      final response = await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer $token',
+        },
+        // body: jsonEncode({})   // usually no body needed for this action
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception('خطا در به‌روزرسانی وضعیت: ${response.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('خطا در ارتباط: $e');
+    }
+  }
+
+  // ──────────────────────────────────────────────
+  // Optional: Mark all notifications as read for user
+  // ──────────────────────────────────────────────
+  Future<void> markAllNotificationsAsRead(int userId) async {
+    try {
+      final url = Uri.parse(
+        '$baseUrl/notifications/mark-all-read?userId=$userId',
+      );
+
+      final response = await http.put(
+        url,
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      if (response.statusCode != 204 && response.statusCode != 200) {
+        throw Exception(
+          'خطا در خوانده شدن همه اعلان‌ها: ${response.statusCode}',
+        );
+      }
+    } catch (e) {
+      throw Exception('خطا: $e');
     }
   }
 

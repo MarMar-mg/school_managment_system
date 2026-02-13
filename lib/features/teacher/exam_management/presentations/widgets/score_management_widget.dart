@@ -217,13 +217,13 @@ class _ExamScoreManagementDialogState extends State<ExamScoreManagementDialog> {
           ),
           _buildStatItem(
             'تعداد پاسخ',
-            '${stats['submissionCount'] ?? 0}',
+            '${stats['totalSubmissions'] ?? 0}',
             Icons.people_outline,
             Colors.blue,
           ),
           _buildStatItem(
             'بالاترین نمره',
-            '${stats['highestScore'] ?? 0}',
+            '${stats['maxScore'] ?? 0}',
             Icons.arrow_upward,
             Colors.green,
           ),
