@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 
+import '../../../../applications/role.dart';
 import '../pages/about_page.dart';
 import '../pages/notification_page.dart';
 import '../pages/privacy_page.dart';
 
 class SettingsMenu extends StatefulWidget {
+  final Role role;
+  final String userName;
   final VoidCallback onLogout;
   final int userId;
 
-  const SettingsMenu({super.key, required this.onLogout, required this.userId});
+  const SettingsMenu({
+    super.key,
+    required this.onLogout,
+    required this.userId,
+    required this.role,
+    required this.userName,
+  });
 
   @override
   State<SettingsMenu> createState() => _SettingsMenuState();
@@ -31,7 +40,7 @@ class _SettingsMenuState extends State<SettingsMenu> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (_) => NotificationsPage(userId: widget.userId),
+                builder: (_) => NotificationsPage(userId: widget.userId, role: widget.role, userName: widget.userName,),
               ),
             );
           },

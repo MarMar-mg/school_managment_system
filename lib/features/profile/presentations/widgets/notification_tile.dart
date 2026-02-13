@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
+import '../../../../core/services/api_service.dart';
 import '../../data/models/notification_model.dart';
 
 class NotificationTile extends StatefulWidget {
@@ -34,9 +35,10 @@ class _NotificationTileState extends State<NotificationTile>
       vsync: this,
       duration: const Duration(milliseconds: 180),
     );
-    _scaleAnimation = Tween<double>(begin: 1.0, end: 0.96).animate(
-      CurvedAnimation(parent: _tapController, curve: Curves.easeInOut),
-    );
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _tapController, curve: Curves.easeInOut));
 
     Future.delayed(Duration(milliseconds: widget.delay), () {
       if (mounted) {
@@ -60,28 +62,45 @@ class _NotificationTileState extends State<NotificationTile>
       scale: _scaleAnimation,
       child: GestureDetector(
         onTapDown: (_) => _tapController.forward(),
-        onTapUp: (_) {
+        onTapUp: (_) async {
           _tapController.reverse();
-          if (unread && widget.onMarkRead != null) {
-            widget.onMarkRead!();
-          }
-          if (widget.onTap != null) {
-            widget.onTap!();
+          if (unread) {
+            try {
+              await ApiService().markNotificationAsRead(widget.notification.id);
+              if (widget.onMarkRead != null) widget.onMarkRead!();
+
+              if (widget.onTap != null) {
+                widget.onTap!();
+              }
+            } catch (e) {
+              if (mounted) {
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text('خطا: $e')));
+              }
+            }
           }
         },
         onTapCancel: () => _tapController.reverse(),
         child: Card(
           margin: const EdgeInsets.only(bottom: 12),
           elevation: unread ? 3 : 1,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
             leading: Stack(
               alignment: Alignment.center,
               children: [
                 CircleAvatar(
                   radius: 26,
-                  backgroundColor: unread ? AppColor.purple.withOpacity(0.15) : Colors.grey[200],
+                  backgroundColor: unread
+                      ? AppColor.purple.withOpacity(0.15)
+                      : Colors.grey[200],
                   child: Icon(
                     _getIcon(n.type),
                     color: unread ? AppColor.purple : Colors.grey[700],
@@ -110,7 +129,11 @@ class _NotificationTileState extends State<NotificationTile>
               mainAxisSize: MainAxisSize.min,
               children: [
                 IconButton(
-                  icon: const Icon(Icons.delete_outline, color: Colors.redAccent, size: 22),
+                  icon: const Icon(
+                    Icons.delete_outline,
+                    color: Colors.redAccent,
+                    size: 22,
+                  ),
                   onPressed: widget.onDelete,
                   tooltip: 'حذف',
                 ),

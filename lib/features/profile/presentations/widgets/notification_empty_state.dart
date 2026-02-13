@@ -3,10 +3,7 @@ import 'package:flutter/material.dart';
 class NotificationEmptyState extends StatelessWidget {
   final VoidCallback? onRetry;
 
-  const NotificationEmptyState({
-    super.key,
-    this.onRetry,
-  });
+  const NotificationEmptyState({super.key, this.onRetry});
 
   @override
   Widget build(BuildContext context) {
@@ -30,10 +27,7 @@ class NotificationEmptyState extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           if (onRetry != null)
-            OutlinedButton(
-              onPressed: onRetry,
-              child: const Text('تلاش مجدد'),
-            ),
+            OutlinedButton(onPressed: onRetry, child: const Text('تلاش مجدد')),
         ],
       ),
     );

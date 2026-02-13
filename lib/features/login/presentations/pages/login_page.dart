@@ -99,6 +99,7 @@ class _LoginPageState extends State<LoginPage> with TickerProviderStateMixin {
             userName: response['username'] ?? 'کاربر',
             userId: response['userid']?.toString() ?? '0',
             userIdi: response['userid'] ?? 0,
+            selectedIndex: 0,
           ),
         ),
       );

@@ -99,6 +99,8 @@ class _ProfilePageState extends State<ProfilePage>
                 child: SettingsMenu(
                   onLogout: _showLogoutDialog,
                   userId: widget.userId.toInt(),
+                  role: widget.role,
+                  userName: widget.userName,
                 ),
               ),
             ),

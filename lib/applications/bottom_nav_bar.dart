@@ -22,6 +22,7 @@ class BottomNavBar extends StatefulWidget {
   final String userName;
   final String userId;
   final int userIdi;
+  final int selectedIndex;
 
   const BottomNavBar({
     super.key,
@@ -29,6 +30,7 @@ class BottomNavBar extends StatefulWidget {
     required this.userName,
     required this.userId,
     required this.userIdi,
+    required this.selectedIndex,
   });
 
   @override
@@ -125,7 +127,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
     ),
   ];
 
-  int _selectedIndex = 0;
+  late int _selectedIndex = widget.selectedIndex;
 
   @override
   Widget build(BuildContext context) {
@@ -188,10 +190,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                     text: 'دانش آموزان',
                   ),
                 if (widget.role == Role.manager)
-                  const GButton(
-                    icon: Icons.people_alt,
-                    text: 'اساتید',
-                  ),
+                  const GButton(icon: Icons.people_alt, text: 'اساتید'),
                 if (widget.role == Role.manager)
                   const GButton(icon: Icons.newspaper, text: 'اخبار'),
                 // if (widget.role == Role.manager)
@@ -199,10 +198,7 @@ class _BottomNavBarState extends State<BottomNavBar> {
                 //     icon: Icons.calendar_today_outlined,
                 //     text: 'رویدادها',
                 //   ),
-                const GButton(
-                  icon: Icons.person_rounded,
-                  text: 'پروفایل',
-                ),
+                const GButton(icon: Icons.person_rounded, text: 'پروفایل'),
               ],
               selectedIndex: _selectedIndex,
               onTabChange: (index) {
