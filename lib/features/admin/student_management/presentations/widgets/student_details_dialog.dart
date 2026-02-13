@@ -17,7 +17,12 @@ class StudentDetailsDialog extends StatelessWidget {
     this.password,
   });
 
-  Widget _buildDetailRow(String label, String value, IconData icon, {bool canCopy = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String value,
+    IconData icon, {
+    bool canCopy = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Row(
@@ -58,8 +63,7 @@ class StudentDetailsDialog extends StatelessWidget {
                         textDirection: TextDirection.rtl,
                       ),
                     ),
-                    if (canCopy)
-                      _buildCopyButton(value),
+                    if (canCopy) _buildCopyButton(value),
                   ],
                 ),
               ],
@@ -81,10 +85,7 @@ class StudentDetailsDialog extends StatelessWidget {
           Clipboard.setData(ClipboardData(text: text));
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text(
-                'کپی شد',
-                textDirection: TextDirection.rtl,
-              ),
+              content: const Text('کپی شد', textDirection: TextDirection.rtl),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 1),
             ),
@@ -143,7 +144,9 @@ class StudentDetailsDialog extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      student.name.isNotEmpty ? student.name[0].toUpperCase() : '?',
+                      student.name.isNotEmpty
+                          ? student.name[0].toUpperCase()
+                          : '?',
                       style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
@@ -165,14 +168,6 @@ class StudentDetailsDialog extends StatelessWidget {
                   textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 4),
-                Text(
-                  'کد: ${student.studentCode}',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColor.lightGray,
-                  ),
-                  textDirection: TextDirection.rtl,
-                ),
 
                 // Login Credentials Section
                 if (username != null && password != null) ...[
@@ -193,12 +188,16 @@ class StudentDetailsDialog extends StatelessWidget {
                         const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.vpn_key_rounded, color: Colors.green, size: 16),
+                            Icon(
+                              Icons.vpn_key_rounded,
+                              color: Colors.green,
+                              size: 16,
+                            ),
                             SizedBox(width: 6),
                             Text(
                               'اطلاعات ورود',
                               style: TextStyle(
-                                fontSize: 12,
+                                fontSize: 14,
                                 fontWeight: FontWeight.bold,
                                 color: Colors.green,
                               ),
@@ -211,7 +210,7 @@ class StudentDetailsDialog extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 'نام کاربری: $username',
-                                style: const TextStyle(fontSize: 11),
+                                style: const TextStyle(fontSize: 13),
                                 textDirection: TextDirection.rtl,
                               ),
                             ),
@@ -224,7 +223,7 @@ class StudentDetailsDialog extends StatelessWidget {
                             Expanded(
                               child: Text(
                                 'رمز عبور: $password',
-                                style: const TextStyle(fontSize: 11),
+                                style: const TextStyle(fontSize: 13),
                                 textDirection: TextDirection.rtl,
                               ),
                             ),
@@ -239,10 +238,7 @@ class StudentDetailsDialog extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // Divider
-                Container(
-                  height: 1,
-                  color: Colors.grey.shade100,
-                ),
+                Container(height: 1, color: Colors.grey.shade100),
                 const SizedBox(height: 20),
 
                 // Details
@@ -250,6 +246,12 @@ class StudentDetailsDialog extends StatelessWidget {
                   'کلاس',
                   getClassName(student.stuClass),
                   Icons.class_rounded,
+                ),
+                _buildDetailRow(
+                  'کد ملی',
+                  student.studentCode,
+                  Icons.credit_card,
+                  canCopy: true,
                 ),
                 _buildDetailRow(
                   'تاریخ تولد',
@@ -276,7 +278,9 @@ class StudentDetailsDialog extends StatelessWidget {
                 _buildDetailRow(
                   'بدهی',
                   student.debt == 0 ? 'بدون بدهی' : '${student.debt} تومان',
-                  student.debt > 0 ? Icons.warning_rounded : Icons.check_circle_rounded,
+                  student.debt > 0
+                      ? Icons.warning_rounded
+                      : Icons.check_circle_rounded,
                 ),
 
                 const SizedBox(height: 24),
