@@ -2316,6 +2316,13 @@ class ApiService {
       final json = jsonDecode(response.body);
       print('Created teacher response: $json'); // debug
       return TeacherModel.fromJson(json);
+    }else {
+      final errorBody = jsonDecode(response.body);
+      throw AppException(
+        errorBody['message'] ?? 'خطای سرور',
+        field: errorBody['field'],
+        errorCode: errorBody['error'],
+      );
     }
     throw Exception('Failed to create teacher: ${response.body}');
   }
@@ -2587,4 +2594,15 @@ class ApiService {
       return DateTime.now().add(const Duration(days: 999));
     }
   }
+}
+
+class AppException implements Exception {
+  final String message;
+  final String? field;
+  final String? errorCode;
+
+  AppException(this.message, {this.field, this.errorCode});
+
+  @override
+  String toString() => message;
 }

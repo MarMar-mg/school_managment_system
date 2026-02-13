@@ -228,12 +228,19 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
           duration: const Duration(seconds: 10),
         ),
       );
-    } catch (e, stack) {
-      print('CATCH BLOCK - ERROR: $e');
-      print('Stack trace: $stack');
+    }on AppException catch (e) {
+      // ← now e is AppException
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('خطا در ذخیره: $e'),
+          content: Text(e.message),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } catch (e) {
+      // fallback for network / other errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('خطا در ارتباط با سرور'),
           backgroundColor: Colors.red,
         ),
       );
