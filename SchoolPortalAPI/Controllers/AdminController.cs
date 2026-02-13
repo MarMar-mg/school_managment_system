@@ -6,6 +6,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Cryptography;
 
 namespace SchoolPortalAPI.Controllers
 {
@@ -1158,45 +1159,96 @@ namespace SchoolPortalAPI.Controllers
            if (!ModelState.IsValid)
                return BadRequest(ModelState);
 
-           // 1. Create User first
+           if (!string.IsNullOrWhiteSpace(dto.NationalCode))
+               {
+                   var existingTeacher = await _context.Teachers
+                       .AnyAsync(t => t.NationalCode == dto.NationalCode.Trim());
+
+                   if (existingTeacher)
+                   {
+                       return BadRequest(new
+                       {
+                           message = "کد ملی وارد شده قبلاً برای معلم دیگری ثبت شده است",
+                           field = "nationalCode",
+                           error = "duplicate_national_code"
+                       });
+                   }
+               }
+
+           // 1. ایجاد کاربر (User) اول
            var user = new User
            {
-               Username = dto.NationalCode ?? dto.Phone ?? $"teacher_{Guid.NewGuid().ToString().Substring(0,8)}",
-               Password = "12345678", // TODO: generate random / send to email / force change later
+               Username = dto.NationalCode?.Trim()
+                          ?? dto.Phone?.Trim()
+                          ?? $"teacher_{Guid.NewGuid().ToString()[..8]}",
+               Password = "12345678", // TODO: تولید رمز تصادفی قوی + ارسال به ایمیل/پیامک + اجبار به تغییر
                Role = "teacher"
            };
 
            _context.Users.Add(user);
+
+           // ذخیره موقت برای گرفتن Userid
            await _context.SaveChangesAsync();
 
-
-           // 2. Create Teacher linked to User
+           // 2. ایجاد رکورد معلم و لینک به کاربر
            var teacher = new Teacher
            {
-               Name = dto.Name.Trim(),
-               Phone = dto.Phone.Trim(),
-               NationalCode = dto.NationalCode?.Trim(),
-               Email = dto.Email?.Trim(),
-               Userid = user.Userid,          // ← link here
-               CreatedAt = DateTime.UtcNow,
-               Specialty = dto.Specialty?.Trim()
+               Name          = dto.Name.Trim(),
+               Phone         = dto.Phone?.Trim(),
+               NationalCode  = dto.NationalCode?.Trim(),
+               Email         = dto.Email?.Trim(),
+               Userid        = user.Userid,              // لینک حیاتی
+               CreatedAt     = DateTime.UtcNow,
+               Specialty     = dto.Specialty?.Trim(),
+               // اگر فیلدهای دیگری مثل IsActive, Address و ... دارید اینجا اضافه کنید
            };
 
            _context.Teachers.Add(teacher);
-           await _context.SaveChangesAsync();
 
+           // ──────────────────────────────────────────────
+           // 3. ایجاد اعلان خوش‌آمدگویی برای خود معلم
+           // ──────────────────────────────────────────────
+           var welcomeNotification = new Notification
+           {
+               UserId      = user.Userid,
+               Title       = "خوش آمدید!",
+               Body        = $"نام کاربری: {user.Username}\n" +
+                             $"رمز عبور اولیه: {user.Password}\n" +
+                             "لطفاً در اولین ورود رمز عبور خود را تغییر دهید.",
+               Type        = "teacher_welcome",
+               RelatedId   = teacher.Teacherid,
+               RelatedType = "teacher",
+               CreatedAt   = DateTime.UtcNow,
+               IsRead      = false
+           };
+
+           _context.Notifications.Add(welcomeNotification);
+
+           // 5. ذخیره نهایی (کاربر + معلم + اعلان‌ها)
+           try
+           {
+               await _context.SaveChangesAsync();
+           }
+           catch (DbUpdateException ex)
+           {
+               // لاگ بهتر در محیط واقعی
+               Console.WriteLine($"{ex.InnerException?.Message ?? ex.Message}");
+               return StatusCode(500, new { message = "خطا در ثبت معلم یا اعلان‌ها" });
+           }
+
+           // 6. پاسخ موفقیت‌آمیز
            var response = new
            {
-               teacherid = teacher.Teacherid,
-               userid = user.Userid,
-               username = user.Username,
-               password = user.Password,       // WARNING: only return in development / secure later
-               name = teacher.Name,
-               phone = teacher.Phone,
-               nationalCode = teacher.NationalCode,
-               email = teacher.Email,
-               Specialty = teacher.Specialty,
-               message = "معلم و حساب کاربری با موفقیت ایجاد شد"
+               teacherid     = teacher.Teacherid,
+               userid        = user.Userid,
+               username      = user.Username,
+               password      = user.Password,          // فقط برای محیط توسعه – در پروداکشن حذف یا امن کنید
+               name          = teacher.Name,
+               phone         = teacher.Phone,
+               nationalCode  = teacher.NationalCode,
+               email         = teacher.Email,
+               specialty     = teacher.Specialty,
+               message       = "معلم و حساب کاربری با موفقیت ایجاد شد"
            };
 
            return CreatedAtAction(nameof(GetTeachers), new { id = teacher.Teacherid }, response);
@@ -1285,44 +1337,178 @@ namespace SchoolPortalAPI.Controllers
         }
 
 
+
         [HttpPost("assign-teacher")]
         public async Task<IActionResult> AssignTeacher([FromBody] AssignTeacherDto dto)
         {
-            var course = await _context.Courses.FindAsync(dto.CourseId);
+            var course = await _context.Courses
+                .Include(c => c.Class)          // برای دسترسی به کلاس درس
+                .FirstOrDefaultAsync(c => c.Courseid == dto.CourseId);
+
             if (course == null)
                 return NotFound("درس یافت نشد");
 
-            var teacher = await _context.Teachers.FindAsync(dto.TeacherId);
+            var teacher = await _context.Teachers
+                .Include(t => t.User)           // فرض می‌کنیم Teacher ← User دارد
+                .FirstOrDefaultAsync(t => t.Teacherid == dto.TeacherId);
+
             if (teacher == null)
                 return NotFound("معلم یافت نشد");
 
-            // ── This is the critical line ──
+            // اگر قبلاً معلم دیگری داشت → اعلان به معلم قبلی (اختیاری)
+            long? previousTeacherId = course.Teacherid;
+
+            // اختصاص معلم جدید
             course.Teacherid = dto.TeacherId;
 
             try
             {
+                // ذخیره تغییرات
                 await _context.SaveChangesAsync();
+
                 Console.WriteLine($"[SUCCESS] Assigned teacher {dto.TeacherId} to course {dto.CourseId}");
+
+                // ──────────────────────────────
+                // اعلان به دانش‌آموزان کلاس
+                // ──────────────────────────────
+                if (course.Classid.HasValue)
+                {
+                    var students = await _context.Students
+                        .Where(s => s.Classeid == course.Classid)
+                        .ToListAsync();
+
+                    foreach (var student in students)
+                    {
+                        var notification = new Notification
+                        {
+                            UserId      = student.UserID ?? 0,
+                            Title       = "تغییر معلم درس",
+                            Body        = $"معلم جدید برای درس {course.Name ?? "نامشخص"} تعیین شد: {teacher.Name ?? "نامشخص"}",
+                            Type        = "course_teacher_changed",
+                            RelatedId   = course.Courseid,
+                            RelatedType = "course",
+                            CreatedAt   = DateTime.UtcNow
+                        };
+
+                        _context.Notifications.Add(notification);
+                    }
+                }
+
+                // اعلان به معلم جدید (خوش‌آمدگویی / تأیید)
+                if (teacher.User?.Userid > 0)
+                {
+                    _context.Notifications.Add(new Notification
+                    {
+                        UserId      = teacher.User.Userid,
+                        Title       = "درس جدید به شما اختصاص یافت",
+                        Body        = $"درس {course.Name ?? "نامشخص"} به شما اختصاص داده شد.",
+                        Type        = "teacher_course_assigned",
+                        RelatedId   = course.Courseid,
+                        RelatedType = "course",
+                        CreatedAt   = DateTime.UtcNow
+                    });
+                }
+
+                // اعلان به معلم قبلی (اگر وجود داشت)
+                if (previousTeacherId.HasValue && previousTeacherId != dto.TeacherId)
+                {
+                    var prevTeacher = await _context.Teachers.FirstOrDefaultAsync(t => t.Teacherid == previousTeacherId);
+                    var prevTeacherUser = await _context.Users.FirstOrDefaultAsync(u => u.Userid == prevTeacher.Userid);
+                    if (prevTeacherUser != null)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId      = prevTeacherUser.Userid,
+                            Title       = "درس از شما حذف شد",
+                            Body        = $"درس {course.Name ?? "نامشخص"} دیگر به شما اختصاص ندارد.",
+                            Type        = "teacher_course_unassigned",
+                            RelatedId   = course.Courseid,
+                            RelatedType = "course",
+                            CreatedAt   = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                await _context.SaveChangesAsync();  // ذخیره اعلان‌ها
+
+                return Ok(new { message = "اختصاص انجام شد" });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[DB ERROR] {ex.Message}");
                 return StatusCode(500, "خطا در ذخیره اختصاص درس");
             }
-
-            return Ok(new { message = "اختصاص انجام شد" });
         }
 
         [HttpPost("unassign-teacher/{courseId}")]
         public async Task<IActionResult> UnassignTeacher(long courseId)
         {
-            var course = await _context.Courses.FindAsync(courseId);
-            if (course == null) return NotFound("درس یافت نشد");
+            var course = await _context.Courses
+                .Include(c => c.Class)
+                .FirstOrDefaultAsync(c => c.Courseid == courseId);
 
-            course.Teacherid = null;
-            await _context.SaveChangesAsync();
+            if (course == null)
+                return NotFound("درس یافت نشد");
 
-            return Ok(new { message = "معلم از درس حذف شد" });
+            try
+            {
+                await _context.SaveChangesAsync();
+
+                // ──────────────────────────────
+                // اعلان به دانش‌آموزان کلاس
+                // ──────────────────────────────
+                if (course.Classid.HasValue)
+                {
+                    var students = await _context.Students
+                        .Where(s => s.Classeid == course.Classid)
+                        .ToListAsync();
+
+                    foreach (var student in students)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId      = student.UserID ?? 0,
+                            Title       = "معلم درس حذف شد",
+                            Body        = $"درس {course.Name ?? "نامشخص"} فعلاً بدون معلم است.",
+                            Type        = "course_teacher_removed",
+                            RelatedId   = course.Courseid,
+                            RelatedType = "course",
+                            CreatedAt   = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                // اعلان به معلم قبلی (اگر وجود داشت)
+                if (course.Teacherid.HasValue)
+                {
+                    var prevTeacher = await _context.Teachers.FirstOrDefaultAsync(t => t.Teacherid == course.Teacherid);
+                    var prevTeacherUser = await _context.Users.FirstOrDefaultAsync(u => u.Userid == prevTeacher.Userid);
+                    if (prevTeacherUser != null)
+                    {
+                        _context.Notifications.Add(new Notification
+                        {
+                            UserId      = prevTeacherUser.Userid,
+                            Title       = "درس از شما حذف شد",
+                            Body        = $"درس {course.Name ?? "نامشخص"} دیگر به شما اختصاص ندارد.",
+                            Type        = "teacher_course_unassigned",
+                            RelatedId   = course.Courseid,
+                            RelatedType = "course",
+                            CreatedAt   = DateTime.UtcNow
+                        });
+                    }
+                }
+
+                course.Teacherid = null;
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = "معلم از درس حذف شد" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[ERROR] {ex.Message}");
+                return StatusCode(500, "خطا در حذف معلم از درس");
+            }
         }
 
         [HttpGet("teacher/{teacherId}/courses")]
@@ -1443,6 +1629,16 @@ namespace SchoolPortalAPI.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
+
+        private string GenerateRandomPassword(int length = 12)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+            var bytes = RandomNumberGenerator.GetBytes(length);
+            var password = new char[length];
+            for (int i = 0; i < length; i++)
+                password[i] = chars[bytes[i] % chars.Length];
+            return new string(password);
+        }
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -1513,3 +1709,5 @@ namespace SchoolPortalAPI.Controllers
         public long? Debt { get; set; }
     }
 }
+
+
