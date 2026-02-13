@@ -196,10 +196,10 @@ class _NotificationsPageState extends State<NotificationsPage>
                               },
                               onDelete: () => _deleteNotification(index),
                               onTap: () {
-                                if (_notifications[index].type ==
+                                if (!(_notifications[index].type ==
                                         "student_welcome" ||
                                     _notifications[index].type ==
-                                        "teacher_welcome") {
+                                        "teacher_welcome")) {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(

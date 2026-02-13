@@ -69,9 +69,6 @@ class _NotificationTileState extends State<NotificationTile>
               await ApiService().markNotificationAsRead(widget.notification.id);
               if (widget.onMarkRead != null) widget.onMarkRead!();
 
-              if (widget.onTap != null) {
-                widget.onTap!();
-              }
             } catch (e) {
               if (mounted) {
                 ScaffoldMessenger.of(
@@ -79,6 +76,10 @@ class _NotificationTileState extends State<NotificationTile>
                 ).showSnackBar(SnackBar(content: Text('خطا: $e')));
               }
             }
+          }
+
+          if (widget.onTap != null) {
+            widget.onTap!();
           }
         },
         onTapCancel: () => _tapController.reverse(),
