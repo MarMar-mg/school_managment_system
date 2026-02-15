@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using SchoolPortalAPI.Data;
 using SchoolPortalAPI.Models;
 using System.IO;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SchoolPortalAPI.Controllers
 {
@@ -1747,6 +1748,114 @@ namespace SchoolPortalAPI.Controllers
 
             return Ok(new { message = "Score saved successfully" });
         }
+
+        [HttpGet("course/{courseId}/students-scores")]
+        public async Task<IActionResult> GetCourseStudentsScores(long courseId)
+        {
+            try
+            {
+
+
+                // 2. Find course - safe
+                var course = await _context.Courses
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Courseid == courseId);
+
+                if (course == null)
+                {
+                    return StatusCode(403, new { message = "شما این درس را تدریس نمی‌کنید یا درس یافت نشد" });
+                }
+
+                // 3. Get classId - safe
+                if (course.Classid == null)
+                {
+                    return BadRequest(new { message = "این درس به هیچ کلاسی وابسته نیست" });
+                }
+
+                var classId = course.Classid.Value;
+
+                // 4. Load students with safe projection
+                var students = await _context.Students
+                    .AsNoTracking()
+                    .Where(s => s.Classeid == classId)
+                    .Select(s => new
+                    {
+                        studentId = s.Studentid,
+                        name = s.Name ?? "نامشخص",
+                        studentCode = s.StuCode ?? "نامشخص",
+                        currentScore = _context.Scores
+                            .Where(sc => sc.Studentid == s.Studentid && sc.Courseid == courseId)
+                            .OrderByDescending(sc => sc.Score_month ?? "")
+                            .Select(sc => new
+                            {
+                                scoreValue = sc.ScoreValue,
+                                score_month = sc.Score_month ?? "نامشخص"
+                            })
+                            .FirstOrDefault()
+                    })
+                    .ToListAsync();
+
+                return Ok(new
+                {
+                    courseId,
+                    courseName = course.Name ?? "درس بدون نام",
+                    studentsCount = students.Count,
+                    students
+                });
+            }
+            catch (Exception ex)
+            {
+                // Log the error (in production use logger)
+                Console.WriteLine($"Error in GetCourseStudentsScores: {ex.Message}\n{ex.StackTrace}");
+                return StatusCode(500, new { message = "خطای سرور در بارگذاری دانشجویان", detail = ex.Message });
+            }
+        }
+
+        // ──────────────────────────────────────────────────────────────
+        // NEW: Batch update course scores
+        // POST: api/teacher/course/{courseId}/scores
+        [HttpPost("course/{courseId}/scores")]
+        public async Task<IActionResult> UpdateCourseScores(long courseId, [FromBody] List<CourseScoreUpdateDto> updates)
+        {
+            var teacherId = long.Parse(User.FindFirst("userid")?.Value ?? "0");
+
+            var course = await _context.Courses
+                .FirstOrDefaultAsync(c => c.Courseid == courseId && c.Teacherid == teacherId);
+
+            foreach (var update in updates)
+            {
+                if (update.ScoreValue < 0 || update.ScoreValue > 20) // assuming 0–20 scale – adjust if needed
+                    return BadRequest($"Invalid score for student {update.StudentId}");
+
+                var existing = await _context.Scores
+                    .FirstOrDefaultAsync(s =>
+                        s.Studentid == update.StudentId &&
+                        s.Courseid == courseId &&
+                        s.Score_month == update.ScoreMonth);
+
+                if (existing != null)
+                {
+                    existing.ScoreValue = update.ScoreValue;
+//                    existing.UpdatedAt = DateTime.UtcNow; // if you have this field
+                }
+                else
+                {
+                    _context.Scores.Add(new Score
+                    {
+                        Studentid   = update.StudentId,
+                        Courseid    = courseId,
+                        Classid     = course.Classid,
+                        ScoreValue  = update.ScoreValue,
+                        Score_month = update.ScoreMonth,   // e.g. "1404-11"
+                        // StuCode     = ... (optional – can remove if using Studentid)
+                    });
+                }
+            }
+
+            await _context.SaveChangesAsync();
+            return NoContent();
+        }
+
 ////////////////////////////////////////////////////////////////////////////
         private string GetContentType(string path)
         {
@@ -1803,6 +1912,13 @@ namespace SchoolPortalAPI.Controllers
         {
             public long SubmissionId { get; set; }
             public decimal Score { get; set; }
+        }
+
+        public class CourseScoreUpdateDto
+        {
+            public long StudentId { get; set; }
+            public long ScoreValue { get; set; }
+            public string ScoreMonth { get; set; } = null!;   // e.g. "1404-11"
         }
     }
 

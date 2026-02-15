@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../../../../../applications/colors.dart';
 
 class TypeSelector extends StatelessWidget {
@@ -14,11 +13,17 @@ class TypeSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final types = [
+      {'value': 'exam', 'label': 'امتحان', 'icon': Icons.description},
+      {'value': 'assignment', 'label': 'تمرین', 'icon': Icons.assignment},
+      {'value': 'course', 'label': 'نمره درس', 'icon': Icons.school},
+    ];
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          'نوع ارزیابی',
+          'نوع نمره‌دهی',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
@@ -26,90 +31,50 @@ class TypeSelector extends StatelessWidget {
           ),
           textDirection: TextDirection.rtl,
         ),
-        const SizedBox(height: 8),
-        Container(
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: _TypeButton(
-                  label: 'امتحانات',
-                  type: 'exam',
-                  icon: Icons.description_outlined,
-                  isSelected: selectedType == 'exam',
-                  onTap: () => onTypeChanged('exam'),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 12,
+          runSpacing: 12,
+          alignment: WrapAlignment.end,
+          children: types.map((t) {
+            final isSelected = selectedType == t['value'];
+            return GestureDetector(
+              onTap: () => onTypeChanged(t['value'] as String),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 300),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: isSelected ? AppColor.purple.withOpacity(0.12) : Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: isSelected ? AppColor.purple : Colors.grey[300]!,
+                    width: 1.5,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      t['icon'] as IconData,
+                      color: isSelected ? AppColor.purple : AppColor.lightGray,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      t['label'] as String,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: isSelected ? AppColor.purple : AppColor.darkText,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              Expanded(
-                child: _TypeButton(
-                  label: 'تمرین‌ها',
-                  type: 'assignment',
-                  icon: Icons.assignment_outlined,
-                  isSelected: selectedType == 'assignment',
-                  onTap: () => onTypeChanged('assignment'),
-                ),
-              ),
-            ],
-          ),
+            );
+          }).toList(),
         ),
       ],
-    );
-  }
-}
-
-class _TypeButton extends StatelessWidget {
-  final String label;
-  final String type;
-  final IconData icon;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _TypeButton({
-    required this.label,
-    required this.type,
-    required this.icon,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color:
-          isSelected ? AppColor.purple.withOpacity(0.1) : Colors.transparent,
-          border: isSelected
-              ? Border(
-            top: BorderSide(color: AppColor.purple, width: 3),
-          )
-              : null,
-        ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              color: isSelected ? AppColor.purple : AppColor.lightGray,
-              size: 20,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: isSelected ? AppColor.purple : AppColor.lightGray,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

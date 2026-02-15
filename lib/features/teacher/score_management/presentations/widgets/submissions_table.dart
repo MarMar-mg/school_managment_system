@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
+import 'package:shamsi_date/shamsi_date.dart';
 
+import '../../../../../commons/date_manager.dart';
 //TODO: to give the course general score
 
 class SubmissionsTable extends StatefulWidget {
@@ -10,6 +12,7 @@ class SubmissionsTable extends StatefulWidget {
   final String selectedType;
   final int userId;
   final VoidCallback onScoreSaved;
+  final dynamic selectedItem;
 
   const SubmissionsTable({
     super.key,
@@ -18,6 +21,7 @@ class SubmissionsTable extends StatefulWidget {
     required this.selectedType,
     required this.userId,
     required this.onScoreSaved,
+    this.selectedItem,
   });
 
   @override
@@ -29,11 +33,65 @@ class _SubmissionsTableState extends State<SubmissionsTable>
   late Map<int, TextEditingController> _controllers;
   late Map<int, double?> _originalScores;
   bool _isSubmitting = false;
+  final Map<int, TextEditingController> _scoreControllers = {};
+  final Map<int, String> _selectedMonths = {};
 
   @override
   void initState() {
     super.initState();
     _initializeControllers();
+  }
+
+  Future<void> _saveCourseScores() async {
+    final courseId = widget.selectedItem?['id'] ??
+        widget.selectedItem?['courseId'] ??
+        widget.selectedItem?['courseid'] ??
+        0;
+
+    if (courseId == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('شناسه درس یافت نشد')),
+      );
+      return;
+    }
+
+    final updates = <Map<String, dynamic>>[];
+
+    _scoreControllers.forEach((studentId, controller) {
+      final text = controller.text.trim();
+      if (text.isNotEmpty) {
+        final score = int.tryParse(text);
+        if (score != null && score >= 0 && score <= 20) {
+          updates.add({
+            'studentId': studentId,
+            'scoreValue': score,
+            'scoreMonth': '1404-11', // ← TODO: make dynamic (current Jalali month)
+          });
+        }
+      }
+    });
+
+    if (updates.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('هیچ تغییری وارد نشده است')),
+      );
+      return;
+    }
+
+    try {
+      await ApiService().updateCourseScores(courseId, updates);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('نمرات با موفقیت ذخیره شد'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      widget.onScoreSaved(); // refresh
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('خطا: $e'), backgroundColor: Colors.red),
+      );
+    }
   }
 
   void _initializeControllers() {
@@ -60,10 +118,14 @@ class _SubmissionsTableState extends State<SubmissionsTable>
     }
   }
 
+
   @override
   void dispose() {
     for (var controller in _controllers.values) {
       controller.dispose();
+    }
+    for (var c in _scoreControllers.values) {
+      c.dispose();
     }
     super.dispose();
   }
@@ -168,6 +230,47 @@ class _SubmissionsTableState extends State<SubmissionsTable>
     }
   }
 
+  // Future<void> _saveCourseScores() async {
+  //   if (widget.selectedType != 'course') return;
+  //
+  //   final updates = <Map<String, dynamic>>[];
+  //
+  //   _scoreControllers.forEach((studentId, controller) {
+  //     final scoreText = controller.text.trim();
+  //     if (scoreText.isNotEmpty) {
+  //       final score = int.tryParse(scoreText);
+  //       if (score != null && score >= 0 && score <= 20) {
+  //         final month = _selectedMonths[studentId] ?? Jalali.now().toString().substring(0, 7);
+  //         updates.add({
+  //           'studentId': studentId,
+  //           'scoreValue': score,
+  //           'scoreMonth': month,
+  //         });
+  //       }
+  //     }
+  //   });
+  //
+  //   if (updates.isEmpty) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('هیچ نمره‌ای وارد نشده است')),
+  //     );
+  //     return;
+  //   }
+  //
+  //   try {
+  //     final selectedItem = // get from parent or context – adjust based on your state management
+  //     await ApiService().updateCourseScores(widget.selectedItem['id'], updates);
+  //     widget.onScoreSaved();
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       const SnackBar(content: Text('نمرات با موفقیت ذخیره شد')),
+  //     );
+  //   } catch (e) {
+  //     ScaffoldMessenger.of(context).showSnackBar(
+  //       SnackBar(content: Text(e.toString())),
+  //     );
+  //   }
+  // }
+
   @override
   Widget build(BuildContext context) {
     if (widget.submissions.isEmpty) {
@@ -180,6 +283,88 @@ class _SubmissionsTableState extends State<SubmissionsTable>
             const Text('دانش‌آموزی یافت نشد'),
           ],
         ),
+      );
+    }
+
+
+
+    if (widget.selectedType == 'course') {
+      print('hhhhhhhhhhhhhhhhhhhhh');
+      if (widget.submissions.isEmpty) {
+        return const Center(
+          child: Padding(
+            padding: EdgeInsets.all(32),
+            child: Text(
+              'هیچ دانش‌آموزی برای این درس ثبت نشده است',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 16, color: Colors.grey),
+            ),
+          ),
+        );
+      }
+
+      return Column(
+        children: [
+          // Save button
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: const Text('ذخیره نمرات درس'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColor.purple,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: _saveCourseScores,   // ← implement below
+              ),
+            ),
+          ),
+
+          Expanded(
+            child: ListView.builder(
+              itemCount: widget.submissions.length,
+              itemBuilder: (context, index) {
+                final student = widget.submissions[index];
+                final studentId = student['studentId'] as int? ?? 0;
+                final name = student['name'] as String? ?? 'نامشخص';
+                final code = student['studentCode'] as String? ?? '-';
+                final currentScoreMap = student['currentScore'] as Map?;
+                final currentScore = currentScoreMap?['scoreValue']?.toString() ?? '';
+
+                // Controller per student
+                _scoreControllers.putIfAbsent(
+                  studentId,
+                      () => TextEditingController(text: currentScore),
+                );
+
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: AppColor.purple.withOpacity(0.1),
+                    child: Text(name[0], style: TextStyle(color: AppColor.purple)),
+                  ),
+                  title: Text(name),
+                  subtitle: Text('کد: $code'),
+                  trailing: SizedBox(
+                    width: 100,
+                    child: TextField(
+                      controller: _scoreControllers[studentId],
+                      keyboardType: TextInputType.number,
+                      textAlign: TextAlign.center,
+                      decoration: InputDecoration(
+                        hintText: 'نمره',
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+                        contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
       );
     }
 

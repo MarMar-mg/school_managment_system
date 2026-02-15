@@ -30,9 +30,20 @@ class ItemSelector extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     // Filter items by selected class
-    List<dynamic> filteredItems = selectedClassId == null
-        ? []
-        : _getFilteredItems();
+    List<dynamic> filteredItems = selectedClassId == null ? [] : _getFilteredItems();
+
+    if (selectedType == 'course') {
+      return const SizedBox.shrink(); // or a nice message
+      // or:
+      // return Padding(
+      //   padding: const EdgeInsets.all(16),
+      //   child: Text(
+      //     'نمرات دانش‌آموزان درس $_selectedClassName به صورت خودکار نمایش داده می‌شود',
+      //     style: TextStyle(fontSize: 15, color: AppColor.darkText),
+      //     textAlign: TextAlign.center,
+      //   ),
+      // );
+    }
 
     if (selectedClassId == null) {
       return _buildNoClassSelected();
@@ -48,6 +59,16 @@ class ItemSelector extends StatelessWidget {
 
     if (filteredItems.isEmpty) {
       return _buildEmptyItemsState();
+    }
+
+    // Determine currently selected ID
+    int? selectedId;
+    if (selectedItem != null) {
+      if (selectedItem is ExamModelT) {
+        selectedId = selectedItem.id;
+      } else if (selectedItem is Map) {
+        selectedId = selectedItem['id'] ?? selectedItem['exerciseid'];
+      }
     }
 
     return Column(
@@ -72,30 +93,35 @@ class ItemSelector extends StatelessWidget {
             border: Border.all(color: Colors.grey.shade200),
           ),
           child: DropdownButtonHideUnderline(
-            child: DropdownButton<dynamic>(
-              value: selectedItem,
+            child: DropdownButton<int?>(
+              value: selectedId,
               hint: Text(
                 '${selectedType == 'exam' ? 'امتحان' : 'تمرین'} را انتخاب کنید',
                 textDirection: TextDirection.rtl,
               ),
               isExpanded: true,
-              items: filteredItems.map<DropdownMenuItem<dynamic>>((item) {
+              items: filteredItems.map<DropdownMenuItem<int>>((item) {
                 late final String title;
                 late final String description;
                 late final String status;
+                final int itemId;
 
                 if (item is ExamModelT) {
+                  itemId = item.id ?? 0;
                   title = item.title ?? 'بدون عنوان';
                   description = item.description ?? '';
                   status = item.status ?? 'upcoming';
                 } else {
+                  itemId = item['id'] ?? item['exerciseid'] ?? 0;
                   title = item['title'] ?? 'بدون عنوان';
                   description = item['description'] ?? '';
                   status = 'assignment';
                 }
 
-                return DropdownMenuItem<dynamic>(
-                  value: item,
+                if (itemId == 0) return const DropdownMenuItem<int>(enabled: false, child: SizedBox.shrink());
+
+                return DropdownMenuItem<int>(
+                  value: itemId,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
                     child: Column(
@@ -119,17 +145,13 @@ class ItemSelector extends StatelessWidget {
                               ),
                               child: Text(
                                 selectedType == 'exam'
-                                    ? (status == 'completed'
-                                    ? 'برگزار شده'
-                                    : 'پیش رو')
+                                    ? (status == 'completed' ? 'برگزار شده' : 'پیش رو')
                                     : 'تمرین',
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
                                   color: selectedType == 'exam'
-                                      ? (status == 'completed'
-                                      ? Colors.green
-                                      : Colors.orange)
+                                      ? (status == 'completed' ? Colors.green : Colors.orange)
                                       : Colors.blue,
                                 ),
                               ),
@@ -155,9 +177,23 @@ class ItemSelector extends StatelessWidget {
                   ),
                 );
               }).toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  onItemSelected(value);
+              onChanged: (int? newId) {
+                if (newId == null) return;
+
+                final selected = filteredItems.firstWhere(
+                      (item) {
+                    if (item is ExamModelT) {
+                      return item.id == newId;
+                    }
+                    return (item['id'] ?? item['exerciseid']) == newId;
+                  },
+                );
+
+                if (selected != null) {
+                  onItemSelected(selected);
+                } else {
+                  // Optional: show snackbar or log
+                  debugPrint('No item found for id: $newId');
                 }
               },
             ),
@@ -171,16 +207,12 @@ class ItemSelector extends StatelessWidget {
     if (selectedClassId == null) return [];
 
     if (selectedType == 'exam') {
-      return exams
-          .where((exam) => exam.courseId == selectedClassId)
-          .toList();
+      return exams.where((exam) => exam.courseId == selectedClassId).toList();
     } else {
-      return assignments
-          .where((assignment) {
+      return assignments.where((assignment) {
         final assignmentClassId = assignment['courseId'];
         return assignmentClassId == selectedClassId;
-      })
-          .toList();
+      }).toList();
     }
   }
 

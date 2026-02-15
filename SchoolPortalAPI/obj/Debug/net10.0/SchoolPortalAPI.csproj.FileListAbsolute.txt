@@ -160,3 +160,4 @@ D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net1
 D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net10.0\SchoolPortalAPI.pdb
 D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net10.0\SchoolPortalAPI.genruntimeconfig.cache
 D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net10.0\ref\SchoolPortalAPI.dll
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll

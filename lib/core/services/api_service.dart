@@ -11,6 +11,7 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:shamsi_date/shamsi_date.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../applications/role.dart';
 import '../../commons/untils.dart';
 import '../../features/admin/news_management/data/models/news_model.dart';
@@ -24,7 +25,6 @@ import '../../features/student/assignments/data/models/assignment_model.dart.dar
 import '../../features/student/exam/entities/models/exam_model.dart';
 import '../../features/student/scores/data/models/score_model.dart';
 import '../../features/teacher/exam_management/data/models/exam_model.dart';
-import 'dart:typed_data';
 
 class ApiService {
   // Update this based on your testing environment
@@ -39,6 +39,18 @@ class ApiService {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
   };
+
+  Future<Map<String, String>> _getHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('auth_token'); // ← change key if you use different name
+
+    return {
+      'Content-Type': 'application/json',
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty)
+        'Authorization': 'Bearer $token',
+    };
+  }
 
   static const Duration _timeout = Duration(seconds: 10);
 
@@ -2567,6 +2579,43 @@ class ApiService {
 
       if (response.statusCode != 200 && response.statusCode != 204) {
         throw Exception('خطا در حذف همه اعلان‌ها: ${response.statusCode}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Get students and their current course scores
+  Future<Map<String, dynamic>> getCourseStudentsScores(int courseId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/teacher/course/$courseId/students-scores'),
+        headers: await _getHeaders(),
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else if (response.statusCode == 403) {
+        throw AppException('شما این درس را تدریس نمی‌کنید');
+      } else {
+        throw AppException('خطا در دریافت نمرات درس: ${response.body}');
+      }
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+// Batch update course scores
+  Future<void> updateCourseScores(int courseId, List<Map<String, dynamic>> updates) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/teacher/course/$courseId/scores'),
+        headers: await _getHeaders(),
+        body: jsonEncode(updates),
+      );
+
+      if (response.statusCode != 204) {
+        throw AppException('خطا در ذخیره نمرات: ${response.body}');
       }
     } catch (e) {
       rethrow;

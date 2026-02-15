@@ -465,3 +465,12 @@ TimeOfDay convertStringToTimeOfDay(String timeOfDay) {
 TextAlign makeAlignJustify() {
   return kIsWeb ? TextAlign.justify : TextAlign.justify;
 }
+
+extension IterableExtension<T> on Iterable<T> {
+  T? firstWhereOrNull(bool Function(T element) test) {
+    for (final element in this) {
+      if (test(element)) return element;
+    }
+    return null;
+  }
+}

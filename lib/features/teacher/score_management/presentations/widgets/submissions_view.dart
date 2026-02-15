@@ -28,188 +28,144 @@ class SubmissionsView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (isLoading) {
-      return _buildShimmerLoader();
+      return _buildLoadingShimmer();
     }
 
     if (error.isNotEmpty) {
-      return _buildErrorState();
+      return _buildErrorView();
     }
 
-    if (submissions.isEmpty) {
-      return _buildNoStudentsState();
+    if (submissions.isEmpty && selectedItem != null) {
+      return _buildEmptyState();
     }
-
-    late final String itemTitle;
-    late final dynamic maxScore;
-
-    if (selectedItem is ExamModelT) {
-      final exam = selectedItem as ExamModelT;
-      itemTitle = exam.title ?? 'بدون عنوان';
-      maxScore = exam.possibleScore;
-    } else {
-      itemTitle = selectedItem['title'] ?? 'بدون عنوان';
-      final score = selectedItem['possibleScore'] ?? selectedItem['score'] ?? 100;
-      maxScore = score is String ? int.tryParse(score) ?? 100 : score;
-    }
-
-    int submitted = submissions.where((s) => s['hasSubmitted'] == true).length;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildInfoCard(itemTitle, maxScore, submitted),
-        const SizedBox(height: 20),
+        if (selectedItem != null) ...[
+          SubmissionStats(
+            submissions: submissions,
+            maxScore: selectedType == 'exam'
+                ? (selectedItem is ExamModelT ? selectedItem.possibleScore : null)
+                : null,
+          ),
+          const SizedBox(height: 20),
+        ],
+
         SubmissionsTable(
           submissions: submissions,
-          maxScore: maxScore,
+          maxScore: selectedType == 'exam'
+              ? (selectedItem is ExamModelT ? selectedItem.possibleScore : null)
+              : null,
           selectedType: selectedType,
           userId: userId,
           onScoreSaved: onReload,
+          selectedItem: selectedItem,
         ),
-        const SizedBox(height: 20),
-        SubmissionStats(
-          submissions: submissions,
-          maxScore: maxScore,
-        ),
-        const SizedBox(height: 30),
       ],
     );
   }
 
-  Widget _buildInfoCard(String title, dynamic maxScore, int submitted) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.grey.shade200),
-      ),
+  Widget _buildLoadingShimmer() {
+    return Shimmer.fromColors(
+      baseColor: Colors.grey[200]!,
+      highlightColor: Colors.grey[100]!,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                'ارسال شده: $submitted/${submissions.length}',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColor.purple,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: AppColor.darkText,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            '${selectedType == 'exam' ? 'امتحان' : 'تمرین'} - حداکثر امتیاز: $maxScore',
-            style: TextStyle(
-              fontSize: 12,
-              color: AppColor.lightGray,
+          Container(
+            height: 140,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
             ),
-            textDirection: TextDirection.rtl,
+          ),
+          const SizedBox(height: 24),
+          ...List.generate(
+            4,
+                (_) => Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                height: 90,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildErrorState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
+  Widget _buildErrorView() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(
-              Icons.error_outline,
-              size: 64,
-              color: Colors.red.shade400,
-            ),
+            Icon(Icons.error_outline_rounded, size: 64, color: Colors.red[400]),
             const SizedBox(height: 16),
             Text(
-              'خطا در بارگذاری',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColor.darkText,
-              ),
+              'خطا در بارگذاری اطلاعات',
+              style: TextStyle(fontSize: 18, color: Colors.grey[800]),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              error.replaceFirst('Exception: ', ''),
+              error,
+              style: TextStyle(color: Colors.grey[600]),
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.rtl,
+            ),
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.refresh),
+              label: const Text('تلاش مجدد'),
+              onPressed: onReload,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    String message;
+    IconData icon;
+
+    switch (selectedType) {
+      case 'course':
+        message = 'هیچ دانش‌آموزی برای این درس یافت نشد';
+        icon = Icons.school_outlined;
+        break;
+      case 'exam':
+        message = 'هنوز پاسخی برای این امتحان ثبت نشده است';
+        icon = Icons.description_outlined;
+        break;
+      default:
+        message = 'هنوز پاسخی برای این تمرین ثبت نشده است';
+        icon = Icons.assignment_outlined;
+    }
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 60),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 24),
+            Text(
+              message,
               style: TextStyle(
-                fontSize: 13,
-                color: AppColor.lightGray,
+                fontSize: 17,
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w500,
               ),
               textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildNoStudentsState() {
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 40),
-      child: Center(
-        child: Column(
-          children: [
-            Icon(
-              Icons.person_outline,
-              size: 64,
-              color: AppColor.lightGray,
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'دانش‌آموزی در این کلاس ثبت نام نشده',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColor.darkText,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildShimmerLoader() {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[100]!,
-      highlightColor: Colors.grey[300]!,
-      child: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              height: 100,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              margin: const EdgeInsets.only(bottom: 16),
-            ),
-            ...List.generate(
-              5,
-                  (_) => Container(
-                height: 60,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                margin: const EdgeInsets.only(bottom: 12),
-              ),
+              textDirection: TextDirection.rtl,
             ),
           ],
         ),

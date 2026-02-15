@@ -43,11 +43,33 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
   int? _selectedClassId;
   String? _selectedClassName;
 
+  void _onClassSelected(int classId, String className) {
+    setState(() {
+      _selectedClassId = classId;
+      _selectedClassName = className;
+      _selectedItem = null;
+      _selectedItemSubmissions = [];
+      _submissionsError = '';
+    });
+
+    // If type is already 'course' when class changes → load immediately
+    if (widget.selectedType == 'course' && classId > 0) {
+      print('Class changed in course mode → loading students for class: $classId');
+      _loadSubmissions({
+        'id': classId,
+        'name': className,
+      });
+    }
+  }
+
   Future<void> _loadSubmissions(dynamic item) async {
+    if (item == null) return;
+
     setState(() {
       _selectedItem = item;
       _isLoadingSubmissions = true;
       _submissionsError = '';
+      _selectedItemSubmissions = [];
     });
 
     try {
@@ -56,29 +78,83 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
       if (widget.selectedType == 'exam') {
         final exam = item as ExamModelT;
         students = await ApiService.getExamStudents(exam.id);
+
+        _selectedItem = {
+          'id': exam.id,
+          'title': exam.title,
+          'possibleScore': exam.possibleScore,
+          'courseId': exam.courseId,
+        };
+      } else if (widget.selectedType == 'course') {
+        final courseId =
+        (item is Map)
+            ? (item['id'] ?? item['courseId'] ?? item['courseid'] ?? 0)
+            : 0;
+
+        print('Course mode: Using courseId = $courseId from selected class');
+
+        if (courseId == 0) {
+          throw Exception('شناسه درس معتبر نیست');
+        }
+
+        final response = await ApiService().getCourseStudentsScores(courseId);
+        print('API called! Response: $response');
+
+        students = (response['students'] != null)
+            ? List<dynamic>.from(response['students'])
+            : [];
       } else {
-        students = await ApiService.getExerciseStudents(item['id']);
+        // assignment / exercise
+        final exerciseId = (item is Map)
+            ? (item['id'] ?? item['exerciseid'] ?? 0)
+            : 0;
+
+        if (exerciseId == 0) {
+          throw Exception('شناسه تمرین معتبر نیست');
+        }
+
+        students = await ApiService.getExerciseStudents(exerciseId);
       }
 
       setState(() {
         _selectedItemSubmissions = students;
-        _isLoadingSubmissions = false;
+        print('Students set: ${students.length}');
       });
     } catch (e) {
+      String message = e.toString();
+      print(message);
+      if (message.startsWith('Exception: ')) {
+        message = message.substring(11);
+      }
       setState(() {
-        _submissionsError = e.toString();
+        _submissionsError = message.isEmpty
+            ? 'خطا در بارگذاری اطلاعات'
+            : message;
+      });
+    } finally {
+      setState(() {
         _isLoadingSubmissions = false;
       });
     }
   }
 
-  void _onClassSelected(int classId, String className) {
-    setState(() {
-      _selectedClassId = classId;
-      _selectedClassName = className;
-      _selectedItem = null;
-      _selectedItemSubmissions = [];
-    });
+  @override
+  void didUpdateWidget(covariant ScoreManagementBody oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    // When type changes to 'course' AND class is already selected → auto load
+    if (widget.selectedType == 'course' &&
+        widget.selectedType != oldWidget.selectedType &&
+        _selectedClassId != null &&
+        _selectedClassId! > 0) {
+
+      print('Type changed to course → auto-loading students for existing class: $_selectedClassId');
+
+      _loadSubmissions({
+        'id': _selectedClassId,
+        'name': _selectedClassName ?? 'درس انتخاب‌شده',
+      });
+    }
   }
 
   @override
@@ -110,7 +186,7 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
           onRetry: widget.onRetry,
         ),
         const SizedBox(height: 24),
-        if (_selectedItem != null)
+        if (_selectedItem != null || widget.selectedType == 'course')
           SubmissionsView(
             selectedType: widget.selectedType,
             selectedItem: _selectedItem,
@@ -120,14 +196,16 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
             userId: widget.userId,
             onReload: () => _loadSubmissions(_selectedItem),
           )
-        else
+        else if (widget.selectedType != 'course')
           EmptyStateSelector(
             selectedType: widget.selectedType,
             isLoading: widget.isLoading,
             error: widget.error,
             itemCount: widget.selectedType == 'exam'
                 ? widget.exams.length
-                : widget.assignments.length,
+                : (widget.selectedType == 'course'
+                      ? 0 // or you can change logic later if needed
+                      : widget.assignments.length),
           ),
       ],
     );

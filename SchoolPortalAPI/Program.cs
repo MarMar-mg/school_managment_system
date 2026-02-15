@@ -1,34 +1,8 @@
-//using Microsoft.EntityFrameworkCore;
-//using SchoolPortalAPI.Data;
-//
-//var builder = WebApplication.CreateBuilder(args);
-//
-//// CORS — کامل
-//builder.Services.AddCors(options =>
-//{
-//    options.AddPolicy("FlutterWebPolicy", policy =>
-//    {
-//        policy.WithOrigins("http://localhost:55295", "http://127.0.0.1:55295")
-//              .AllowAnyHeader()
-//              .AllowAnyMethod()
-//              .AllowCredentials();
-//    });
-//});
-//
-//builder.Services.AddControllers();
-//builder.Services.AddDbContext<SchoolDbContext>(options =>
-//    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
-//
-//var app = builder.Build();
-//
-//// ترتیب مهم!
-//app.UseCors("FlutterWebPolicy"); // قبل از MapControllers
-//app.UseHttpsRedirection();
-//app.MapControllers();
-//
-//app.Run();
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using SchoolPortalAPI.Data;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,18 +10,46 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // ==================== CORS CONFIGURATION ====================
-// This allows your Flutter web app to communicate with the API
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFlutterWeb", policy =>
     {
-        policy.AllowAnyOrigin()      // Allows requests from any origin (for development)
-              .AllowAnyMethod()      // Allows any HTTP method (GET, POST, PUT, DELETE, etc.)
-              .AllowAnyHeader();     // Allows any headers
+        policy.AllowAnyOrigin()      // For development only — tighten in production!
+              .AllowAnyMethod()
+              .AllowAnyHeader();
     });
 });
 
-// Add Swagger/OpenAPI for API documentation
+// ==================== ADD AUTHENTICATION (JWT) ====================
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = builder.Configuration["Jwt:Issuer"],
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"] ??
+                "YourSuperSecretKeyAtLeast32CharactersLong1234567890")) // ← change this!
+    };
+
+    // Optional: Allow requests without token during dev (remove in production)
+    // options.RequireHttpsMetadata = false;
+    // options.SaveToken = true;
+});
+
+// Add Authorization services
+builder.Services.AddAuthorization();
+
+// Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -64,13 +66,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-// ==================== ENABLE CORS ====================
-// IMPORTANT: This must be called BEFORE UseAuthorization
+// Middleware order is CRITICAL
 app.UseCors("AllowFlutterWeb");
-
-// Serve static files (for uploaded files like PDFs, images)
 app.UseStaticFiles();
 
+app.UseAuthentication();     // ← MUST come before UseAuthorization
 app.UseAuthorization();
 
 app.MapControllers();
