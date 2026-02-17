@@ -84,10 +84,10 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
         students = examId != 0? await ApiService.getExamStudents(examId):  await ApiService.getExamStudents(exam.id);
 
         // _selectedItem = {
-        //   'id': exam.id,
-        //   'title': exam.title,
-        //   'possibleScore': exam.possibleScore,
-        //   'courseId': exam.courseId,
+        //   'id': examId != 0? examId: exam.id,
+        //   'title': examId != 0? item[''] :exam.title,
+        //   'possibleScore': examId != 0? item[''] exam.possibleScore,
+        //   'courseId': examId != 0? item[''] exam.courseId,
         // };
       } else if (widget.selectedType == 'course') {
         final courseId =

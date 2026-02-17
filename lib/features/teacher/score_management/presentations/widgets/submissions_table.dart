@@ -375,9 +375,10 @@ class _SubmissionsTableState extends State<SubmissionsTable>
         ],
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           // Scrollable Table
-          Expanded(
+          Flexible(
             child: SingleChildScrollView(
               child: SingleChildScrollView(
                 scrollDirection: Axis.horizontal,

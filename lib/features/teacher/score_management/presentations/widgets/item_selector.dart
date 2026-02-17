@@ -29,31 +29,34 @@ class ItemSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Filter items by selected class
-    List<dynamic> filteredItems = selectedClassId == null ? [] : _getFilteredItems();
-
     if (selectedType == 'course') {
-      return const SizedBox.shrink(); // or a nice message
-      // or:
-      // return Padding(
-      //   padding: const EdgeInsets.all(16),
-      //   child: Text(
-      //     'نمرات دانش‌آموزان درس $_selectedClassName به صورت خودکار نمایش داده می‌شود',
-      //     style: TextStyle(fontSize: 15, color: AppColor.darkText),
-      //     textAlign: TextAlign.center,
-      //   ),
-      // );
+      return const SizedBox.shrink();
+      // Alternative (uncomment if you want to show info):
+      /*
+      return Padding(
+        padding: const EdgeInsets.all(16),
+        child: Text(
+          'نمرات دانش‌آموزان درس به صورت خودکار نمایش داده می‌شود',
+          style: TextStyle(fontSize: 15, color: AppColor.darkText),
+          textAlign: TextAlign.center,
+        ),
+      );
+      */
     }
 
     if (selectedClassId == null) {
       return _buildNoClassSelected();
     }
 
+    final filteredItems = _getFilteredItems();
+
     if (isLoading) {
-      return _buildShimmerLoader();
+      return Column(
+        children: List.generate(3, (_) => _buildShimmerLoader()),
+      );
     }
 
-    if (error.isNotEmpty && filteredItems.isEmpty) {
+    if (error.isNotEmpty) {
       return _buildErrorState();
     }
 
@@ -66,8 +69,8 @@ class ItemSelector extends StatelessWidget {
     if (selectedItem != null) {
       if (selectedItem is ExamModelT) {
         selectedId = selectedItem.id;
-      } else if (selectedItem is Map) {
-        selectedId = selectedItem['id'] ?? selectedItem['exerciseid'];
+      } else if (selectedItem is Map<String, dynamic>) {
+        selectedId = selectedItem['id'] as int? ?? selectedItem['exerciseid'] as int?;
       }
     }
 
@@ -76,7 +79,7 @@ class ItemSelector extends StatelessWidget {
       children: [
         Text(
           'انتخاب ${selectedType == 'exam' ? 'امتحان' : 'تمرین'}',
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
             color: AppColor.darkText,
@@ -96,31 +99,20 @@ class ItemSelector extends StatelessWidget {
             child: DropdownButton<int?>(
               value: selectedId,
               hint: Text(
-                '${selectedType == 'exam' ? 'امتحان' : 'تمرین'} را انتخاب کنید',
+                'یک ${selectedType == 'exam' ? 'امتحان' : 'تمرین'} انتخاب کنید',
                 textDirection: TextDirection.rtl,
+                style: TextStyle(color: AppColor.lightGray),
               ),
               isExpanded: true,
-              items: filteredItems.map<DropdownMenuItem<int>>((item) {
-                late final String title;
-                late final String description;
-                late final String status;
-                final int itemId;
-
-                if (item is ExamModelT) {
-                  itemId = item.id ?? 0;
-                  title = item.title ?? 'بدون عنوان';
-                  description = item.description ?? '';
-                  status = item.status ?? 'upcoming';
-                } else {
-                  itemId = item['id'] ?? item['exerciseid'] ?? 0;
-                  title = item['title'] ?? 'بدون عنوان';
-                  description = item['description'] ?? '';
-                  status = 'assignment';
+              items: filteredItems.map<DropdownMenuItem<int?>>((item) {
+                final itemId = _getItemId(item);
+                if (itemId == null || itemId == 0) {
+                  return const DropdownMenuItem<int?>(enabled: false, child: SizedBox.shrink());
                 }
 
-                if (itemId == 0) return const DropdownMenuItem<int>(enabled: false, child: SizedBox.shrink());
+                final (title, description, status) = _extractItemInfo(item);
 
-                return DropdownMenuItem<int>(
+                return DropdownMenuItem<int?>(
                   value: itemId,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -129,30 +121,19 @@ class ItemSelector extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            // Status Badge
+                            // Status badge
                             Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 6,
-                                vertical: 2,
-                              ),
+                              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                               decoration: BoxDecoration(
-                                color: selectedType == 'exam'
-                                    ? (status == 'completed'
-                                    ? Colors.green.withOpacity(0.1)
-                                    : Colors.orange.withOpacity(0.1))
-                                    : Colors.blue.withOpacity(0.1),
+                                color: _getStatusColor(status).withOpacity(0.1),
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                selectedType == 'exam'
-                                    ? (status == 'completed' ? 'برگزار شده' : 'پیش رو')
-                                    : 'تمرین',
+                                _getStatusText(status),
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w600,
-                                  color: selectedType == 'exam'
-                                      ? (status == 'completed' ? Colors.green : Colors.orange)
-                                      : Colors.blue,
+                                  color: _getStatusColor(status),
                                 ),
                               ),
                             ),
@@ -181,19 +162,14 @@ class ItemSelector extends StatelessWidget {
                 if (newId == null) return;
 
                 final selected = filteredItems.firstWhere(
-                      (item) {
-                    if (item is ExamModelT) {
-                      return item.id == newId;
-                    }
-                    return (item['id'] ?? item['exerciseid']) == newId;
-                  },
+                      (item) => _getItemId(item) == newId,
+                  orElse: () => null,
                 );
 
                 if (selected != null) {
                   onItemSelected(selected);
                 } else {
-                  // Optional: show snackbar or log
-                  debugPrint('No item found for id: $newId');
+                  debugPrint('Item not found for id: $newId');
                 }
               },
             ),
@@ -209,41 +185,83 @@ class ItemSelector extends StatelessWidget {
     if (selectedType == 'exam') {
       return exams.where((exam) => exam.courseId == selectedClassId).toList();
     } else {
-      return assignments.where((assignment) {
-        final assignmentClassId = assignment['courseId'];
-        return assignmentClassId == selectedClassId;
+      return assignments.where((ass) {
+        final assCourseId = ass['courseId'] as int?;
+        return assCourseId == selectedClassId;
       }).toList();
     }
   }
 
+  int? _getItemId(dynamic item) {
+    if (item is ExamModelT) return item.id;
+    if (item is Map<String, dynamic>) {
+      return item['id'] as int? ?? item['exerciseid'] as int?;
+    }
+    return null;
+  }
+
+  (String title, String description, String status) _extractItemInfo(dynamic item) {
+    if (item is ExamModelT) {
+      return (
+      item.title ?? 'بدون عنوان',
+      item.description ?? '',
+      item.status ?? 'upcoming',
+      );
+    } else if (item is Map<String, dynamic>) {
+      return (
+      item['title'] as String? ?? 'بدون عنوان',
+      item['description'] as String? ?? '',
+      'assignment',
+      );
+    }
+    return ('نامشخص', '', 'unknown');
+  }
+
+  Color _getStatusColor(String status) {
+    if (selectedType == 'exam') {
+      return status == 'completed' ? Colors.green : Colors.orange;
+    }
+    return Colors.blue;
+  }
+
+  String _getStatusText(String status) {
+    if (selectedType == 'exam') {
+      return status == 'completed' ? 'برگزار شده' : 'پیش رو';
+    }
+    return 'تمرین';
+  }
+
   Widget _buildNoClassSelected() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.warning_outlined,
-              size: 48,
+              Icons.warning_amber_rounded,
+              size: 56,
               color: Colors.orange.shade400,
             ),
-            const SizedBox(height: 12),
-            Text(
-              'ابتدا کلاس را انتخاب کنید',
+            const SizedBox(height: 16),
+            const Text(
+              'ابتدا درس / کلاس را انتخاب کنید',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColor.darkText,
               ),
+              textDirection: TextDirection.rtl,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              'برای مشاهده ${selectedType == 'exam' ? 'امتحانات' : 'تمرینات'} کلاس را انتخاب کنید',
+              'برای نمایش ${selectedType == 'exam' ? 'امتحانات' : 'تمرینات'}، ابتدا درس مورد نظر را انتخاب کنید.',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 color: AppColor.lightGray,
               ),
               textDirection: TextDirection.rtl,
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -253,31 +271,36 @@ class ItemSelector extends StatelessWidget {
 
   Widget _buildErrorState() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
-              Icons.error_outline,
-              size: 48,
+              Icons.error_outline_rounded,
+              size: 56,
               color: Colors.red.shade400,
             ),
-            const SizedBox(height: 12),
-            Text(
-              'خطا در بارگذاری',
+            const SizedBox(height: 16),
+            const Text(
+              'خطا در بارگذاری اطلاعات',
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColor.darkText,
               ),
+              textDirection: TextDirection.rtl,
             ),
-            const SizedBox(height: 8),
-            ElevatedButton(
+            const SizedBox(height: 16),
+            ElevatedButton.icon(
               onPressed: onRetry,
+              icon: const Icon(Icons.refresh, size: 18),
+              label: const Text('تلاش مجدد'),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColor.purple,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               ),
-              child: const Text('تلاش مجدد'),
             ),
           ],
         ),
@@ -287,30 +310,31 @@ class ItemSelector extends StatelessWidget {
 
   Widget _buildEmptyItemsState() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 20),
+      padding: const EdgeInsets.symmetric(vertical: 32),
       child: Center(
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.inbox_outlined,
-              size: 48,
+              size: 56,
               color: AppColor.lightGray,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             Text(
-              'هیچ ${selectedType == 'exam' ? 'امتحان' : 'تمرین'} ایی برای این کلاس یافت نشد',
-              style: TextStyle(
-                fontSize: 14,
+              'هیچ ${selectedType == 'exam' ? 'امتحانی' : 'تمرینی'} برای این درس یافت نشد',
+              style: const TextStyle(
+                fontSize: 15,
                 fontWeight: FontWeight.w600,
                 color: AppColor.darkText,
               ),
               textDirection: TextDirection.rtl,
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 8),
             Text(
-              'برای شروع یک ${selectedType == 'exam' ? 'امتحان' : 'تمرین'} ایجاد کنید',
+              'می‌توانید یک ${selectedType == 'exam' ? 'امتحان' : 'تمرین'} جدید ایجاد کنید',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 color: AppColor.lightGray,
               ),
               textDirection: TextDirection.rtl,
@@ -326,7 +350,8 @@ class ItemSelector extends StatelessWidget {
       baseColor: Colors.grey[100]!,
       highlightColor: Colors.grey[300]!,
       child: Container(
-        height: 60,
+        height: 68,
+        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),

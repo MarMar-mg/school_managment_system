@@ -48,27 +48,43 @@ class _ScoreManagementPageState extends State<ScoreManagementPage>
     super.dispose();
   }
 
+  // Future<void> _loadData() async {
+  //   setState(() {
+  //     _isLoading = true;
+  //     _error = '';
+  //   });
+  //
+  //   try {
+  //     final exams = await ApiService.getTeacherExams(widget.userId);
+  //     final assignments =
+  //     await ApiService.getTeacherAssignments(widget.userId);
+  //
+  //     setState(() {
+  //       _exams = exams;
+  //       _assignments = assignments;
+  //       _isLoading = false;
+  //     });
+  //
+  //     _controller.forward();
+  //   } catch (e) {
+  //     setState(() {
+  //       _error = e.toString();
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
   Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-      _error = '';
-    });
-
     try {
-      final exams = await ApiService.getTeacherExams(widget.userId);
-      final assignments =
-      await ApiService.getTeacherAssignments(widget.userId);
-
-      setState(() {
-        _exams = exams;
-        _assignments = assignments;
-        _isLoading = false;
-      });
-
-      _controller.forward();
+      // Load only the data for the selected type (optimization)
+      if (_selectedType == 'exam') {
+        _exams = await ApiService.getTeacherExams(widget.userId);
+      } else if (_selectedType == 'assignment') {
+        _assignments = await ApiService.getTeacherAssignments(widget.userId);
+      }
     } catch (e) {
+      _error = e.toString();
+    } finally {
       setState(() {
-        _error = e.toString();
         _isLoading = false;
       });
     }
@@ -77,7 +93,15 @@ class _ScoreManagementPageState extends State<ScoreManagementPage>
   void _setSelectedType(String type) {
     setState(() {
       _selectedType = type;
+      _isLoading = true;  // Immediately show loading for the new type
+      _error = '';  // Clear any previous errors
+      if (type == 'exam') {
+        _exams = [];  // Clear the list to force reload and show empty/loading state
+      } else if (type == 'assignment') {
+        _assignments = [];  // Clear the list to force reload and show empty/loading state
+      }
     });
+    _loadData();  // Trigger async load for the new type
   }
 
   @override
