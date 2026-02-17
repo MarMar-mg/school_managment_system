@@ -2614,7 +2614,7 @@ class ApiService {
         body: jsonEncode(updates),
       );
 
-      if (response.statusCode != 204) {
+      if (response.statusCode != 200 && response.statusCode != 204) {
         throw AppException('خطا در ذخیره نمرات: ${response.body}');
       }
     } catch (e) {

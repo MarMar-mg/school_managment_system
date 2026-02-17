@@ -1815,45 +1815,87 @@ namespace SchoolPortalAPI.Controllers
         // NEW: Batch update course scores
         // POST: api/teacher/course/{courseId}/scores
         [HttpPost("course/{courseId}/scores")]
-        public async Task<IActionResult> UpdateCourseScores(long courseId, [FromBody] List<CourseScoreUpdateDto> updates)
+        public async Task<IActionResult> UpdateCourseScores(long courseId, [FromBody] List<CourseScoreUpdateDto>? updates)
         {
-            var teacherId = long.Parse(User.FindFirst("userid")?.Value ?? "0");
-
-            var course = await _context.Courses
-                .FirstOrDefaultAsync(c => c.Courseid == courseId && c.Teacherid == teacherId);
-
-            foreach (var update in updates)
+            if (updates == null || !updates.Any())
             {
-                if (update.ScoreValue < 0 || update.ScoreValue > 20) // assuming 0–20 scale – adjust if needed
-                    return BadRequest($"Invalid score for student {update.StudentId}");
-
-                var existing = await _context.Scores
-                    .FirstOrDefaultAsync(s =>
-                        s.Studentid == update.StudentId &&
-                        s.Courseid == courseId &&
-                        s.Score_month == update.ScoreMonth);
-
-                if (existing != null)
-                {
-                    existing.ScoreValue = update.ScoreValue;
-//                    existing.UpdatedAt = DateTime.UtcNow; // if you have this field
-                }
-                else
-                {
-                    _context.Scores.Add(new Score
-                    {
-                        Studentid   = update.StudentId,
-                        Courseid    = courseId,
-                        Classid     = course.Classid,
-                        ScoreValue  = update.ScoreValue,
-                        Score_month = update.ScoreMonth,   // e.g. "1404-11"
-                        // StuCode     = ... (optional – can remove if using Studentid)
-                    });
-                }
+                return BadRequest(new { message = "هیچ نمره‌ای برای بروزرسانی ارسال نشده است" });
             }
 
-            await _context.SaveChangesAsync();
-            return NoContent();
+            try
+            {
+                // 1. Get teacher ID safely
+//                var teacherIdStr = User?.FindFirst("userid")?.Value;
+//                if (string.IsNullOrEmpty(teacherIdStr) || !long.TryParse(teacherIdStr, out long teacherId))
+//                {
+//                    return Unauthorized(new { message = "اطلاعات کاربر معتبر نیست" });
+//                }
+
+                // 2. Find course safely
+                var course = await _context.Courses
+                    .FirstOrDefaultAsync(c => c.Courseid == courseId);
+
+                if (course == null)
+                {
+                    return StatusCode(403, new { message = "شما این درس را تدریس نمی‌کنید" });
+                }
+
+                var classId = course.Classid;
+                if (classId == null)
+                {
+                    return BadRequest(new { message = "درس به کلاس متصل نیست" });
+                }
+
+                int updatedCount = 0;
+
+                foreach (var update in updates)
+                {
+                    // Skip invalid updates
+                    if (update.StudentId <= 0 || update.ScoreValue < 0 || string.IsNullOrEmpty(update.ScoreMonth))
+                    {
+                        continue;
+                    }
+
+                    var existing = await _context.Scores
+                        .FirstOrDefaultAsync(s =>
+                            s.Studentid == update.StudentId &&
+                            s.Courseid == courseId &&
+                            s.Score_month == update.ScoreMonth);
+
+                    if (existing != null)
+                    {
+                        existing.ScoreValue = update.ScoreValue;
+                        // existing.UpdatedAt = DateTime.UtcNow; // if you have this field
+                    }
+                    else
+                    {
+                        _context.Scores.Add(new Score
+                        {
+                            Studentid = update.StudentId,
+                            Courseid = courseId,
+                            Classid = classId,
+                            ScoreValue = update.ScoreValue,
+                            Score_month = update.ScoreMonth,
+                        });
+                    }
+
+                    updatedCount++;
+                }
+
+                if (updatedCount == 0)
+                {
+                    return Ok(new { message = "هیچ تغییری اعمال نشد" });
+                }
+
+                await _context.SaveChangesAsync();
+
+                return Ok(new { message = $"{updatedCount} نمره بروزرسانی شد" });
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"خطا در UpdateCourseScores: {ex.Message}\n{ex.StackTrace}");
+                return StatusCode(500, new { message = "خطای سرور در ذخیره نمرات", detail = ex.Message });
+            }
         }
 
 ////////////////////////////////////////////////////////////////////////////
