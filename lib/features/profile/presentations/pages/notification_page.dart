@@ -5,6 +5,7 @@ import 'package:school_management_system/core/services/api_service.dart';
 import '../../../../applications/bottom_nav_bar.dart';
 import '../../../../applications/role.dart';
 import '../../data/models/notification_model.dart';
+import '../widgets/app_bar.dart';
 import '../widgets/notification_tile.dart';
 import '../widgets/notification_empty_state.dart';
 import '../widgets/notification_error_state.dart';
@@ -191,22 +192,13 @@ class _NotificationsPageState extends State<NotificationsPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('اعلان‌ها'),
-        centerTitle: true,
-        backgroundColor: AppColor.purple,
-        foregroundColor: Colors.white,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _fetchNotifications,
-          ),
-          // if (_notifications.isNotEmpty && !_isLoading && !_hasError)
-          //   IconButton(
-          //     icon: const Icon(Icons.delete_sweep_rounded, color: Colors.redAccent),
-          //     onPressed: _showDeleteAllConfirmation,
-          //     tooltip: 'حذف همه اعلان‌ها',
-          //   ),
+      appBar: CustomAppBar(
+        title: 'اعلان‌ها',
+        bottomRadius: 5.0,           // smaller curve
+        gradientColors: [
+          AppColor.purple,
+          AppColor.purple.withOpacity(0.85),
+          AppColor.purple.withOpacity(0.7),
         ],
       ),
       floatingActionButton: _notifications.isNotEmpty && !_isLoading && !_hasError

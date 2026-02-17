@@ -4,13 +4,12 @@ import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/core/services/api_service.dart';
 import 'package:school_management_system/commons/responsive_container.dart';
 
+import '../widgets/app_bar.dart';
+
 class ChangePasswordPage extends StatefulWidget {
   final int userId;
 
-  const ChangePasswordPage({
-    super.key,
-    required this.userId,
-  });
+  const ChangePasswordPage({super.key, required this.userId});
 
   @override
   State<ChangePasswordPage> createState() => _ChangePasswordPageState();
@@ -63,31 +62,24 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           ),
           backgroundColor: Colors.green,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
           duration: const Duration(seconds: 4),
         ),
       );
 
       // Optional: close page after success
       Navigator.pop(context);
-    }
-    on AppException catch (e) {
+    } on AppException catch (e) {
       // Known backend validation / business errors
       if (!mounted) return;
-      _showSnackBar(
-        e.message,
-        e.field != null ? Colors.orange : Colors.red,
-      );
-    }
-    catch (e) {
+      _showSnackBar(e.message, e.field != null ? Colors.orange : Colors.red);
+    } catch (e) {
       // Network error, timeout, json parse fail, etc.
       if (!mounted) return;
-      _showSnackBar(
-        'خطا در ارتباط با سرور\n${e.toString()}',
-        Colors.red,
-      );
-    }
-    finally {
+      _showSnackBar('خطا در ارتباط با سرور\n${e.toString()}', Colors.red);
+    } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -122,15 +114,14 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('تغییر رمز عبور'),
-        centerTitle: true,
-        backgroundColor: AppColor.purple,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
-        ),
+      appBar: CustomAppBar(
+        title: 'تغییر رمز عبور',
+        bottomRadius: 5.0, // smaller curve
+        gradientColors: [
+          AppColor.purple,
+          AppColor.purple.withOpacity(0.85),
+          AppColor.purple.withOpacity(0.7),
+        ],
       ),
       body: ResponsiveContainer(
         padding: const EdgeInsets.all(24),
@@ -160,8 +151,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   label: 'رمز عبور فعلی',
                   hint: 'رمز فعلی خود را وارد کنید',
                   obscure: _obscureCurrent,
-                  onToggleObscure: () => setState(() => _obscureCurrent = !_obscureCurrent),
-                  validator: (v) => v?.isEmpty ?? true ? 'لطفاً رمز فعلی را وارد کنید' : null,
+                  onToggleObscure: () =>
+                      setState(() => _obscureCurrent = !_obscureCurrent),
+                  validator: (v) =>
+                      v?.isEmpty ?? true ? 'لطفاً رمز فعلی را وارد کنید' : null,
                 ),
 
                 const SizedBox(height: 24),
@@ -172,7 +165,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   label: 'رمز عبور جدید',
                   hint: 'حداقل ۸ کاراکتر',
                   obscure: _obscureNew,
-                  onToggleObscure: () => setState(() => _obscureNew = !_obscureNew),
+                  onToggleObscure: () =>
+                      setState(() => _obscureNew = !_obscureNew),
                   validator: _validatePassword,
                 ),
 
@@ -184,7 +178,8 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   label: 'تکرار رمز عبور جدید',
                   hint: 'رمز جدید را دوباره وارد کنید',
                   obscure: _obscureConfirm,
-                  onToggleObscure: () => setState(() => _obscureConfirm = !_obscureConfirm),
+                  onToggleObscure: () =>
+                      setState(() => _obscureConfirm = !_obscureConfirm),
                   validator: (value) {
                     if (value != _newPasswordController.text) {
                       return 'رمزهای عبور مطابقت ندارند';
@@ -203,17 +198,20 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                     onPressed: _isLoading ? null : _changePassword,
                     icon: _isLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2.5,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Icon(Icons.lock_reset_rounded),
                     label: Text(
                       _isLoading ? 'در حال تغییر...' : 'تغییر رمز عبور',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      style: const TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColor.purple,
@@ -275,7 +273,10 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Colors.red, width: 1.5),
         ),
-        prefixIcon: const Icon(Icons.lock_outline_rounded, color: AppColor.purple),
+        prefixIcon: const Icon(
+          Icons.lock_outline_rounded,
+          color: AppColor.purple,
+        ),
         suffixIcon: IconButton(
           icon: Icon(
             obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
