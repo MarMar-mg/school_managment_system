@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../applications/role.dart';
 import '../pages/about_page.dart';
 import '../pages/notification_page.dart';
-import '../pages/privacy_page.dart';
+import '../pages/change_password_page.dart';
 
 class SettingsMenu extends StatefulWidget {
   final Role role;
@@ -49,12 +49,12 @@ class _SettingsMenuState extends State<SettingsMenu> {
         _buildSettingsItem(
           index: 1,
           icon: Icons.lock_outline,
-          label: 'حریم خصوصی و امنیت',
+          label: 'تغییر رمز عبور',
           iconBgColor: Colors.blue,
           onTap: () {
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (_) => PrivacyPage()),
+              MaterialPageRoute(builder: (_) => ChangePasswordPage(userId: widget.userId,)),
             );
           },
         ),
@@ -268,3 +268,4 @@ class _SettingsMenuState extends State<SettingsMenu> {
     );
   }
 }
+

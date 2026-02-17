@@ -90,6 +90,45 @@ class ApiService {
     }
   }
 
+  // ==================== CHANGE PASSWORD ====================
+  Future<void> changePassword({
+    required int userId,
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/change-password'),
+      headers: _headers,
+      body: jsonEncode({
+        'userId': userId,
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      // Optional: print for debugging during development
+      // final json = jsonDecode(response.body);
+      // print('Change password success: ${json['message'] ?? 'OK'}');
+      return;
+    }
+
+    // ── Error handling ────────────────────────────────────────
+    try {
+      final errorBody = jsonDecode(response.body);
+      throw AppException(
+        errorBody['message'] ?? 'خطا در تغییر رمز عبور',
+        field: errorBody['field'],
+        errorCode: errorBody['errorCode'] ?? errorBody['error'],
+      );
+    } catch (_) {
+      // Fallback when response is not valid JSON
+      throw Exception(
+        'Failed to change password (${response.statusCode}): ${response.body}',
+      );
+    }
+  }
+
   // ==================== NEWS ====================
 
   static Future<List<dynamic>> getNews() async {
