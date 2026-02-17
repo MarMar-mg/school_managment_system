@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'features/login/presentations/pages/register_page.dart';
+import 'applications/splash_screen.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() async {
@@ -36,7 +37,7 @@ class MyApp extends StatelessWidget {
           ? const SizedBox()
           : Directionality(textDirection: TextDirection.rtl, child: child),
       debugShowCheckedModeBanner: false,
-      home: const RegisterPage(),
+      home: const SplashPage(),
     );
   }
 }

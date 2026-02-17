@@ -1,0 +1,11 @@
+flutter_native_splash:
+  color: "#6A1B9A"                  # deep purple from your theme
+  image: assets/images/app_logo.png   # your school logo or book icon (png, centered)
+  android: true
+  ios: true
+  web: true
+  android_gravity: center
+  ios_content_mode: center
+  fullscreen: true
+  branding: "مدیریت مدرسه هوشمند"  # optional small text "مدیریت مدرسه هوشمند"
+  branding_bottom: 32
