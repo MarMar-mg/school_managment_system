@@ -267,7 +267,7 @@ class _NotificationsPageState extends State<NotificationsPage>
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => BottomNavBar(
-                                        role: Role.student,
+                                        role: widget.role,
                                         userName: widget.userName,
                                         userId: widget.userId.toString(),
                                         userIdi: widget.userId,
@@ -275,7 +275,11 @@ class _NotificationsPageState extends State<NotificationsPage>
                                             _notifications[index].type ==
                                                     "course_teacher_changed" ||
                                                 _notifications[index].type ==
-                                                    "course_teacher_removed"
+                                                    "course_teacher_removed" ||
+                                                _notifications[index].type ==
+                                                "teacher_course_assigned" ||
+                                                _notifications[index].type ==
+                                                "teacher_course_unassigned"
                                             ? 1
                                             : _notifications[index].type ==
                                                   "grade"
@@ -283,12 +287,20 @@ class _NotificationsPageState extends State<NotificationsPage>
                                             : _notifications[index].type ==
                                                       "exam_updated" ||
                                                   _notifications[index].type ==
-                                                      "exam"
+                                                      "exam" ||
+                                                _notifications[index].type ==
+                                                    "exam_teacher_update" ||
+                                                _notifications[index].type ==
+                                                    "exam_created"
                                             ? 3
                                             : _notifications[index].type ==
                                                       "exercise_updated" ||
                                                   _notifications[index].type ==
-                                                      "exercise"
+                                                      "exercise" ||
+                                                  _notifications[index].type ==
+                                                      "exercise_teacher_update" ||
+                                                  _notifications[index].type ==
+                                                      "exercise_created"
                                             ? 2
                                             : 0,
                                       ),
