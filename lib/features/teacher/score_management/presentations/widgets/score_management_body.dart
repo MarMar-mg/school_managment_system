@@ -76,15 +76,19 @@ class _ScoreManagementBodyState extends State<ScoreManagementBody> {
       late List<dynamic> students;
 
       if (widget.selectedType == 'exam') {
-        final exam = item as ExamModelT;
-        students = await ApiService.getExamStudents(exam.id);
 
-        _selectedItem = {
-          'id': exam.id,
-          'title': exam.title,
-          'possibleScore': exam.possibleScore,
-          'courseId': exam.courseId,
-        };
+        final exam = _selectedItem as ExamModelT;
+        final examId = (item is Map)
+            ? (item['id'] ?? item['examId'] ?? item['examid'] ?? 0)
+            : 0;
+        students = examId != 0? await ApiService.getExamStudents(examId):  await ApiService.getExamStudents(exam.id);
+
+        // _selectedItem = {
+        //   'id': exam.id,
+        //   'title': exam.title,
+        //   'possibleScore': exam.possibleScore,
+        //   'courseId': exam.courseId,
+        // };
       } else if (widget.selectedType == 'course') {
         final courseId =
         (item is Map)
