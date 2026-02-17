@@ -76,7 +76,7 @@ class _SplashPageState extends State<SplashPage> with SingleTickerProviderStateM
                     width: 280,
                     height: 280,
                     child: Lottie.asset(
-                      'assets/animations/STUDENT.json.json',
+                      'assets/animations/STUDENT.json',
                       controller: _controller,
                       onLoaded: (composition) {
                         _controller
