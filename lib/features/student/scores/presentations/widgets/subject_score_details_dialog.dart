@@ -115,7 +115,12 @@ class _SubjectScoreDetailsDialogState
                       return _buildSection(
                         title: 'تمرینات نمره‌دار',
                         itemsCount: items.length,
-                        average: _average(items.map((e) => e.totalScore!.toInt()).toList()),
+                        average: _average(
+                          items
+                              .where((e) => e.totalScore != null && e.totalScore != '-1')
+                              .map((e) => int.parse(e.totalScore!))
+                              .toList(),
+                        ),
                         expandedKey: 'assignments',
                         children: items
                             .map((e) => TitleScoreTile(

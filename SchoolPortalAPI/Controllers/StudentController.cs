@@ -226,7 +226,7 @@ namespace SchoolPortalAPI.Controllers
                    dueDate = dueDateStr ?? "نامشخص",
                    file = e?.File,
                    filenameQ = e?.Filename,
-                   totalScore = e.Score?.ToString() ?? "نامشخص",
+                   totalScore = e.Score?.ToString() ?? "-1",
                    isUrgent,
                    status = hasGrade ? "graded" : (hasSubmitted ? "submitted" : (!isPastDue ? "pending" : "notSubmitted")),
                    finalScore = hasGrade ? $"{answer.Score}/{e.Score}" : null,
