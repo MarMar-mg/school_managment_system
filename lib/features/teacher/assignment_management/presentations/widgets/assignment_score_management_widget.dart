@@ -66,136 +66,140 @@ class _AssignmentScoreManagementDialogState
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: AppColor.backgroundColor,
-      child: Column(
-        children: [
-          // Header
-          Container(
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColor.purple, AppColor.lightPurple],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(20),
-              ),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'مدیریت نمرات',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                        textDirection: TextDirection.rtl,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.assignmentTitle,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Colors.white70,
-                        ),
-                        textDirection: TextDirection.rtl,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+        child: Column(
+          children: [
+            // Header
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [AppColor.purple, AppColor.lightPurple],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close, color: Colors.white),
-                  onPressed: () => Navigator.pop(context),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(20),
                 ),
-              ],
-            ),
-          ),
-
-          // Content
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  // Stats Card
-                  FutureBuilder<Map<String, dynamic>>(
-                    future: _statsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final stats = snapshot.data!;
-                        return _buildStatsCard(stats);
-                      }
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(20),
-                            child: CircularProgressIndicator(),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'مدیریت نمرات',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
                           ),
-                        );
-                      }
-                      return const SizedBox.shrink();
-                    },
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Submissions List
-                  const Text(
-                    'پاسخ‌های دانش‌آموزان',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: AppColor.darkText,
+                          textDirection: TextDirection.rtl,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.assignmentTitle,
+                          style: const TextStyle(
+                            fontSize: 14,
+                            color: Colors.white70,
+                          ),
+                          textDirection: TextDirection.rtl,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
-                    textDirection: TextDirection.rtl,
                   ),
-                  const SizedBox(height: 12),
-
-                  FutureBuilder<List<dynamic>>(
-                    future: _submissionsFuture,
-                    builder: (context, snapshot) {
-                      if (snapshot.hasData) {
-                        final submissions = snapshot.data!;
-                        if (submissions.isEmpty) {
-                          return const Center(
-                            child: Text(
-                              'هیچ پاسخی یافت نشد',
-                              style: TextStyle(color: Colors.grey),
-                              textDirection: TextDirection.rtl,
-                            ),
-                          );
-                        }
-                        return Column(
-                          children: submissions.map((submission) {
-                            return _buildSubmissionCard(submission);
-                          }).toList(),
-                        );
-                      }
-                      if (snapshot.hasError) {
-                        return Center(
-                          child: Text(
-                            'خطا: ${snapshot.error}',
-                            style: const TextStyle(color: Colors.red),
-                            textDirection: TextDirection.rtl,
-                          ),
-                        );
-                      }
-                      return const Center(child: CircularProgressIndicator());
-                    },
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
                   ),
                 ],
               ),
             ),
-          ),
-        ],
+
+            // Content
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Stats Card
+                    FutureBuilder<Map<String, dynamic>>(
+                      future: _statsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final stats = snapshot.data!;
+                          return _buildStatsCard(stats);
+                        }
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
+                        }
+                        return const SizedBox.shrink();
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Submissions List
+                    const Text(
+                      'پاسخ‌های دانش‌آموزان',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: AppColor.darkText,
+                      ),
+                      textDirection: TextDirection.rtl,
+                    ),
+                    const SizedBox(height: 12),
+
+                    FutureBuilder<List<dynamic>>(
+                      future: _submissionsFuture,
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          final submissions = snapshot.data!;
+                          if (submissions.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'هیچ پاسخی یافت نشد',
+                                style: TextStyle(color: Colors.grey),
+                                textDirection: TextDirection.rtl,
+                              ),
+                            );
+                          }
+                          return Column(
+                            children: submissions.map((submission) {
+                              return _buildSubmissionCard(submission);
+                            }).toList(),
+                          );
+                        }
+                        if (snapshot.hasError) {
+                          return Center(
+                            child: Text(
+                              'خطا: ${snapshot.error}',
+                              style: const TextStyle(color: Colors.red),
+                              textDirection: TextDirection.rtl,
+                            ),
+                          );
+                        }
+                        return const Center(child: CircularProgressIndicator());
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -488,10 +492,7 @@ class _AssignmentScoreManagementDialogState
               }
               try {
                 print(estId);
-                await ApiService.updateSubmissionScoreEx(
-                  estId,
-                  score,
-                );
+                await ApiService.updateSubmissionScoreEx(estId, score);
                 print('after');
                 if (mounted) {
                   Navigator.pop(context);

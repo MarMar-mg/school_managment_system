@@ -348,287 +348,293 @@ class _AddEditExamDialogContentState extends State<_AddEditExamDialogContent>
       child: Dialog(
         backgroundColor: Colors.white,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // Header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      widget.isAdd ? 'ایجاد امتحان جدید' : 'ویرایش امتحان',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColor.darkText,
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+          child: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        widget.isAdd ? 'ایجاد امتحان جدید' : 'ویرایش امتحان',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppColor.darkText,
+                        ),
+                        textDirection: TextDirection.rtl,
                       ),
-                      textDirection: TextDirection.rtl,
-                    ),
-                    GestureDetector(
-                      onTap: _isLoading ? null : () => Navigator.pop(context),
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        child: Icon(
-                          Icons.close,
-                          size: 24,
-                          color: _isLoading ? Colors.grey : Colors.black,
+                      GestureDetector(
+                        onTap: _isLoading ? null : () => Navigator.pop(context),
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          child: Icon(
+                            Icons.close,
+                            size: 24,
+                            color: _isLoading ? Colors.grey : Colors.black,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
 
-                // Course dropdown (only for add)
-                if (widget.isAdd && widget.isNeeded) ...[
-                  _buildLabel('انتخاب درس'),
+                  // Course dropdown (only for add)
+                  if (widget.isAdd && widget.isNeeded) ...[
+                    _buildLabel('انتخاب درس'),
+                    const SizedBox(height: 8),
+                    _buildCourseDropdown(),
+                    const SizedBox(height: 20),
+                  ],
+
+                  // Title
+                  _buildLabel('عنوان امتحان'),
                   const SizedBox(height: 8),
-                   _buildCourseDropdown(),
+                  _buildTextField(
+                    _titleController,
+                    1,
+                    'مثال: آزمون ریاضی میان‌ترم',
+                  ),
                   const SizedBox(height: 20),
-                ],
 
-                // Title
-                _buildLabel('عنوان امتحان'),
-                const SizedBox(height: 8),
-                _buildTextField(
-                  _titleController,
-                  1,
-                  'مثال: آزمون ریاضی میان‌ترم',
-                ),
-                const SizedBox(height: 20),
-
-                // Subject
-                _buildLabel('توضیحات'),
-                const SizedBox(height: 8),
-                _buildTextField(
-                  _descriptionController,
-                  3,
-                  'دستورالعمل و توضیحات تمرین را بنویسید...',
-                ),
-                const SizedBox(height: 20),
-
-                // Start Date and Time row
-                Row(
-                  textDirection: TextDirection.rtl,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('تاریخ امتحان'),
-                          const SizedBox(height: 8),
-                          _buildDatePickerField(),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('ساعت شروع'),
-                          const SizedBox(height: 8),
-                          _buildTimePickerField(),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 20),
-                // FILE UPLOAD SECTION
-                const SizedBox(height: 20),
-                _buildLabel('فایل درسنامه (اختیاری)'),
-                const SizedBox(height: 8),
-                ElevatedButton.icon(
-                  onPressed: _isLoading ? null : _pickFile,
-                  icon: const Icon(Icons.attach_file),
-                  label: Text(
-                    _fileNameController.text.isNotEmpty
-                        ? 'فایل دیگری انتخاب کنید'
-                        : 'انتخاب فایل (PDF, ZIP, تصویر)',
+                  // Subject
+                  _buildLabel('توضیحات'),
+                  const SizedBox(height: 8),
+                  _buildTextField(
+                    _descriptionController,
+                    3,
+                    'دستورالعمل و توضیحات تمرین را بنویسید...',
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColor.purple,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    minimumSize: const Size(double.infinity, 48),
-                  ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 20),
 
-                // Show selected file
-                if (_selectedFile != null || _fileNameController.text != '')
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.green.shade200),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  // Start Date and Time row
+                  Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'فایل انتخاب شده',
-                                    style: TextStyle(
-                                      fontSize: 11,
-                                      color: Colors.green[700],
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    _fileNameController.text,
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.green[700],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ],
-                              ),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.clear, color: Colors.red),
-                              onPressed: _clearFile,
-                            ),
+                            _buildLabel('تاریخ امتحان'),
+                            const SizedBox(height: 8),
+                            _buildDatePickerField(),
                           ],
                         ),
-                      ],
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('ساعت شروع'),
+                            const SizedBox(height: 8),
+                            _buildTimePickerField(),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  // FILE UPLOAD SECTION
+                  const SizedBox(height: 20),
+                  _buildLabel('فایل درسنامه (اختیاری)'),
+                  const SizedBox(height: 8),
+                  ElevatedButton.icon(
+                    onPressed: _isLoading ? null : _pickFile,
+                    icon: const Icon(Icons.attach_file),
+                    label: Text(
+                      _fileNameController.text.isNotEmpty
+                          ? 'فایل دیگری انتخاب کنید'
+                          : 'انتخاب فایل (PDF, ZIP, تصویر)',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColor.purple,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      minimumSize: const Size(double.infinity, 48),
                     ),
                   ),
+                  const SizedBox(height: 12),
 
-                // Duration and Score row
-                Row(
-                  textDirection: TextDirection.rtl,
-                  children: [
-                    Expanded(
+                  // Show selected file
+                  if (_selectedFile != null || _fileNameController.text != '')
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.green.shade200),
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildLabel('مدت (دقیقه)'),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            _durationController,
-                            1,
-                            '90',
-                            isNumber: true,
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'فایل انتخاب شده',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      _fileNameController.text,
+                                      style: TextStyle(
+                                        fontSize: 18,
+                                        color: Colors.green[700],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.clear,
+                                  color: Colors.red,
+                                ),
+                                onPressed: _clearFile,
+                              ),
+                            ],
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _buildLabel('امتیاز کل'),
-                          const SizedBox(height: 8),
-                          _buildTextField(
-                            _scoreController,
-                            1,
-                            '100',
-                            isNumber: true,
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 28),
 
-                // Buttons
-                Row(
-                  textDirection: TextDirection.rtl,
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () => Navigator.pop(context),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          side: BorderSide(color: Colors.grey.shade300),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'انصراف',
-                          style: TextStyle(
-                            color: Colors.black54,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                              color: AppColor.purple.withOpacity(0.4),
-                              blurRadius: 12,
-                              offset: const Offset(0, 4),
+                  // Duration and Score row
+                  Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('مدت (دقیقه)'),
+                            const SizedBox(height: 8),
+                            _buildTextField(
+                              _durationController,
+                              1,
+                              '90',
+                              isNumber: true,
                             ),
                           ],
                         ),
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _submit,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _isLoading
-                                ? Colors.grey.shade400
-                                : AppColor.purple,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildLabel('امتیاز کل'),
+                            const SizedBox(height: 8),
+                            _buildTextField(
+                              _scoreController,
+                              1,
+                              '100',
+                              isNumber: true,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Buttons
+                  Row(
+                    textDirection: TextDirection.rtl,
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _isLoading
+                              ? null
+                              : () => Navigator.pop(context),
+                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 12),
+                            side: BorderSide(color: Colors.grey.shade300),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
                           ),
-                          child: _isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    valueColor: AlwaysStoppedAnimation<Color>(
-                                      Colors.white,
-                                    ),
-                                  ),
-                                )
-                              : Text(
-                                  widget.isAdd
-                                      ? 'ایجاد امتحان'
-                                      : 'ذخیره تغییرات',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 15,
-                                  ),
-                                ),
+                          child: const Text(
+                            'انصراف',
+                            style: TextStyle(
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColor.purple.withOpacity(0.4),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submit,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _isLoading
+                                  ? Colors.grey.shade400
+                                  : AppColor.purple,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: _isLoading
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : Text(
+                                    widget.isAdd
+                                        ? 'ایجاد امتحان'
+                                        : 'ذخیره تغییرات',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ),

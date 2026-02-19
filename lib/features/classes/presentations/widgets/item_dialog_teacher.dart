@@ -112,7 +112,10 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
                     _deleteExam(id);
                   }
                 },
-                child: Text('حذف', style: TextStyle(color: Colors.red.shade600)),
+                child: Text(
+                  'حذف',
+                  style: TextStyle(color: Colors.red.shade600),
+                ),
               ),
             ],
           ),
@@ -170,9 +173,8 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.all(10),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width - 20,
-        height: MediaQuery.of(context).size.height * 0.8,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
