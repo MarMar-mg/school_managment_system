@@ -88,8 +88,8 @@ class _SubjectScoreDetailsDialogState
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.all(12),
-      child: SizedBox(
-        height: MediaQuery.of(context).size.height * 0.8,
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
         child: Column(
           children: [
             Padding(

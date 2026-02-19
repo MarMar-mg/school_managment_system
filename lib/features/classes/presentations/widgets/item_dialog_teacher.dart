@@ -92,26 +92,31 @@ class _TeacherCourseDialogState extends State<TeacherCourseDialog>
   void _showDeleteDialog(String type, int id) {
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('حذف ${type == 'assignment' ? 'تمرین' : 'امتحان'}'),
-        content: Text('آیا مطمئن هستید؟', textDirection: TextDirection.rtl),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('لغو'),
+      builder: (ctx) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 400),
+          child: AlertDialog(
+            title: Text('حذف ${type == 'assignment' ? 'تمرین' : 'امتحان'}'),
+            content: Text('آیا مطمئن هستید؟', textDirection: TextDirection.rtl),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('لغو'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(ctx);
+                  if (type == 'assignment') {
+                    _deleteAssignment(id);
+                  } else {
+                    _deleteExam(id);
+                  }
+                },
+                child: Text('حذف', style: TextStyle(color: Colors.red.shade600)),
+              ),
+            ],
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(ctx);
-              if (type == 'assignment') {
-                _deleteAssignment(id);
-              } else {
-                _deleteExam(id);
-              }
-            },
-            child: Text('حذف', style: TextStyle(color: Colors.red.shade600)),
-          ),
-        ],
+        ),
       ),
     );
   }

@@ -274,34 +274,37 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
   }
 
   Widget _buildActionButton(Color color) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 14),
-      decoration: BoxDecoration(
-        border: Border.all(color: color.withOpacity(0.4), width: 2),
-        borderRadius: BorderRadius.circular(14),
-        color: color.withOpacity(0.05),
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          onTap: () => _showCourseDialog(),
+    return GestureDetector(
+      onTap: () => _showCourseDialog(),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          border: Border.all(color: color.withOpacity(0.4), width: 2),
           borderRadius: BorderRadius.circular(14),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                'مشاهده تمرین‌ها و امتحانات',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: color,
-                  letterSpacing: 0.3,
+          color: color.withOpacity(0.05),
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () => _showCourseDialog(),
+            borderRadius: BorderRadius.circular(14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  'مشاهده تمرین‌ها و امتحانات',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: color,
+                    letterSpacing: 0.3,
+                  ),
+                  textDirection: TextDirection.rtl,
                 ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(width: 8),
-            ],
+                const SizedBox(width: 8),
+              ],
+            ),
           ),
         ),
       ),
@@ -311,7 +314,6 @@ class _CourseCardWidgetState extends State<CourseCardWidget>
   void _showCourseDialog() {
     if (widget.isTeacher) {
       // CALL TEACHER DIALOG: Show assignments and exams dialog
-
       showTeacherCourseDialog(
         context,
         course: widget.course,

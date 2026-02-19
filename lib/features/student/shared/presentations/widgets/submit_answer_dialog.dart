@@ -116,8 +116,6 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       }
     }
 
-
-
     setState(() => _isLoading = true);
 
     try {
@@ -127,8 +125,8 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
           widget.id,
           !isEmpty,
           _descriptionController.text,
-          isEmpty? null: _selectedFile,
-          customFileName: isEmpty? '':_fileNameController.text,
+          isEmpty ? null : _selectedFile,
+          customFileName: isEmpty ? '' : _fileNameController.text,
           isUpdate: widget.isEditing,
         );
       } else {
@@ -137,8 +135,8 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
           widget.id,
           !isEmpty,
           _descriptionController.text,
-          isEmpty? null: _selectedFile,
-          customFileName: isEmpty? '':_fileNameController.text,
+          isEmpty ? null : _selectedFile,
+          customFileName: isEmpty ? '' : _fileNameController.text,
           isUpdate: widget.isEditing,
         );
       }
@@ -194,226 +192,233 @@ class _SubmitAnswerDialogState extends State<SubmitAnswerDialog> {
       insetPadding: const EdgeInsets.all(16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       backgroundColor: Colors.white,
-      child: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header
-              Text(
-                widget.isEditing ? 'تغییر پاسخ' : 'ارسال پاسخ',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColor.darkText,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 16),
-
-              // TIME WARNING BANNER
-              if (isExamTimeInvalid) ...[
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.red.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.red.shade300),
+      child: Container(
+        constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header
+                Text(
+                  widget.isEditing ? 'تغییر پاسخ' : 'ارسال پاسخ',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: AppColor.darkText,
                   ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.error_outline, color: Colors.red.shade600),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          ExamTimeValidator.getTimeErrorMessage(
-                            _examTimeStatus!,
-                          ),
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.red.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ),
-                    ],
-                  ),
+                  textDirection: TextDirection.rtl,
                 ),
                 const SizedBox(height: 16),
-              ] else if (widget.type == 'exam' &&
-                  _examTimeStatus == 'during' &&
-                  _remainingMinutes != null) ...[
-                // TIME REMAINING BANNER
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.orange.shade300),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(Icons.schedule, color: Colors.orange.shade600),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'زمان باقی‌مانده: ${_remainingMinutes!} دقیقه',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: Colors.orange.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
 
-              // Description Input
-              Text(
-                'توضیحات (اختیاری)',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 8),
-              TextField(
-                controller: _descriptionController,
-                maxLines: 3,
-                textDirection: TextDirection.rtl,
-                enabled: !_isLoading && !isExamTimeInvalid,
-                decoration: InputDecoration(
-                  hintText: 'توضیحات درباره پاسخ خود...',
-                  hintTextDirection: TextDirection.rtl,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  disabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    borderSide: BorderSide(color: Colors.grey.shade300),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              // File Selection
-              Text(
-                'انتخاب فایل',
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.grey.shade700,
-                ),
-                textDirection: TextDirection.rtl,
-              ),
-              const SizedBox(height: 8),
-              ElevatedButton.icon(
-                onPressed: (_isLoading || isExamTimeInvalid) ? null : _pickFile,
-                icon: const Icon(Icons.attach_file),
-                label: const Text('انتخاب فایل'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColor.purple,
-                  disabledBackgroundColor: Colors.grey.shade300,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Selected File Display
-              if (_fileNameController.text.isNotEmpty)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.green.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.green.shade300),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          _fileNameController.text,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.green.shade700,
-                            fontWeight: FontWeight.w600,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => setState(() {
-                          _selectedFile = null;
-                          _fileNameController.clear();
-                          isEmpty = true;
-                        }),
-                        child: Icon(
-                          Icons.close,
-                          color: Colors.red.shade600,
-                          size: 18,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-
-              const SizedBox(height: 24),
-
-              // Action Buttons
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: (_isLoading || isExamTimeInvalid)
-                          ? null
-                          : () => Navigator.pop(context),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: const Text('لغو'),
+                // TIME WARNING BANNER
+                if (isExamTimeInvalid) ...[
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.red.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.red.shade300),
                     ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed: (_isLoading || isExamTimeInvalid)
-                          ? null
-                          : _submit,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: isExamTimeInvalid
-                            ? Colors.grey.shade400
-                            : AppColor.purple,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                      ),
-                      child: _isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation(
-                                  Colors.white,
-                                ),
-                              ),
-                            )
-                          : Text(
-                              widget.isEditing ? 'ذخیره تغییرات' : 'ارسال پاسخ',
+                    child: Row(
+                      children: [
+                        Icon(Icons.error_outline, color: Colors.red.shade600),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            ExamTimeValidator.getTimeErrorMessage(
+                              _examTimeStatus!,
                             ),
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.red.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                  const SizedBox(height: 16),
+                ] else if (widget.type == 'exam' &&
+                    _examTimeStatus == 'during' &&
+                    _remainingMinutes != null) ...[
+                  // TIME REMAINING BANNER
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.orange.shade300),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.schedule, color: Colors.orange.shade600),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'زمان باقی‌مانده: ${_remainingMinutes!} دقیقه',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: Colors.orange.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
                 ],
-              ),
-            ],
+
+                // Description Input
+                Text(
+                  'توضیحات (اختیاری)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: _descriptionController,
+                  maxLines: 3,
+                  textDirection: TextDirection.rtl,
+                  enabled: !_isLoading && !isExamTimeInvalid,
+                  decoration: InputDecoration(
+                    hintText: 'توضیحات درباره پاسخ خود...',
+                    hintTextDirection: TextDirection.rtl,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    disabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey.shade300),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // File Selection
+                Text(
+                  'انتخاب فایل',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.grey.shade700,
+                  ),
+                  textDirection: TextDirection.rtl,
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton.icon(
+                  onPressed: (_isLoading || isExamTimeInvalid)
+                      ? null
+                      : _pickFile,
+                  icon: const Icon(Icons.attach_file),
+                  label: const Text('انتخاب فایل'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColor.purple,
+                    disabledBackgroundColor: Colors.grey.shade300,
+                  ),
+                ),
+                const SizedBox(height: 12),
+
+                // Selected File Display
+                if (_fileNameController.text.isNotEmpty)
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.green.shade300),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            _fileNameController.text,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.green.shade700,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                            textDirection: TextDirection.rtl,
+                          ),
+                        ),
+                        GestureDetector(
+                          onTap: () => setState(() {
+                            _selectedFile = null;
+                            _fileNameController.clear();
+                            isEmpty = true;
+                          }),
+                          child: Icon(
+                            Icons.close,
+                            color: Colors.red.shade600,
+                            size: 18,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 24),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton(
+                        onPressed: (_isLoading || isExamTimeInvalid)
+                            ? null
+                            : () => Navigator.pop(context),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: const Text('لغو'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: (_isLoading || isExamTimeInvalid)
+                            ? null
+                            : _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isExamTimeInvalid
+                              ? Colors.grey.shade400
+                              : AppColor.purple,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                            : Text(
+                                widget.isEditing
+                                    ? 'ذخیره تغییرات'
+                                    : 'ارسال پاسخ',
+                              ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       ),

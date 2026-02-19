@@ -156,54 +156,57 @@ class _ProfilePageState extends State<ProfilePage>
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.logout, color: Colors.red.shade600, size: 32),
-                const SizedBox(height: 16),
-                const Text(
-                  'خروج از حساب',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  textDirection: TextDirection.rtl,
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'آیا مطمئن هستید که می‌خواهید خروج کنید؟',
-                  textDirection: TextDirection.rtl,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('لغو'),
-                    ),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.red.shade600,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.logout, color: Colors.red.shade600, size: 32),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'خروج از حساب',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    textDirection: TextDirection.rtl,
+                  ),
+                  const SizedBox(height: 12),
+                  const Text(
+                    'آیا مطمئن هستید که می‌خواهید خروج کنید؟',
+                    textDirection: TextDirection.rtl,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('لغو'),
+                      ),
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red.shade600,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (_) => RegisterPage()),
+                          );
+                        },
+                        child: const Text(
+                          'خروج',
+                          style: TextStyle(color: Colors.white),
                         ),
                       ),
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (_) => RegisterPage()),
-                        );
-                      },
-                      child: const Text(
-                        'خروج',
-                        style: TextStyle(color: Colors.white),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         );

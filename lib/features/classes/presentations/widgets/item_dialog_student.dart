@@ -107,9 +107,8 @@ class _StudentCourseDialogState extends State<StudentCourseDialog>
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
       insetPadding: const EdgeInsets.all(10),
-      child: SizedBox(
-        width: MediaQuery.of(context).size.width - 20,
-        height: MediaQuery.of(context).size.height * 0.8,
+      child: Container(
+          constraints: const BoxConstraints(maxWidth: 600, maxHeight: 700),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
