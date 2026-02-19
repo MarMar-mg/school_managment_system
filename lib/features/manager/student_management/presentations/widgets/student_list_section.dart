@@ -1,7 +1,6 @@
-// lib/features/admin/student_management/presentations/widgets/student_list_section.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
-import 'package:school_management_system/features/admin/student_management/presentations/widgets/student_tile.dart';
+import 'package:school_management_system/features/manager/student_management/presentations/widgets/student_tile.dart';
 
 import '../../data/models/student_model.dart';
 

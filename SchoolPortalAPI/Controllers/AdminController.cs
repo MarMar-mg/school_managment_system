@@ -11,7 +11,7 @@ using System.Security.Cryptography;
 namespace SchoolPortalAPI.Controllers
 {
     [ApiController]
-    [Route("api/admin")]
+    [Route("api/manager")]
     public class AdminController : ControllerBase
     {
         private readonly SchoolDbContext _context;

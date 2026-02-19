@@ -1,4 +1,4 @@
-import 'package:school_management_system/features/admin/teacher_management/data/models/teacher_model.dart';
+import 'package:school_management_system/features/manager/teacher_management/data/models/teacher_model.dart';
 
 class ClassGroup {
   final int classId;

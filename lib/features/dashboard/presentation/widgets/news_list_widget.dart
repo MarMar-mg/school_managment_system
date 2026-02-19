@@ -4,7 +4,7 @@ import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
 import '../../../../commons/utils/manager/date_manager.dart';
-import '../../../admin/news_management/presentations/widgets/news_card.dart';
+import '../../../manager/news_management/presentations/widgets/news_card.dart';
 
 /// Premium animated news list with category colors, shimmer loading,
 /// pull-to-refresh, and stunning staggered card animations.

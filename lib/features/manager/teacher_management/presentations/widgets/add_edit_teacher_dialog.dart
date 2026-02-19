@@ -89,7 +89,9 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
   @override
   void initState() {
     super.initState();
-    _specialtyController = TextEditingController(text: widget.teacher?.specialty ?? '');
+    _specialtyController = TextEditingController(
+      text: widget.teacher?.specialty ?? '',
+    );
     _nameController = TextEditingController(text: widget.teacher?.name ?? '');
     _phoneController = TextEditingController(text: widget.teacher?.phone ?? '');
     _nationalCodeController = TextEditingController(
@@ -228,13 +230,10 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
           duration: const Duration(seconds: 10),
         ),
       );
-    }on AppException catch (e) {
+    } on AppException catch (e) {
       // ← now e is AppException
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(e.message),
-          backgroundColor: Colors.red,
-        ),
+        SnackBar(content: Text(e.message), backgroundColor: Colors.red),
       );
     } catch (e) {
       // fallback for network / other errors
@@ -255,10 +254,7 @@ class _AddEditTeacherDialogState extends State<AddEditTeacherDialog> {
     return AlertDialog(
       title: Text(widget.isEdit ? 'ویرایش معلم' : 'افزودن معلم جدید'),
       content: ConstrainedBox(
-        constraints: BoxConstraints(
-          maxWidth: 600,
-          maxHeight: 700,
-        ),
+        constraints: BoxConstraints(maxWidth: 400, maxHeight: 700),
         child: SizedBox(
           width: double.maxFinite,
           child: SingleChildScrollView(

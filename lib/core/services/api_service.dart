@@ -14,11 +14,11 @@ import 'package:shamsi_date/shamsi_date.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../applications/role.dart';
 import '../../commons/untils.dart';
-import '../../features/admin/news_management/data/models/news_model.dart';
-import '../../features/admin/teacher_management/data/models/class_group.dart';
-import '../../features/admin/teacher_management/data/models/course_model.dart';
-import '../../features/admin/teacher_management/data/models/grouped_teachers_response.dart';
-import '../../features/admin/teacher_management/data/models/teacher_model.dart';
+import '../../features/manager/news_management/data/models/news_model.dart';
+import '../../features/manager/teacher_management/data/models/class_group.dart';
+import '../../features/manager/teacher_management/data/models/course_model.dart';
+import '../../features/manager/teacher_management/data/models/grouped_teachers_response.dart';
+import '../../features/manager/teacher_management/data/models/teacher_model.dart';
 import '../../features/dashboard/data/models/dashboard_models.dart';
 import '../../features/profile/data/models/notification_model.dart';
 import '../../features/student/assignments/data/models/assignment_model.dart.dart';
@@ -368,7 +368,7 @@ class ApiService {
         endpoint = '$baseUrl/teacher/progress/$userId';
         break;
       case Role.manager:
-        endpoint = '$baseUrl/admin/progress';
+        endpoint = '$baseUrl/manager/progress';
         break;
     }
 
@@ -399,7 +399,7 @@ class ApiService {
           endpoint = '$baseUrl/teacher/stats/$userId';
           break;
         case Role.manager:
-          endpoint = '$baseUrl/admin/stats';
+          endpoint = '$baseUrl/manager/stats';
           break;
         default:
           return stats;
@@ -718,7 +718,7 @@ class ApiService {
       final endpoint = switch (role) {
         Role.student => '$baseUrl/student/name/$userId',
         Role.teacher => '$baseUrl/teacher/name/$userId',
-        Role.manager => '$baseUrl/admin/name/$userId',
+        Role.manager => '$baseUrl/manager/name/$userId',
       };
 
       final response = await http.get(Uri.parse(endpoint));
@@ -1773,11 +1773,11 @@ class ApiService {
     }
   }
 
-  // ==================== ADMIN CLASS SCORES ====================
+  // ==================== MANAGER CLASS SCORES ====================
 
   /// Get all classes with basic statistics
   static Future<List<dynamic>> getAdminClasses() async {
-    final url = Uri.parse('$baseUrl/admin/classes');
+    final url = Uri.parse('$baseUrl/manager/classes');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1792,14 +1792,14 @@ class ApiService {
         throw Exception('خطا در دریافت کلاس‌ها: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching admin classes: $e');
+      print('Error fetching manager classes: $e');
       throw Exception('خطا: $e');
     }
   }
 
   /// Get overview statistics for all classes
   static Future<List<dynamic>> getAdminOverview() async {
-    final url = Uri.parse('$baseUrl/admin/overview');
+    final url = Uri.parse('$baseUrl/manager/overview');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1814,7 +1814,7 @@ class ApiService {
         throw Exception('خطا در دریافت آمار کلی: ${response.statusCode}');
       }
     } catch (e) {
-      print('Error fetching admin overview: $e');
+      print('Error fetching manager overview: $e');
       throw Exception('خطا: $e');
     }
   }
@@ -1827,7 +1827,7 @@ class ApiService {
   ///   topPerformers: [{studentId, name, avgScore, rank}, ...]
   /// }
   static Future<Map<String, dynamic>> getClassStatistics(int classId) async {
-    final url = Uri.parse('$baseUrl/admin/class/$classId/statistics');
+    final url = Uri.parse('$baseUrl/manager/class/$classId/statistics');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1852,7 +1852,7 @@ class ApiService {
   /// Get monthly trend for a class
   /// Returns: [{month, avgScore, count}, ...]
   static Future<List<dynamic>> getClassMonthlyTrend(int classId) async {
-    final url = Uri.parse('$baseUrl/admin/class/$classId/monthly-trend');
+    final url = Uri.parse('$baseUrl/manager/class/$classId/monthly-trend');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1874,7 +1874,7 @@ class ApiService {
   /// Get comparison data for all classes
   /// Returns: [{id, name, grade, studentCount, avgScore, passPercentage}, ...]
   static Future<List<dynamic>> getClassesComparison() async {
-    final url = Uri.parse('$baseUrl/admin/classes-comparison');
+    final url = Uri.parse('$baseUrl/manager/classes-comparison');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1896,7 +1896,7 @@ class ApiService {
   /// Get detailed student list for a class
   /// Returns: [{id, name, stuCode, avgScore, scoreCount}, ...]
   static Future<List<dynamic>> getClassStudents(int classId) async {
-    final url = Uri.parse('$baseUrl/admin/class/$classId/students');
+    final url = Uri.parse('$baseUrl/manager/class/$classId/students');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1919,7 +1919,7 @@ class ApiService {
 
   /// Get all students
   static Future<List<dynamic>> getAllStudents() async {
-    final url = Uri.parse('$baseUrl/admin/students');
+    final url = Uri.parse('$baseUrl/manager/students');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1958,7 +1958,7 @@ class ApiService {
 
   /// Get student by ID
   static Future<Map<String, dynamic>> getStudentById(int studentId) async {
-    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+    final url = Uri.parse('$baseUrl/manager/students/$studentId');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -1989,7 +1989,7 @@ class ApiService {
     required String address,
     required int debt,
   }) async {
-    final url = Uri.parse('$baseUrl/admin/students');
+    final url = Uri.parse('$baseUrl/manager/students');
 
     try {
       final response = await http
@@ -2035,7 +2035,7 @@ class ApiService {
     required String address,
     required int debt,
   }) async {
-    final url = Uri.parse('$baseUrl/admin/students/$studentId');
+    final url = Uri.parse('$baseUrl/manager/students/$studentId');
 
     try {
       final response = await http
@@ -2076,7 +2076,7 @@ class ApiService {
     int studentId,
     int userId,
   ) async {
-    final url = Uri.parse('$baseUrl/admin/students/$studentId/$userId');
+    final url = Uri.parse('$baseUrl/manager/students/$studentId/$userId');
 
     try {
       final response = await http
@@ -2101,7 +2101,7 @@ class ApiService {
 
   /// Get student stats
   static Future<Map<String, dynamic>> getStudentStats() async {
-    final url = Uri.parse('$baseUrl/admin/students-stats');
+    final url = Uri.parse('$baseUrl/manager/students-stats');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -2121,7 +2121,7 @@ class ApiService {
 
   /// Search students
   static Future<List<dynamic>> searchStudents(String query) async {
-    final url = Uri.parse('$baseUrl/admin/students/search?query=$query');
+    final url = Uri.parse('$baseUrl/manager/students/search?query=$query');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -2142,7 +2142,7 @@ class ApiService {
 
   // ==================== GET ALL CLASSES ====================
   static Future<List<dynamic>> getAllClasses() async {
-    final url = Uri.parse('$baseUrl/admin/classes');
+    final url = Uri.parse('$baseUrl/manager/classes');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -2164,7 +2164,7 @@ class ApiService {
 
   // ==================== GET CLASS BY ID ====================
   static Future<Map<String, dynamic>> getClassById(int classId) async {
-    final url = Uri.parse('$baseUrl/admin/classes/$classId');
+    final url = Uri.parse('$baseUrl/manager/classes/$classId');
 
     try {
       final response = await http.get(url, headers: _headers).timeout(_timeout);
@@ -2358,7 +2358,7 @@ class ApiService {
   // ──────────────────────────────────────────────────────────────
   Future<TeacherModel> addTeacher(Map<String, dynamic> data) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/admin/teachers'),
+      Uri.parse('$baseUrl/manager/teachers'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
@@ -2380,7 +2380,7 @@ class ApiService {
 
   Future<bool> updateTeacher(int teacherId, Map<String, dynamic> data) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/admin/teachers/$teacherId'),
+      Uri.parse('$baseUrl/manager/teachers/$teacherId'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode(data),
     );
@@ -2390,7 +2390,7 @@ class ApiService {
   Future<void> assignTeacherToCourse(int teacherId, int courseId) async {
     try {
       final response = await http.post(
-        Uri.parse('$baseUrl/admin/assign-teacher'),
+        Uri.parse('$baseUrl/manager/assign-teacher'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'teacherId': teacherId, 'courseId': courseId}),
       );
@@ -2413,7 +2413,7 @@ class ApiService {
 
   Future<void> unassignTeacherFromCourse(int courseId) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/admin/unassign-teacher/$courseId'),
+      Uri.parse('$baseUrl/manager/unassign-teacher/$courseId'),
       headers: {'Content-Type': 'application/json'},
     );
     if (response.statusCode != 200 && response.statusCode != 204) {
@@ -2422,7 +2422,7 @@ class ApiService {
   }
 
   Future<List<CourseModel>> getTeacherCourses(int teacherId) async {
-    final uri = Uri.parse('$baseUrl/admin/teacher/$teacherId/courses');
+    final uri = Uri.parse('$baseUrl/manager/teacher/$teacherId/courses');
     print('Fetching courses → $uri');
 
     final response = await http.get(uri);
@@ -2444,7 +2444,7 @@ class ApiService {
   /// Get all teachers
   Future<List<TeacherModel>> getTeachers() async {
     try {
-      final response = await http.get(Uri.parse('$baseUrl/admin/teachers'));
+      final response = await http.get(Uri.parse('$baseUrl/manager/teachers'));
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
         return data.map((json) => TeacherModel.fromJson(json)).toList();
@@ -2460,7 +2460,7 @@ class ApiService {
   /// Delete teacher
   Future<void> deleteTeacher(int teacherId) async {
     final response = await http.delete(
-      Uri.parse('$baseUrl/admin/teachers/$teacherId'),
+      Uri.parse('$baseUrl/manager/teachers/$teacherId'),
     );
 
     if (response.statusCode != 200) {
@@ -2488,7 +2488,7 @@ class ApiService {
 
   Future<GroupedTeachersResponse> getTeachersGroupedByClass() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/admin/teachers/grouped-by-class'),
+      Uri.parse('$baseUrl/manager/teachers/grouped-by-class'),
     );
 
     print('Grouped endpoint status: ${response.statusCode}');

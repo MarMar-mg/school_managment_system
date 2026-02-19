@@ -1,4 +1,4 @@
-// lib/features/admin/student_management/presentations/pages/student_management_page.dart
+// lib/features/manager/student_management/presentations/pages/student_management_page.dart
 import 'package:flutter/material.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/applications/role.dart';
