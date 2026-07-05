@@ -3,16 +3,13 @@ import 'package:flutter/material.dart';
 import '../../../../applications/colors.dart';
 import '../../../../applications/role.dart';
 import '../../../../core/services/api_service.dart';
+import '../features/profile/presentations/pages/notification_page.dart';
 
 class DashboardAppBar extends StatefulWidget implements PreferredSizeWidget {
   final Role role;
   final int userId;
 
-  const DashboardAppBar({
-    super.key,
-    required this.role,
-    required this.userId,
-  });
+  const DashboardAppBar({super.key, required this.role, required this.userId});
 
   @override
   State<DashboardAppBar> createState() => _DashboardAppBarState();
@@ -75,9 +72,30 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
       actions: [
         Stack(
           children: [
-            IconButton(
-              icon: const Icon(Icons.notifications_outlined, color: AppColor.purple, size: 24),
-              onPressed: () {},
+            FutureBuilder<String>(
+              future: _nameFuture,
+              builder: (context, snapshot) {
+                final name = snapshot.data ?? 'در حال بارگذاری...';
+                return IconButton(
+                  icon: const Icon(
+                    Icons.notifications_outlined,
+                    color: AppColor.purple,
+                    size: 24,
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => NotificationsPage(
+                          userId: widget.userId,
+                          role: widget.role,
+                          userName: name,
+                        ),
+                      ),
+                    );
+                  },
+                );
+              },
             ),
             Positioned(
               right: 12,
@@ -85,7 +103,10 @@ class _DashboardAppBarState extends State<DashboardAppBar> {
               child: Container(
                 width: 8,
                 height: 8,
-                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.red,
+                  shape: BoxShape.circle,
+                ),
               ),
             ),
           ],
