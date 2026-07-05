@@ -253,21 +253,16 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                             ),
                           );
                         }
-                        if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const Center(
-                        child: Padding(
-                        padding: EdgeInsets.all(20),
-                        child: CircularProgressIndicator(),
-                        ),
-                        );
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {
+                          return const Center(
+                            child: Padding(
+                              padding: EdgeInsets.all(20),
+                              child: CircularProgressIndicator(),
+                            ),
+                          );
                         }
-                        return
-                        const
-                        SizedBox
-                        .
-                        shrink
-                        (
-                        );
+                        return const SizedBox.shrink();
                       },
                     ),
                     if (!isUpcoming) ...[
@@ -333,10 +328,7 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                             possibleScore: widget.exam.possibleScore,
                           );
                         },
-                        icon: Icon(
-                          Icons.score,
-                          size: 16,
-                        ),
+                        icon: Icon(Icons.score, size: 16),
                         label: Text('مدیریت نمرات'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.blue.shade50,
@@ -345,15 +337,17 @@ class _TeacherExamCardState extends State<TeacherExamCard>
                           padding: const EdgeInsets.symmetric(vertical: 10),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
-                            side: BorderSide(
-                              color: Colors.blue.shade300,
-                            ),
+                            side: BorderSide(color: Colors.blue.shade300),
                           ),
                         ),
                       ),
                     ),
+                    if (!widget.isActive) const SizedBox(width: 8),
+                    if (!widget.isActive) downloadFile(),
                   ],
                 ),
+                if (widget.isActive) const SizedBox(height: 4),
+                if (widget.isActive) Row(children: [downloadFile()]),
               ],
             ),
           ),
@@ -396,10 +390,12 @@ class _TeacherExamCardState extends State<TeacherExamCard>
     );
   }
 
-  Widget _buildStatCard(String label,
-      String value,
-      Color bgColor,
-      Color textColor,) {
+  Widget _buildStatCard(
+    String label,
+    String value,
+    Color bgColor,
+    Color textColor,
+  ) {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       decoration: BoxDecoration(
@@ -430,5 +426,97 @@ class _TeacherExamCardState extends State<TeacherExamCard>
         ],
       ),
     );
+  }
+
+  Expanded downloadFile() {
+    return  Expanded(
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          await _downloadQuestionFile(context, 'exam');
+        },
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: const Text("دانلود سوال"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.lightGreen.shade50,
+          foregroundColor: Colors.lightGreen,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadQuestionFile(BuildContext context, String type) async {
+    try {
+      // Verify file exists before downloading
+      if (widget.exam.file == null || widget.exam.file!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل سوال برای این امتحان موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('در حال دانلود...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Download file
+      print(
+        'Attempting to download exam question file for exam: ${widget.exam.id}',
+      );
+      final fileBytes = await ApiService.downloadExamQuestionFile(widget.exam.id);
+
+      print('Downloaded ${fileBytes.length} bytes');
+
+      // Save file
+      final fileName = widget.exam.filename ?? 'exam_${widget.exam.id}.pdf';
+      final filePath = await ApiService.saveFileToDevice(fileBytes, fileName);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل سوال با موفقیت دانلود شد'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Download error: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 }

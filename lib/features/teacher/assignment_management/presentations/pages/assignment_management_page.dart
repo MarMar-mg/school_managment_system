@@ -60,10 +60,27 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
 
       final now = DateTime.now();
 
+      DateTime getAssignmentDateTime(Map<String, dynamic> assignment) {
+        final date = DateFormatManager.convertToDateTime(assignment['dueDate']);
+        final time = assignment['dueTime'] ?? "00:00";
+
+        final parts = time.split(':');
+        final hour = int.parse(parts[0]);
+        final minute = int.parse(parts[1]);
+
+        return DateTime(
+          date.year,
+          date.month,
+          date.day,
+          hour,
+          minute,
+        );
+      }
+
       _activeAssignments = assignments.where((a) {
         try {
-          final dueDate = DateFormatManager.convertToDateTime(a['dueDate']);
-          return dueDate.isAfter(now);
+          final dueDateTime = getAssignmentDateTime(a);
+          return dueDateTime.isAfter(now);
         } catch (e) {
           return false;
         }
@@ -71,8 +88,8 @@ class _AssignmentManagementPageState extends State<AssignmentManagementPage>
 
       _inactiveAssignments = assignments.where((a) {
         try {
-          final dueDate = DateFormatManager.convertToDateTime(a['dueDate']);
-          return !dueDate.isAfter(now);
+          final dueDateTime = getAssignmentDateTime(a);
+          return !dueDateTime.isAfter(now);
         } catch (e) {
           return true;
         }

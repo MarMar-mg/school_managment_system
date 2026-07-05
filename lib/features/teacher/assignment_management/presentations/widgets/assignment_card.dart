@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../../applications/colors.dart';
 import '../../../../../commons/utils/manager/date_manager.dart';
+import '../../../../../core/services/api_service.dart';
 import 'assignment_score_management_widget.dart';
 
 class TeacherAssignmentCard extends StatefulWidget {
@@ -307,8 +308,14 @@ class _TeacherAssignmentCardState extends State<TeacherAssignmentCard>
                           ),
                         ),
                       ),
+                      if(!widget.isActive)
+                      const SizedBox(width: 8),
+                      if(!widget.isActive)
+                      downloadFile()
                     ],
                   ),
+                  if (widget.isActive) const SizedBox(height: 4),
+                  if (widget.isActive) Row(children: [downloadFile()]),
                 ],
               ),
             ),
@@ -347,5 +354,96 @@ class _TeacherAssignmentCardState extends State<TeacherAssignmentCard>
         ),
       ],
     );
+  }
+  Expanded downloadFile() {
+    return  Expanded(
+      child: ElevatedButton.icon(
+        onPressed: () async {
+          await _downloadQuestionFile(context, 'exam');
+        },
+        icon: const Icon(Icons.download_rounded, size: 18),
+        label: const Text("دانلود سوال"),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.lightGreen.shade50,
+          foregroundColor: Colors.lightGreen,
+          elevation: 0,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _downloadQuestionFile(BuildContext context, String type) async {
+    try {
+      // Verify file exists before downloading
+      if (widget.data['file'] == null || widget.data['file']!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل سوال برای این تمرین موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      if (context.mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => const AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('در حال دانلود...'),
+              ],
+            ),
+          ),
+        );
+      }
+
+      // Download file
+      print(
+        'Attempting to download exercise question file for exercise: ${widget.data['id']}',
+      );
+      final fileBytes = await ApiService.downloadAssignmentQuestionFile(widget.data['id']);
+
+      print('Downloaded ${fileBytes.length} bytes');
+
+      // Save file
+      final fileName =widget.data['filename'] ?? 'exercise_${widget.data['id']}.pdf';
+      final filePath = await ApiService.saveFileToDevice(fileBytes, fileName);
+
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('فایل سوال با موفقیت دانلود شد'),
+            backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Download error: $e');
+      if (context.mounted) {
+        Navigator.pop(context); // Close loading dialog
+
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('خطا در دانلود: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
   }
 }
