@@ -746,7 +746,7 @@ class ExamCard extends StatelessWidget {
       return Row(
         children: [
           // Download Question Button (only if allowed and file exists)
-          if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
+          // if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
             Expanded(
               child: ElevatedButton.icon(
                 onPressed: () async {
@@ -764,7 +764,7 @@ class ExamCard extends StatelessWidget {
                 ),
               ),
             ),
-          if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
+          // if (isDownloadAllowed && (item.filename ?? '').isNotEmpty)
             const SizedBox(width: 8),
           // Download Answer Button
           Expanded(

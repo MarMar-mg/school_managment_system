@@ -486,6 +486,16 @@ class AssignmentCard extends StatelessWidget {
   // Download file helper method
   Future<void> _downloadFile(BuildContext context, String type) async {
     try {
+
+      if (item.file == null || item.file!.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('فایل پاسخ برای این سوال موجود نیست'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
       // Show loading dialog
       showDialog(
         context: context,
