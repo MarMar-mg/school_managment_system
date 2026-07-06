@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:html' as html;
+import 'dart:typed_data';
 import 'dart:io';
 import 'dart:math';
 import 'package:image_picker/image_picker.dart';
@@ -15,7 +15,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../applications/role.dart';
 import '../../commons/untils.dart';
 import '../../features/manager/news_management/data/models/news_model.dart';
-import '../../features/manager/teacher_management/data/models/class_group.dart';
 import '../../features/manager/teacher_management/data/models/course_model.dart';
 import '../../features/manager/teacher_management/data/models/grouped_teachers_response.dart';
 import '../../features/manager/teacher_management/data/models/teacher_model.dart';
@@ -1387,7 +1386,7 @@ class ApiService {
       // Check if running on web
       if (kIsWeb) {
         // For web, use html package to trigger browser download
-        return _downloadFileWeb(fileBytes, fileName);
+        return downloadFile(fileBytes, fileName);
       }
 
       // For mobile/desktop platforms
@@ -1412,22 +1411,16 @@ class ApiService {
     }
   }
 
-  /// Download file for web platform
-  static String _downloadFileWeb(Uint8List fileBytes, String fileName) {
+  static Future<String> downloadFile(Uint8List fileBytes, String fileName) async {
     try {
-      // Using dart:html for web
-      final blob = html.Blob([fileBytes]);
-      final url = html.Url.createObjectUrlFromBlob(blob);
-      final anchor = html.AnchorElement(href: url)
-        ..setAttribute('download', fileName)
-        ..click();
-      html.Url.revokeObjectUrl(url);
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/$fileName');
 
-      print('Web download triggered: $fileName');
-      return 'Downloaded: $fileName';
+      await file.writeAsBytes(fileBytes);
+
+      return 'Saved to: ${file.path}';
     } catch (e) {
-      print('Web Download Error: $e');
-      throw Exception('خطا در دانلود فایل: $e');
+      throw Exception('خطا در ذخیره فایل: $e');
     }
   }
 
