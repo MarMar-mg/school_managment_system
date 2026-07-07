@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:school_management_system/applications/colors.dart';
 import 'package:school_management_system/features/teacher/exam_management/data/models/exam_model.dart';
+import 'package:collection/collection.dart';
 
 class ItemSelector extends StatelessWidget {
   final String selectedType;
@@ -48,7 +49,17 @@ class ItemSelector extends StatelessWidget {
       return _buildNoClassSelected();
     }
 
-    final filteredItems = _getFilteredItems();
+    final filteredItems = _getFilteredItems()
+        .where((item) => _getItemId(item) != null)
+        .fold<List<dynamic>>([], (list, item) {
+      final id = _getItemId(item);
+
+      if (!list.any((x) => _getItemId(x) == id)) {
+        list.add(item);
+      }
+
+      return list;
+    });
 
     if (isLoading) {
       return Column(
@@ -161,9 +172,9 @@ class ItemSelector extends StatelessWidget {
               onChanged: (int? newId) {
                 if (newId == null) return;
 
-                final selected = filteredItems.firstWhere(
+
+                final selected = filteredItems.firstWhereOrNull(
                       (item) => _getItemId(item) == newId,
-                  orElse: () => null,
                 );
 
                 if (selected != null) {

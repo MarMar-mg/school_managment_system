@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../../../../applications/role.dart';
+
 class UserInfoCard extends StatefulWidget {
   final String userName;
+  final Role role;
 
   const UserInfoCard({
     super.key,
-    required this.userName,
+    required this.userName, required this.role,
   });
 
   @override
@@ -56,7 +59,7 @@ class _UserInfoCardState extends State<UserInfoCard> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        Colors.purple.shade400,
+                        widget.role == Role.student ? Colors.purple.shade400: Colors.green.shade400,
                         Colors.blue.shade400,
                       ],
                       begin: Alignment.topLeft,

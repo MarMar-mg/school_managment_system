@@ -161,3 +161,9 @@ D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net1
 D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net10.0\SchoolPortalAPI.genruntimeconfig.cache
 D:\maryam\flutter_project\school_managment_system\schoolportalapi\obj\Debug\net10.0\ref\SchoolPortalAPI.dll
 D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Microsoft.AspNetCore.Authentication.JwtBearer.dll
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\web.config
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\appsettings.Development.json
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\appsettings.json
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\SchoolPortalAPI.deps.json
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\SchoolPortalAPI.runtimeconfig.json
+D:\maryam\flutter_project\school_managment_system\SchoolPortalAPI\bin\Debug\net10.0\Publish\SchoolPortalAPI.staticwebassets.endpoints.json
