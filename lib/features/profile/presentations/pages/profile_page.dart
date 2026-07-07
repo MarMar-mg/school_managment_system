@@ -84,7 +84,7 @@ class _ProfilePageState extends State<ProfilePage>
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // ================= USER CARD =================
-            _animatedSection(0, UserInfoCard(userName: widget.userName)),
+            _animatedSection(0, UserInfoCard(userName: widget.userName, role: widget.role,)),
 
             const SizedBox(height: 40),
 

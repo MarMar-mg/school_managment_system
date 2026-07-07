@@ -167,7 +167,11 @@ class _BottomNavBarState extends State<BottomNavBar> {
               hoverColor: Colors.grey[100]!,
               gap: 8,
               color: AppColor.lightGray,
-              activeColor: AppColor.purple,
+              activeColor: widget.role == Role.student
+                  ? AppColor.purple
+                  : widget.role == Role.teacher
+                  ? AppColor.teacherSecondColor
+                  : AppColor.adminSecondColor,
               iconSize: 24,
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
               duration: const Duration(milliseconds: 200),

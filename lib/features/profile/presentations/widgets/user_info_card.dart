@@ -59,8 +59,8 @@ class _UserInfoCardState extends State<UserInfoCard> with SingleTickerProviderSt
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        widget.role == Role.student ? Colors.purple.shade400: Colors.green.shade400,
-                        Colors.blue.shade400,
+                        widget.role == Role.student? Colors.purple.shade400: widget.role == Role.teacher? Colors.green.shade400: Colors.pink.shade400,
+                        widget.role == Role.manager? Colors.purple.shade400: Colors.blue.shade400,
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,

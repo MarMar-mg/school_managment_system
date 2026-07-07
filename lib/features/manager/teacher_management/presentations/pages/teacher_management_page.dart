@@ -218,9 +218,12 @@ class _TeacherManagementPageState extends State<TeacherManagementPage> {
               alignment: Alignment.centerLeft,
               child: FloatingActionButton.extended(
                 onPressed: _addTeacher,
-                backgroundColor: AppColor.purple,
-                icon: const Icon(Icons.add, color: Colors.white),
-                label: const Text('افزودن معلم جدید'),
+                backgroundColor: Colors.pink.shade100,
+                icon: const Icon(Icons.add, color: Colors.pink),
+                label: const Text(
+                  'افزودن معلم جدید',
+                  style: const TextStyle(color: Colors.pink),
+                ),
               ),
             ),
           ),

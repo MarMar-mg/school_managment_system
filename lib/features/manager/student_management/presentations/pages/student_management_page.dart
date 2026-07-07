@@ -433,14 +433,14 @@ class _StudentManagementPageState extends State<StudentManagementPage> {
         Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [AppColor.purple, AppColor.lightPurple],
+              colors: [AppColor.adminBaseColor, AppColor.lightPurple],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: AppColor.purple.withOpacity(0.3),
+                color: AppColor.adminBaseColor.withOpacity(0.3),
                 blurRadius: 12,
                 offset: const Offset(0, 4),
               ),

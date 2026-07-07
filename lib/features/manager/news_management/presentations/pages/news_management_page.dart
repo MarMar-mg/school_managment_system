@@ -151,7 +151,7 @@ class _NewsManagementPageState extends State<NewsManagementPage> {
                     style: defaultTextStyle(
                       context,
                       StyleText.bb1,
-                    ).s(22).c(AppColor.purple),
+                    ).s(22).c(Colors.pink),
                     textDirection: TextDirection.rtl,
                   ),
                   if (widget.role == Role.manager)
@@ -160,7 +160,7 @@ class _NewsManagementPageState extends State<NewsManagementPage> {
                       icon: const Icon(Icons.add, size: 20),
                       label: const Text('افزودن'),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColor.purple,
+                        backgroundColor: AppColor.adminBaseColor,
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(8),
@@ -201,7 +201,7 @@ class _NewsManagementPageState extends State<NewsManagementPage> {
                         curve: Curves.easeInOut,
                         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected ? AppColor.purple : Colors.purple.shade50,
+                          color: isSelected ? Colors.pinkAccent : Colors.purple.shade50,
                           borderRadius: BorderRadius.circular(30), // pill shape
                           boxShadow: isSelected
                               ? [

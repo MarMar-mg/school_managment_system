@@ -26,7 +26,7 @@ class HeaderSection extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Colors.purple, Colors.deepPurple]),
+              gradient: LinearGradient(colors: [Colors.greenAccent, Colors.blue]),
               borderRadius: BorderRadius.circular(12),
             ),
             child: const Row(

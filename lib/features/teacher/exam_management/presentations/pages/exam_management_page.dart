@@ -240,9 +240,11 @@ class _ExamManagementPageState extends State<ExamManagementPage>
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: _showAddExamDialog,
-              icon: const Icon(Icons.add),
-              label: const Text('افزودن امتحان'),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColor.purple),
+              icon: const Icon(Icons.add, color: Colors.green,),
+              label: const Text('افزودن امتحان', style: const TextStyle(
+                color: Colors.green,
+              ),),
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade100),
             ),
           ],
         ),
