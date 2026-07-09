@@ -727,7 +727,7 @@ namespace SchoolPortalAPI.Controllers
                 // 2. Prepare username & password
                 // ──────────────────────────────────────────────
                 var username = model.StudentCode; // or model.NationalCode if you add it later
-                var password = GenerateRandomPassword();
+                var password = model.StudentCode;
 
                 // Check duplicate username
                 if (await _context.Users.AnyAsync(u => u.Username == username))

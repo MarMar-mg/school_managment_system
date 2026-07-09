@@ -42,11 +42,11 @@ class _UserInfoCardState extends State<UserInfoCard> with SingleTickerProviderSt
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
             boxShadow: [
-              BoxShadow(
-                color: Colors.purple.withOpacity(0.2),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
+              // BoxShadow(
+              //   color: Colors.purple.withOpacity(0.2),
+              //   blurRadius: 20,
+              //   offset: const Offset(0, 10),
+              // ),
             ],
           ),
           child: ClipRRect(
@@ -80,17 +80,17 @@ class _UserInfoCardState extends State<UserInfoCard> with SingleTickerProviderSt
                         ),
                         textDirection: TextDirection.rtl,
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 8),
                       _buildInfoRow(Icons.email_outlined, 'ali.ahmadi@school.edu'),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(Icons.phone_outlined, '۰۹۱۱-۱۲۳-۴۵۶۷'),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(
-                        Icons.location_on_outlined,
-                        'تهران، خیابان انقلاب',
-                      ),
-                      const SizedBox(height: 8),
-                      _buildInfoRow(Icons.calendar_today_outlined, '۱۴۰۰/۰۱/۰۱'),
+                      // const SizedBox(height: 8),
+                      // _buildInfoRow(Icons.phone_outlined, '۰۹۱۱-۱۲۳-۴۵۶۷'),
+                      // const SizedBox(height: 8),
+                      // _buildInfoRow(
+                      //   Icons.location_on_outlined,
+                      //   'تهران، خیابان انقلاب',
+                      // ),
+                      // const SizedBox(height: 8),
+                      // _buildInfoRow(Icons.calendar_today_outlined, '۱۴۰۰/۰۱/۰۱'),
                     ],
                   ),
                 ),
@@ -154,11 +154,11 @@ class _UserInfoCardState extends State<UserInfoCard> with SingleTickerProviderSt
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Icon(icon, color: Colors.white70, size: 16),
+        // Icon(icon, color: Colors.white70, size: 16),
         const SizedBox(width: 6),
         Expanded(
           child: Text(
-            text,
+            '',
             style: const TextStyle(
               color: Colors.white70,
               fontSize: 13,
