@@ -230,176 +230,176 @@ namespace SchoolPortalAPI.Controllers
             }
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // Get detailed statistics for a specific class
-        // ──────────────────────────────────────────────────────────────
-        [HttpGet("class/{classId}/statistics")]
-        public async Task<IActionResult> GetClassStatistics(string classId)
-        {
-            try
-            {
-                // Parse classId
-                if (!long.TryParse(classId, out long parsedClassId))
-                {
-                    return BadRequest(new { message = "شناسه کلاس نامعتبر است" });
-                }
-
-                // Get class
-                var classObj = await _context.Classes
-                    .FirstOrDefaultAsync(c => c.Classid == parsedClassId);
-
-                if (classObj == null)
-                    return NotFound(new { message = "کلاس یافت نشد" });
-
-                // Get all students in this class with their IDs
-                var studentsInClass = await _context.Students
-                    .Where(s => s.Classeid == parsedClassId)
-                    .Select(s => new { s.Studentid, s.Name, s.StuCode })
-                    .ToListAsync();
-
-                if (!studentsInClass.Any())
-                    return Ok(new
-                    {
-                        id = classObj.Classid,
-                        name = classObj.Name ?? "نامشخص",
-                        grade = classObj.Grade ?? "نامشخص",
-                        capacity = classObj.Capacity,
-                        totalStudents = 0,
-                        avgScore = 0.0,
-                        passPercentage = 0,
-                        scoreRanges = new List<object>(),
-                        subjectScores = new List<object>(),
-                        topPerformers = new List<object>(),
-                    });
-
-                // Get all scores for these students in this class
-                var studentIds = studentsInClass.Select(s => s.Studentid).ToList();
-
-                var allScores = await _context.Scores
-                    .Where(s => studentIds.Contains(s.Studentid ?? 0) && s.Classid == parsedClassId)
-                    .Include(s => s.Course)
-                    .ToListAsync();
-
-                Console.WriteLine($"[DEBUG] Class: {parsedClassId}, Students: {studentsInClass.Count}, Scores: {allScores.Count}");
-
-                if (!allScores.Any())
-                {
-                    return Ok(new
-                    {
-                        id = classObj.Classid,
-                        name = classObj.Name ?? "نامشخص",
-                        grade = classObj.Grade ?? "نامشخص",
-                        capacity = classObj.Capacity,
-                        totalStudents = studentsInClass.Count,
-                        avgScore = 0.0,
-                        passPercentage = 0,
-                        scoreRanges = new List<object>
-                        {
-                            new { range = "18-20", count = 0, percentage = 0 },
-                            new { range = "16-18", count = 0, percentage = 0 },
-                            new { range = "14-16", count = 0, percentage = 0 },
-                            new { range = "12-14", count = 0, percentage = 0 },
-                            new { range = "<12", count = 0, percentage = 0 },
-                        },
-                        subjectScores = new List<object>(),
-                        topPerformers = new List<object>(),
-                    });
-                }
-
-                // Calculate statistics
-                double avgScore = allScores.Average(s => (double)s.ScoreValue);
-                int passCount = allScores.Count(s => s.ScoreValue >= 12);
-                int passPercentage = (int)System.Math.Round((double)passCount / allScores.Count * 100);
-
-                // Score ranges
-                var scoreRanges = new List<ScoreRangeDto>
-                {
-                    new ScoreRangeDto { Range = "18-20", Count = allScores.Count(s => s.ScoreValue >= 18) },
-                    new ScoreRangeDto { Range = "16-18", Count = allScores.Count(s => s.ScoreValue >= 16 && s.ScoreValue < 18) },
-                    new ScoreRangeDto { Range = "14-16", Count = allScores.Count(s => s.ScoreValue >= 14 && s.ScoreValue < 16) },
-                    new ScoreRangeDto { Range = "12-14", Count = allScores.Count(s => s.ScoreValue >= 12 && s.ScoreValue < 14) },
-                    new ScoreRangeDto { Range = "<12", Count = allScores.Count(s => s.ScoreValue < 12) },
-                };
-
-                int totalScores = allScores.Count;
-                foreach (var range in scoreRanges)
-                {
-                    range.Percentage = (int)System.Math.Round((double)range.Count / totalScores * 100);
-                }
-
-                // Subject scores
-                var subjectScores = allScores
-                    .GroupBy(s => s.Course != null ? s.Course.Name : "نامشخص")
-                    .Select(g => new
-                    {
-                        name = g.Key,
-                        avgScore = System.Math.Round(g.Average(s => (double)s.ScoreValue), 1),
-                        totalCount = g.Count(),
-                    })
-                    .OrderByDescending(s => s.avgScore)
-                    .ToList();
-
-                // Group by Studentid and calculate average
-                var groupedScores = allScores
-                    .GroupBy(s => s.Studentid ?? 0)
-                    .Select(g => new
-                    {
-                        studentId = g.Key,
-                        avgScore = System.Math.Round(g.Average(s => (double)s.ScoreValue), 2),
-                    })
-                    .OrderByDescending(s => s.avgScore)
-                    .Take(3)
-                    .ToList();
-
-                Console.WriteLine($"[DEBUG] Grouped Scores: {groupedScores.Count}");
-                foreach (var gs in groupedScores)
-                {
-                    Console.WriteLine($"[DEBUG] StudentId: {gs.studentId}, AvgScore: {gs.avgScore}");
-                }
-
-                var topPerformers = new List<object>();
-                int rank = 1;
-
-                foreach (var perf in groupedScores)
-                {
-                    // Find student in our list
-                    var studentInfo = studentsInClass.FirstOrDefault(s => s.Studentid == perf.studentId);
-                    var studentName = studentInfo?.Name ?? "نامشخص";
-
-                    Console.WriteLine($"[DEBUG] Rank {rank}: StudentId={perf.studentId}, Name={studentName}");
-
-                    topPerformers.Add(new
-                    {
-                        studentId = perf.studentId,
-                        studentName = studentName,
-                        stuCode = studentInfo?.StuCode ?? "نامشخص",
-                        avgScore = perf.avgScore,
-                        rank = rank,
-                    });
-                    rank++;
-                }
-
-                return Ok(new
-                {
-                    id = classObj.Classid,
-                    name = classObj.Name ?? "نامشخص",
-                    grade = classObj.Grade ?? "نامشخص",
-                    capacity = classObj.Capacity,
-                    totalStudents = studentsInClass.Count,
-                    avgScore = System.Math.Round(avgScore, 1),
-                    passPercentage = passPercentage,
-                    scoreRanges = scoreRanges,
-                    subjectScores = subjectScores,
-                    topPerformers = topPerformers,
-                });
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[GET CLASS STATISTICS] Error: {ex.Message}");
-                Console.WriteLine($"[GET CLASS STATISTICS] StackTrace: {ex.StackTrace}");
-                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
-            }
-        }
+//        // ──────────────────────────────────────────────────────────────
+//        // Get detailed statistics for a specific class
+//        // ──────────────────────────────────────────────────────────────
+//        [HttpGet("class/{classId}/statistics")]
+//        public async Task<IActionResult> GetClassStatistics(string classId)
+//        {
+//            try
+//            {
+//                // Parse classId
+//                if (!long.TryParse(classId, out long parsedClassId))
+//                {
+//                    return BadRequest(new { message = "شناسه کلاس نامعتبر است" });
+//                }
+//
+//                // Get class
+//                var classObj = await _context.Classes
+//                    .FirstOrDefaultAsync(c => c.Classid == parsedClassId);
+//
+//                if (classObj == null)
+//                    return NotFound(new { message = "کلاس یافت نشد" });
+//
+//                // Get all students in this class with their IDs
+//                var studentsInClass = await _context.Students
+//                    .Where(s => s.Classeid == parsedClassId)
+//                    .Select(s => new { s.Studentid, s.Name, s.StuCode })
+//                    .ToListAsync();
+//
+//                if (!studentsInClass.Any())
+//                    return Ok(new
+//                    {
+//                        id = classObj.Classid,
+//                        name = classObj.Name ?? "نامشخص",
+//                        grade = classObj.Grade ?? "نامشخص",
+//                        capacity = classObj.Capacity,
+//                        totalStudents = 0,
+//                        avgScore = 0.0,
+//                        passPercentage = 0,
+//                        scoreRanges = new List<object>(),
+//                        subjectScores = new List<object>(),
+//                        topPerformers = new List<object>(),
+//                    });
+//
+//                // Get all scores for these students in this class
+//                var studentIds = studentsInClass.Select(s => s.Studentid).ToList();
+//
+//                var allScores = await _context.Scores
+//                    .Where(s => studentIds.Contains(s.Studentid ?? 0) && s.Classid == parsedClassId)
+//                    .Include(s => s.Course)
+//                    .ToListAsync();
+//
+//                Console.WriteLine($"[DEBUG] Class: {parsedClassId}, Students: {studentsInClass.Count}, Scores: {allScores.Count}");
+//
+//                if (!allScores.Any())
+//                {
+//                    return Ok(new
+//                    {
+//                        id = classObj.Classid,
+//                        name = classObj.Name ?? "نامشخص",
+//                        grade = classObj.Grade ?? "نامشخص",
+//                        capacity = classObj.Capacity,
+//                        totalStudents = studentsInClass.Count,
+//                        avgScore = 0.0,
+//                        passPercentage = 0,
+//                        scoreRanges = new List<object>
+//                        {
+//                            new { range = "18-20", count = 0, percentage = 0 },
+//                            new { range = "16-18", count = 0, percentage = 0 },
+//                            new { range = "14-16", count = 0, percentage = 0 },
+//                            new { range = "12-14", count = 0, percentage = 0 },
+//                            new { range = "<12", count = 0, percentage = 0 },
+//                        },
+//                        subjectScores = new List<object>(),
+//                        topPerformers = new List<object>(),
+//                    });
+//                }
+//
+//                // Calculate statistics
+//                double avgScore = allScores.Average(s => (double)s.ScoreValue);
+//                int passCount = allScores.Count(s => s.ScoreValue >= 12);
+//                int passPercentage = (int)System.Math.Round((double)passCount / allScores.Count * 100);
+//
+//                // Score ranges
+//                var scoreRanges = new List<ScoreRangeDto>
+//                {
+//                    new ScoreRangeDto { Range = "18-20", Count = allScores.Count(s => s.ScoreValue >= 18) },
+//                    new ScoreRangeDto { Range = "16-18", Count = allScores.Count(s => s.ScoreValue >= 16 && s.ScoreValue < 18) },
+//                    new ScoreRangeDto { Range = "14-16", Count = allScores.Count(s => s.ScoreValue >= 14 && s.ScoreValue < 16) },
+//                    new ScoreRangeDto { Range = "12-14", Count = allScores.Count(s => s.ScoreValue >= 12 && s.ScoreValue < 14) },
+//                    new ScoreRangeDto { Range = "<12", Count = allScores.Count(s => s.ScoreValue < 12) },
+//                };
+//
+//                int totalScores = allScores.Count;
+//                foreach (var range in scoreRanges)
+//                {
+//                    range.Percentage = (int)System.Math.Round((double)range.Count / totalScores * 100);
+//                }
+//
+//                // Subject scores
+//                var subjectScores = allScores
+//                    .GroupBy(s => s.Course != null ? s.Course.Name : "نامشخص")
+//                    .Select(g => new
+//                    {
+//                        name = g.Key,
+//                        avgScore = System.Math.Round(g.Average(s => (double)s.ScoreValue), 1),
+//                        totalCount = g.Count(),
+//                    })
+//                    .OrderByDescending(s => s.avgScore)
+//                    .ToList();
+//
+//                // Group by Studentid and calculate average
+//                var groupedScores = allScores
+//                    .GroupBy(s => s.Studentid ?? 0)
+//                    .Select(g => new
+//                    {
+//                        studentId = g.Key,
+//                        avgScore = System.Math.Round(g.Average(s => (double)s.ScoreValue), 2),
+//                    })
+//                    .OrderByDescending(s => s.avgScore)
+//                    .Take(3)
+//                    .ToList();
+//
+//                Console.WriteLine($"[DEBUG] Grouped Scores: {groupedScores.Count}");
+//                foreach (var gs in groupedScores)
+//                {
+//                    Console.WriteLine($"[DEBUG] StudentId: {gs.studentId}, AvgScore: {gs.avgScore}");
+//                }
+//
+//                var topPerformers = new List<object>();
+//                int rank = 1;
+//
+//                foreach (var perf in groupedScores)
+//                {
+//                    // Find student in our list
+//                    var studentInfo = studentsInClass.FirstOrDefault(s => s.Studentid == perf.studentId);
+//                    var studentName = studentInfo?.Name ?? "نامشخص";
+//
+//                    Console.WriteLine($"[DEBUG] Rank {rank}: StudentId={perf.studentId}, Name={studentName}");
+//
+//                    topPerformers.Add(new
+//                    {
+//                        studentId = perf.studentId,
+//                        studentName = studentName,
+//                        stuCode = studentInfo?.StuCode ?? "نامشخص",
+//                        avgScore = perf.avgScore,
+//                        rank = rank,
+//                    });
+//                    rank++;
+//                }
+//
+//                return Ok(new
+//                {
+//                    id = classObj.Classid,
+//                    name = classObj.Name ?? "نامشخص",
+//                    grade = classObj.Grade ?? "نامشخص",
+//                    capacity = classObj.Capacity,
+//                    totalStudents = studentsInClass.Count,
+//                    avgScore = System.Math.Round(avgScore, 1),
+//                    passPercentage = passPercentage,
+//                    scoreRanges = scoreRanges,
+//                    subjectScores = subjectScores,
+//                    topPerformers = topPerformers,
+//                });
+//            }
+//            catch (Exception ex)
+//            {
+//                Console.WriteLine($"[GET CLASS STATISTICS] Error: {ex.Message}");
+//                Console.WriteLine($"[GET CLASS STATISTICS] StackTrace: {ex.StackTrace}");
+//                return StatusCode(500, new { message = "خطای سرور", error = ex.Message });
+//            }
+//        }
 
         // ──────────────────────────────────────────────────────────────
         // Get monthly trend for a class
@@ -1243,7 +1243,9 @@ namespace SchoolPortalAPI.Controllers
                Username = dto.NationalCode?.Trim()
                           ?? dto.Phone?.Trim()
                           ?? $"teacher_{Guid.NewGuid().ToString()[..8]}",
-               Password = GenerateRandomPassword(),
+               Password = dto.NationalCode?.Trim()
+                            ?? dto.Phone?.Trim()
+                            ?? $"teacher_{Guid.NewGuid().ToString()[..8]}",
                Role = "teacher"
            };
 

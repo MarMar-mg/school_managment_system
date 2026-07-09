@@ -45,13 +45,13 @@ namespace SchoolPortalAPI.Controllers
             return Ok(news);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> Create([FromBody] News news)
-        {
-            _context.News.Add(news);
-            await _context.SaveChangesAsync();
-            return CreatedAtAction(nameof(GetById), new { id = news.Newsid }, news);
-        }
+//        [HttpPost]
+//        public async Task<IActionResult> Create([FromBody] News news)
+//        {
+//            _context.News.Add(news);
+//            await _context.SaveChangesAsync();
+//            return CreatedAtAction(nameof(GetById), new { id = news.Newsid }, news);
+//        }
 
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] News news, IFormFile? image)

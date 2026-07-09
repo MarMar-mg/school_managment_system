@@ -653,6 +653,7 @@ namespace SchoolPortalAPI.Controllers
         // Update exam answer (replace existing submission)
         // ──────────────────────────────────────────────────────────────
         [HttpPost("update/exam/{userId}/{examId}")]
+        [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateExamAnswer(
             long userId,
             long examId,

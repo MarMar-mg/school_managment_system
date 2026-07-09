@@ -27,8 +27,8 @@ import '../../features/teacher/exam_management/data/models/exam_model.dart';
 
 class ApiService {
   // Update this based on your testing environment
-  static const String baseUrl = 'http://localhost:5105/api';
-  static const String baseImageUrl = 'http://localhost:5105';
+  static const String baseUrl = "http://62.220.123.242/api";
+  static const String baseImageUrl = 'http://62.220.123.242/';
 
   // For Android Emulator: 'http://10.0.2.2:5105/api'
   // For iOS Simulator: 'http://localhost:5105/api'

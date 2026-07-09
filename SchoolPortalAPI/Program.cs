@@ -51,7 +51,7 @@ builder.Services.AddAuthorization();
 
 // Add Swagger/OpenAPI
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+//builder.Services.AddSwaggerGen();
 
 // Configure Database Context
 builder.Services.AddDbContext<SchoolDbContext>(options =>
@@ -60,11 +60,11 @@ builder.Services.AddDbContext<SchoolDbContext>(options =>
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+//if (app.Environment.IsDevelopment())
+//{
+//    app.UseSwagger();
+//    app.UseSwaggerUI();
+//}
 
 // Middleware order is CRITICAL
 app.UseCors("AllowFlutterWeb");

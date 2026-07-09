@@ -175,13 +175,13 @@ class _LoginFormCardState extends State<LoginFormCard>
                       ),
                     ),
 
-                    const SizedBox(height: 16),
-
-                    // Remember Me + Forgot Password
-                    _buildFieldWithDelay(
-                      delay: 0.2,
-                      child: _buildRememberMeRow(),
-                    ),
+                    // const SizedBox(height: 16),
+                    //
+                    // // Remember Me + Forgot Password
+                    // _buildFieldWithDelay(
+                    //   delay: 0.2,
+                    //   child: _buildRememberMeRow(),
+                    // ),
 
                     const SizedBox(height: 24),
 
@@ -376,9 +376,9 @@ class _LoginFormCardState extends State<LoginFormCard>
   /// Role-specific demo credentials card
   Widget _buildDemoCard() {
     return switch (widget.role) {
-      Role.student => const DemoInfoCard(userName: 'شماره دانش آموزی', password: '123'),
-      Role.teacher => const DemoInfoCard(userName: 'کد استادی', password: '123'),
-      Role.manager => const DemoInfoCard(userName: 'کد معاونت', password: '123'),
+      Role.student => const DemoInfoCard(userName: 'کد ملی', password: 'کد ملی'),
+      Role.teacher => const DemoInfoCard(userName: 'کد ملی', password: 'کد ملی'),
+      Role.manager => const DemoInfoCard(userName: 'کد ملی', password: 'کد ملی'),
     };
   }
 }
